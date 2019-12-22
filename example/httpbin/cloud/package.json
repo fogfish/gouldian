@@ -1,0 +1,23 @@
+{
+  "name": "gouldian-api-gateway-example",
+  "version": "0.0.0",
+  "dependencies": {
+    "@types/node": "12.12.21",
+    "aws-cdk-pure": "^1.2.11",
+    "@aws-cdk/core": "1.19.0",
+    "@aws-cdk/aws-iam": "1.19.0",
+    "@aws-cdk/aws-lambda": "1.19.0",
+    "@aws-cdk/aws-apigateway": "1.19.0"
+  },
+  "devDependencies": {
+    "ts-node": "^8.5.4",
+    "tslint": "^5.20.1",
+    "prettier": "^1.19.1",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.7.4"
+  },
+  "scripts": {
+    "clean": "rm -Rf cdk.out && rm -Rf node_modules",
+    "lint": "tslint -p tsconfig.json"
+  }
+}
