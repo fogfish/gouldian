@@ -67,7 +67,7 @@ See [example](example) folder for advanced use-case. The library  [api specifica
 
 ## How To Contribute
 
-The library is [MIT](LICENSE) licensed and accepts contributions via GitHub pull requests:
+The library is [Apache 2.0](LICENSE) licensed and accepts contributions via GitHub pull requests:
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
@@ -81,9 +81,9 @@ The build and testing process requires [Go](https://golang.org) version 1.13 or 
 **Build** and **run** in your development console.
 
 ```bash
-git clone https://github.com/fogfish/golem
-cd golem
-go test -cover ./...
+git clone https://github.com/fogfish/gouldian
+cd gouldian
+go test
 ```
 
 ## License
