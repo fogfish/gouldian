@@ -1,6 +1,6 @@
 # Gouldian
 
-<img src="./doc/logo.svg" width="200" align="left"/>
+<img src="./doc/logo.svg" width="320" align="left"/>
 
 The library is Go combinator library for building HTTP services.
 The library is a thin layer of purely functional abstractions on top
@@ -17,16 +17,21 @@ declarative api implementations in the absence of pattern matching.
 
 ## Inspiration
 
-The library is heavily inspired by Scala [Finch](https://github.com/finagle/finch). However, gouldian primary target is a serverless development with AWS Lambda and AWS Gateway API.
+Microservices have become a design style to evolve system architecture in parallel, implement stable and consistent interfaces. An expressive language is required to design the variety of network interfaces. A pure functional languages fits very well to express communication behavior due they rich techniques to hide the networking complexity. [Finch](https://github.com/finagle/finch) is the best library in Scala for microservice development.
 
+Gouldian is heavily inspired by [Finch](https://github.com/finagle/finch). However, it is primarily designed for serverless application to implement microservices using AWS Lambda and AWS API Gateway. 
 
 
 ## Getting started
 
+The latest version of the library is available at `master` branch. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
+
 Here is minimal "Hello World!" example that matches any HTTP requests
-to /hello endpoint.
+to `/hello` endpoint. You can run this example locally see the [instructions](example/hello-world). 
 
 ```go
+package main
+
 import (
   "github.com/aws/aws-lambda-go/lambda"
   "github.com/fogfish/gouldian"
@@ -43,16 +48,19 @@ func hello() gouldian.Endpoint {
 }
 ```
 
-See [example](example) folder for advanced use-case and its [documentation](http://godoc.org/github.com/fogfish/gouldian)
+See [example](example) folder for advanced use-case. The library  [api specification](http://godoc.org/github.com/fogfish/gouldian) is available via Go doc.
 
 
 
 ## Next steps
 
 * Study [Endpoint](endpoint.go) type and its composition
+
 * Check build-in [collection of endpoints](request.go) to deal with HTTP request. See types: [HTTP](http://godoc.org/github.com/fogfish/gouldian/#HTTP), [APIGateway](http://godoc.org/github.com/fogfish/gouldian/#APIGateway)
+
 * Endpoint always returns some `Output` that defines HTTP response. There are three cases of output: HTTP Success, HTTP Failure and general error. See [Output](http://godoc.org/github.com/fogfish/gouldian/#Output), [Issue](http://godoc.org/github.com/fogfish/gouldian/#Issue) types.
 
+* Learn about microservice deployment with AWS CDK.
 
 
 ## How To Contribute

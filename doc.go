@@ -8,13 +8,15 @@
 //
 // The library is heavily inspired by Scala Finch
 // https://github.com/finagle/finch. However, gouldian primary target is
-// a serverless development with AWS Lambda and AWS Gateway API.
+// a serverless development with AWS Lambda and AWS API Gateway.
 //
 //
 // Getting started
 //
 // Here is minimal "Hello World!" example that matches any HTTP requests
 // to /hello endpoint.
+//
+//   package main
 //
 //   import (
 //     "github.com/aws/aws-lambda-go/lambda"
@@ -26,8 +28,8 @@
 //   }
 //
 //   func hello() gouldian.Endpoint {
-//     return gouldian.Get().Path("hello").Then(
-//        func() error { return gouldian.Ok().Text("Hello World!") }
+//     return gouldian.Get().Path("hello").FMap(
+//        func() error { return gouldian.Ok().Text("Hello World!") },
 //     )
 //   }
 //
