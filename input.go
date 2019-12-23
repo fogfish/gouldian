@@ -26,33 +26,32 @@ func (x *Input) Text(text string) {
 }
 */
 
-func New(req events.APIGatewayProxyRequest) *Input {
-	return &Input{
-		req,
-		1,
-		strings.Split(req.Path, "/"),
-		"",
-	}
+// Mock creates new Input - HTTP GET request
+func Mock(httpURL string) *Input {
+	return MockVerb("GET", httpURL)
 }
 
-func NewGet(spec string) *Input {
-	uri, _ := url.Parse(spec)
+// MockVerb creates new Input with any verb
+func MockVerb(verb string, httpURL string) *Input {
+	uri, _ := url.Parse(httpURL)
 	query := map[string]string{}
 	for key, val := range uri.Query() {
 		query[key] = strings.Join(val, "")
 	}
 
-	return &Input{
+	return NewRequest(
 		events.APIGatewayProxyRequest{
-			HTTPMethod:            "GET",
+			HTTPMethod:            verb,
 			Path:                  uri.Path,
 			Headers:               map[string]string{},
 			QueryStringParameters: query,
 		},
-		1,
-		strings.Split(uri.Path, "/"),
-		"",
-	}
+	)
+}
+
+// MockRequest creates new Input from API Gateway request
+func NewRequest(req events.APIGatewayProxyRequest) *Input {
+	return &Input{req, 1, strings.Split(req.Path, "/"), ""}
 }
 
 func (input *Input) With(head string, value string) *Input {
