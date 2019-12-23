@@ -44,8 +44,8 @@ func main() {
 }
 
 func hello() gouldian.Endpoint {
-  return gouldian.Get().Path("hello").Then(
-      func() error { return gouldian.Ok().Text("Hello World!") }
+  return gouldian.Get().Path("hello").FMap(
+    func() error { return gouldian.Ok().Text("Hello World!") },
   )
 }
 ```
