@@ -24,6 +24,8 @@ Gouldian is heavily inspired by [Finch](https://github.com/finagle/finch). Howev
 
 ## Getting started
 
+The library requires **Go 1.13** or later due to usage of [new error interface](https://blog.golang.org/go1.13-errors).
+
 The latest version of the library is available at `master` branch. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
 
 Here is minimal "Hello World!" example that matches any HTTP requests
