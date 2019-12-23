@@ -1,6 +1,6 @@
 # Gouldian
 
-<img src="./doc/logo.svg" width="280" align="left"/>
+<img src="./doc/logo.svg" width="200" align="left"/>
 
 The library is Go combinator library for building HTTP services.
 The library is a thin layer of purely functional abstractions on top
