@@ -1,3 +1,19 @@
+//
+//   Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+//
+
 package gouldian
 
 import (
@@ -8,6 +24,7 @@ import (
 	"net/url"
 )
 
+// Input wraps HTTP request
 type Input struct {
 	events.APIGatewayProxyRequest
 	segment int
@@ -15,57 +32,48 @@ type Input struct {
 	body    string
 }
 
-/*
-func (x *Input) Json(val interface{}) {
-	body, _ := json.Marshal(val)
-	x.body = string(body)
+// Mock creates new Input - HTTP GET request
+func Mock(httpURL string) *Input {
+	return MockVerb("GET", httpURL)
 }
 
-func (x *Input) Text(text string) {
-	x.body = text
-}
-*/
-
-func New(req events.APIGatewayProxyRequest) *Input {
-	return &Input{
-		req,
-		1,
-		strings.Split(req.Path, "/"),
-		"",
-	}
-}
-
-func NewGet(spec string) *Input {
-	uri, _ := url.Parse(spec)
+// MockVerb creates new Input with any verb
+func MockVerb(verb string, httpURL string) *Input {
+	uri, _ := url.Parse(httpURL)
 	query := map[string]string{}
 	for key, val := range uri.Query() {
 		query[key] = strings.Join(val, "")
 	}
 
-	return &Input{
+	return NewRequest(
 		events.APIGatewayProxyRequest{
-			HTTPMethod:            "GET",
+			HTTPMethod:            verb,
 			Path:                  uri.Path,
 			Headers:               map[string]string{},
 			QueryStringParameters: query,
 		},
-		1,
-		strings.Split(uri.Path, "/"),
-		"",
-	}
+	)
 }
 
+// NewRequest creates new Input from API Gateway request
+func NewRequest(req events.APIGatewayProxyRequest) *Input {
+	return &Input{req, 1, strings.Split(req.Path, "/"), ""}
+}
+
+// With adds HTTP header to mocked request
 func (input *Input) With(head string, value string) *Input {
 	input.Headers[head] = value
 	return input
 }
 
-func (input *Input) WithJson(val interface{}) *Input {
+// WithJSON adds Json payload to mocked request
+func (input *Input) WithJSON(val interface{}) *Input {
 	body, _ := json.Marshal(val)
 	input.Body = string(body)
 	return input
 }
 
+// WithText adds Text payload to mocked requets
 func (input *Input) WithText(val string) *Input {
 	input.Body = val
 	return input
