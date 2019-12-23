@@ -31,7 +31,7 @@ type HTTPHeader interface {
 
 // HTTPBody defines Endpoint(s) to match body of HTTP Request
 type HTTPBody interface {
-	Json(val interface{}) HTTP
+	JSON(val interface{}) HTTP
 	Text(val *string) HTTP
 }
 
@@ -42,7 +42,7 @@ type HTTP interface {
 	HTTPHeader
 	HTTPBody
 
-	Then(f func() error) Endpoint
+	FMap(f func() error) Endpoint
 	IsMatch(req *Input) bool
 }
 
@@ -248,8 +248,8 @@ func (state *APIGateway) HString(name string, val *string) HTTP {
 	return state
 }
 
-// Json decodes HTTP payload to struct
-func (state *APIGateway) Json(val interface{}) HTTP {
+// JSON decodes HTTP payload to struct
+func (state *APIGateway) JSON(val interface{}) HTTP {
 	state.f = state.f.Then(func(req *Input) error {
 		err := json.Unmarshal([]byte(req.Body), val)
 		if err == nil {
@@ -269,12 +269,13 @@ func (state *APIGateway) Text(val *string) HTTP {
 	return state
 }
 
-//
+// IsMatch evaluates Endpoint against mocked Input
 func (state *APIGateway) IsMatch(in *Input) bool {
 	return state.f(in) == nil
 }
 
-//
-func (state *APIGateway) Then(f func() error) Endpoint {
+// FMap applies clojure to matched HTTP request.
+// A business logic in gouldian is an endpoint transformation.
+func (state *APIGateway) FMap(f func() error) Endpoint {
 	return state.f.Then(func(req *Input) error { return f() })
 }

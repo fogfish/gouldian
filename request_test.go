@@ -214,18 +214,18 @@ type foobar struct {
 
 func TestJson(t *testing.T) {
 	req := gouldian.Mock("/foo").
-		WithJson(foobar{"foo", 10})
+		WithJSON(foobar{"foo", 10})
 	inv := gouldian.Mock("/foo").
 		WithText("foobar")
 	val := foobar{}
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").Json(&val).IsMatch(req)).
+		If(gouldian.Get().Path("foo").JSON(&val).IsMatch(req)).
 		Should().Equal(true).
 		//
 		If(val).Should().Equal(foobar{"foo", 10}).
 		//
-		If(gouldian.Get().Path("foo").Json(&val).IsMatch(inv)).
+		If(gouldian.Get().Path("foo").JSON(&val).IsMatch(inv)).
 		Should().Equal(false)
 }
 
@@ -234,7 +234,7 @@ func TestThenSuccess(t *testing.T) {
 	handle := func() error { return gouldian.Ok().Text("bar") }
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").Then(handle)(req)).Should().
+		If(gouldian.Get().Path("foo").FMap(handle)(req)).Should().
 		Assert(
 			func(be interface{}) bool {
 				var rsp *gouldian.Output
@@ -248,7 +248,7 @@ func TestThenFailure(t *testing.T) {
 	handle := func() error { return gouldian.Unauthorized("") }
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").Then(handle)(req)).Should().
+		If(gouldian.Get().Path("foo").FMap(handle)(req)).Should().
 		Assert(
 			func(be interface{}) bool {
 				var rsp *gouldian.Output

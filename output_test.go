@@ -44,7 +44,7 @@ func output(t *testing.T, a, b *gouldian.Output) {
 	handle := func() error { return a }
 
 	it.Ok(t).
-		If(gouldian.Get().Then(handle)(gouldian.Mock(""))).Should().
+		If(gouldian.Get().FMap(handle)(gouldian.Mock(""))).Should().
 		Assert(
 			func(be interface{}) bool {
 				var out *gouldian.Output
@@ -61,7 +61,7 @@ func issue(t *testing.T, a, b *gouldian.Issue) {
 	handle := func() error { return a }
 
 	it.Ok(t).
-		If(gouldian.Get().Then(handle)(gouldian.Mock(""))).Should().
+		If(gouldian.Get().FMap(handle)(gouldian.Mock(""))).Should().
 		Assert(
 			func(be interface{}) bool {
 				var out *gouldian.Issue
