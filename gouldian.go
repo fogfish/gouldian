@@ -37,7 +37,7 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 			return events.APIGatewayProxyResponse{
 				Body:       output.body,
 				StatusCode: output.status,
-				Headers:    output.headers,
+				Headers:    joinHead(defaultCORS(), output.headers),
 			}, nil
 		} else if errors.As(err, &issue) {
 			text, _ := json.Marshal(issue)
@@ -47,4 +47,22 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 		}
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
+}
+
+func defaultCORS() map[string]string {
+	return map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+		"Access-Control-Max-Age":       "600",
+	}
+}
+
+func joinHead(a, b map[string]string) map[string]string {
+	for keyA, valA := range a {
+		if _, ok := b[keyA]; !ok {
+			b[keyA] = valA
+		}
+	}
+	return b
 }
