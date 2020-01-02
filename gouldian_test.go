@@ -24,7 +24,7 @@ import (
 	"github.com/fogfish/it"
 )
 
-func TestServe(t *testing.T) {
+func TestServeSuccess(t *testing.T) {
 	fun := gouldian.Serve(hello())
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
@@ -49,4 +49,50 @@ func hello() gouldian.Endpoint {
 	return gouldian.Get().Path("hello").FMap(
 		func() error { return gouldian.Ok().Text("Hello World!") },
 	)
+}
+
+func TestServeFailure(t *testing.T) {
+	fun := gouldian.Serve(unauthorized())
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "GET",
+		Path:       "/issue",
+	}
+	head := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+		"Access-Control-Max-Age":       "600",
+		"Content-Type":                 "application/json",
+	}
+	rsp, _ := fun(req)
+
+	it.Ok(t).
+		If(rsp.StatusCode).Should().Equal(401).
+		If(rsp.Headers).Should().Equal(head).
+		If(rsp.Body).Should().Equal("{\"type\":\"https://httpstatuses.com/401\",\"status\":401,\"title\":\"Unauthorized\",\"details\":\"some reason\"}")
+}
+
+func unauthorized() gouldian.Endpoint {
+	return gouldian.Get().Path("issue").FMap(
+		func() error { return gouldian.Unauthorized("some reason") },
+	)
+}
+
+func TestServeNoMatch(t *testing.T) {
+	fun := gouldian.Serve(hello())
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "GET",
+		Path:       "/issue",
+	}
+	head := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+		"Access-Control-Max-Age":       "600",
+	}
+	rsp, _ := fun(req)
+
+	it.Ok(t).
+		If(rsp.StatusCode).Should().Equal(501).
+		If(rsp.Headers).Should().Equal(head)
 }

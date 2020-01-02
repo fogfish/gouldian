@@ -44,7 +44,7 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 			return events.APIGatewayProxyResponse{
 				Body:       string(text),
 				StatusCode: issue.Status,
-				Headers:    defaultCORS(req),
+				Headers:    joinHead(defaultCORS(req), map[string]string{"Content-Type": "application/json"}),
 			}, nil
 		} else if errors.Is(err, NoMatch{}) {
 			return events.APIGatewayProxyResponse{
