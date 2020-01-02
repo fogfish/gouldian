@@ -271,6 +271,7 @@ func (state *APIGateway) JSON(val interface{}) HTTP {
 		if err == nil {
 			return nil
 		}
+		// TODO: pass error to api client
 		return NoMatch{}
 	})
 	return state
