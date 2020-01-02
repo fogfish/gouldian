@@ -37,25 +37,40 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 			return events.APIGatewayProxyResponse{
 				Body:       output.body,
 				StatusCode: output.status,
-				Headers:    joinHead(defaultCORS(), output.headers),
+				Headers:    joinHead(defaultCORS(req), output.headers),
 			}, nil
 		} else if errors.As(err, &issue) {
 			text, _ := json.Marshal(issue)
-			return events.APIGatewayProxyResponse{Body: string(text), StatusCode: issue.Status}, nil
+			return events.APIGatewayProxyResponse{
+				Body:       string(text),
+				StatusCode: issue.Status,
+				Headers:    defaultCORS(req),
+			}, nil
 		} else if errors.Is(err, NoMatch{}) {
-			return events.APIGatewayProxyResponse{StatusCode: 501}, nil
+			return events.APIGatewayProxyResponse{
+				StatusCode: 501,
+				Headers:    defaultCORS(req),
+			}, nil
 		}
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 }
 
-func defaultCORS() map[string]string {
+func defaultCORS(req events.APIGatewayProxyRequest) map[string]string {
 	return map[string]string{
-		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Origin":  defaultOrigin(req),
 		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
 		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
 		"Access-Control-Max-Age":       "600",
 	}
+}
+
+func defaultOrigin(req events.APIGatewayProxyRequest) string {
+	origin, exists := req.Headers["Origin"]
+	if exists {
+		return origin
+	}
+	return "*"
 }
 
 func joinHead(a, b map[string]string) map[string]string {
