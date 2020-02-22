@@ -19,6 +19,8 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/path"
 )
 
 func main() {
@@ -26,7 +28,12 @@ func main() {
 }
 
 func hello() gouldian.Endpoint {
-	return gouldian.Get().Path("hello").FMap(
+	return µ.XGet(
+		µ.Path(path.Is("hello")),
+	).FMap(
 		func() error { return gouldian.Ok().Text("Hello World!") },
 	)
+	// return gouldian.Get().Path("hello").FMap(
+	// 	func() error { return gouldian.Ok().Text("Hello World!") },
+	// )
 }
