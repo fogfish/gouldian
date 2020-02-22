@@ -1,18 +1,37 @@
-# Gouldian
+<p align="center">
+  <img src="./doc/logo.svg" height="180" />
+  <h3 align="center">Gouldian</h3>
+  <p align="center"><strong>Go combinator library for building HTTP serverless applications</strong></p>
 
-<img src="./doc/logo.svg" width="320" align="left"/>
+  <p align="center">
+    <!-- Documentation -->
+    <a href="http://godoc.org/github.com/fogfish/gouldian">
+      <img src="https://godoc.org/github.com/fogfish/gouldian?status.svg" />
+    </a>
+    <!-- Build Status  -->
+    <a href="http://travis-ci.org/fogfish/gouldian">
+      <img src="https://secure.travis-ci.org/fogfish/gouldian.svg?branch=master" />
+    </a>
+    <!-- GitHub -->
+    <a href="http://github.com/fogfish/gouldian">
+      <img src="https://img.shields.io/github/last-commit/fogfish/gouldian.svg" />
+    </a>
+    <!-- Coverage -->
+    <a href="https://coveralls.io/github/fogfish/gouldian?branch=master">
+      <img src="https://coveralls.io/repos/github/fogfish/gouldian/badge.svg?branch=master" />
+    </a>
+    <!-- Go Card -->
+    <a href="https://goreportcard.com/report/github.com/fogfish/gouldian">
+      <img src="https://goreportcard.com/badge/github.com/fogfish/gouldian" />
+    </a>
+  </p>
+</p>
 
-The library is Go combinator library for building HTTP services.
+--- 
+
 The library is a thin layer of purely functional abstractions on top
 of AWS Gateway API. It resolves a challenge of building simple and
 declarative api implementations in the absence of pattern matching.
-
-[![Documentation](https://godoc.org/github.com/fogfish/gouldian?status.svg)](http://godoc.org/github.com/fogfish/gouldian)
-[![Build Status](https://secure.travis-ci.org/fogfish/gouldian.svg?branch=master)](http://travis-ci.org/fogfish/gouldian)
-[![Git Hub](https://img.shields.io/github/last-commit/fogfish/gouldian.svg)](http://travis-ci.org/fogfish/gouldian)
-[![Coverage Status](https://coveralls.io/repos/github/fogfish/gouldian/badge.svg?branch=master)](https://coveralls.io/github/fogfish/gouldian?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fogfish/gouldian)](https://goreportcard.com/report/github.com/fogfish/gouldian)
-
 
 
 ## Inspiration
