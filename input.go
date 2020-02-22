@@ -20,8 +20,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/aws/aws-lambda-go/events"
 	"net/url"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
 // Input wraps HTTP request
@@ -73,8 +74,18 @@ func (input *Input) WithJSON(val interface{}) *Input {
 	return input
 }
 
-// WithText adds Text payload to mocked requets
+// WithText adds Text payload to mocked request
 func (input *Input) WithText(val string) *Input {
 	input.Body = val
+	return input
+}
+
+// WithAuthorizer adds Authorizer payload to mocked request
+func (input *Input) WithAuthorizer(claims map[string]interface{}) *Input {
+	input.RequestContext = events.APIGatewayProxyRequestContext{
+		Authorizer: map[string]interface{}{
+			"claims": claims,
+		},
+	}
 	return input
 }

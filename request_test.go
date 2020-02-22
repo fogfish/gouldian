@@ -272,3 +272,18 @@ func TestThenFailure(t *testing.T) {
 			},
 		)
 }
+
+func TestAccessToken(t *testing.T) {
+	req := gouldian.Mock("/foo").
+		WithAuthorizer(map[string]interface{}{
+			"sub":   "00000000-0000-0000-0000-000000000000",
+			"scope": "a b",
+		})
+	val := gouldian.AccessToken{}
+
+	it.Ok(t).
+		If(gouldian.Get().Path("foo").AccessToken(&val).IsMatch(req)).
+		Should().Equal(true).
+		If(val.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
+		If(val.Scope).Should().Equal("a b")
+}
