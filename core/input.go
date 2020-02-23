@@ -14,30 +14,22 @@
 //   limitations under the License.
 //
 
-package gouldian_test
+package core
 
 import (
-	"errors"
-	"testing"
+	"strings"
 
-	"github.com/fogfish/gouldian"
-	"github.com/fogfish/it"
+	"github.com/aws/aws-lambda-go/events"
 )
 
-func TestEndpointThen(t *testing.T) {
-	var ok = errors.New("b")
-	var a gouldian.Endpoint = func(x *gouldian.Input) error { return nil }
-	var b gouldian.Endpoint = func(x *gouldian.Input) error { return ok }
-
-	it.Ok(t).
-		If(a.Then(b)(gouldian.Mock(""))).Should().Equal(ok)
+// Input wraps HTTP request
+type Input struct {
+	events.APIGatewayProxyRequest
+	Path []string
+	Body string
 }
 
-func TestEndpointOr(t *testing.T) {
-	var ok = errors.New("a")
-	var a gouldian.Endpoint = func(x *gouldian.Input) error { return ok }
-	var b gouldian.Endpoint = func(x *gouldian.Input) error { return nil }
-
-	it.Ok(t).
-		If(a.Or(b)(gouldian.Mock(""))).Should().Equal(ok)
+// Request creates new Input from API Gateway request
+func Request(req events.APIGatewayProxyRequest) *Input {
+	return &Input{req, strings.Split(req.Path, "/")[1:], ""}
 }

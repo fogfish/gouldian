@@ -5,19 +5,23 @@ import (
 	"testing"
 
 	"github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/path"
 )
 
 func TestXGet(t *testing.T) {
-	req := gouldian.Mock("/10")
-	var str int
+	req := mock.Input(mock.URL("/10"))
+	var i int
+	var s string
 
-	end := gouldian.XGet(
-		gouldian.Path(path.Int(&str)),
+	x := path.OR(path.Int(&i), path.String(&s))
+
+	end := gouldian.GET(
+		gouldian.Path(x),
 	)
 	val := end.IsMatch(req)
 	fmt.Println("====> ")
 	fmt.Println(val)
-	fmt.Println(str)
-
+	fmt.Println(i)
+	fmt.Println(s)
 }

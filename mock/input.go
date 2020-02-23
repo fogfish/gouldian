@@ -14,24 +14,65 @@
 //   limitations under the License.
 //
 
-package gouldian
+package mock
 
 import (
-	"encoding/json"
+	"net/url"
 	"strings"
 
-	"net/url"
-
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/fogfish/gouldian/core"
 )
 
-// Input wraps HTTP request
-type Input struct {
-	events.APIGatewayProxyRequest
-	segment int
-	path    []string
-	body    string
+type Mock func(*core.Input) *core.Input
+
+// Input mocks HTTP event
+func Input(spec ...Mock) *core.Input {
+	input := core.Request(
+		events.APIGatewayProxyRequest{
+			HTTPMethod: "GET",
+			Path:       "/",
+			Headers:    map[string]string{},
+		},
+	)
+	for _, f := range spec {
+		input = f(input)
+	}
+	return input
 }
+
+// Method
+func Method(verb string) Mock {
+	return func(mock *core.Input) *core.Input {
+		mock.APIGatewayProxyRequest.HTTPMethod = verb
+		return mock
+	}
+}
+
+// URL
+func URL(httpURL string) Mock {
+	return func(mock *core.Input) *core.Input {
+		uri, _ := url.Parse(httpURL)
+		query := map[string]string{}
+		for key, val := range uri.Query() {
+			query[key] = strings.Join(val, "")
+		}
+		mock.APIGatewayProxyRequest.Path = uri.Path
+		mock.APIGatewayProxyRequest.QueryStringParameters = query
+		mock.Path = strings.Split(uri.Path, "/")[1:]
+		return mock
+	}
+}
+
+// Header
+func Header(header string, value string) Mock {
+	return func(mock *core.Input) *core.Input {
+		mock.APIGatewayProxyRequest.Headers[header] = value
+		return mock
+	}
+}
+
+/*
 
 // Mock creates new Input - HTTP GET request
 func Mock(httpURL string) *Input {
@@ -89,3 +130,4 @@ func (input *Input) WithAuthorizer(claims map[string]interface{}) *Input {
 	}
 	return input
 }
+*/

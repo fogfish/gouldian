@@ -17,77 +17,82 @@
 package gouldian_test
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/path"
 	"github.com/fogfish/it"
 )
 
 func TestVerbDelete(t *testing.T) {
+	endpoint := µ.DELETE()
+	success := mock.Input(mock.Method("DELETE"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Delete().IsMatch(gouldian.MockVerb("DELETE", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Delete().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint.IsMatch(success)).Should().Equal(true).
+		If(endpoint.IsMatch(failure)).Should().Equal(false)
 }
 
 func TestVerbGet(t *testing.T) {
+	endpoint := µ.GET()
+	success := mock.Input(mock.Method("GET"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Get().IsMatch(gouldian.MockVerb("GET", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Get().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint.IsMatch(success)).Should().Equal(true).
+		If(endpoint.IsMatch(failure)).Should().Equal(false)
+
 }
 
 func TestVerbPatch(t *testing.T) {
+	endpoint := µ.PATCH()
+	success := mock.Input(mock.Method("PATCH"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Patch().IsMatch(gouldian.MockVerb("PATCH", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Patch().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint.IsMatch(success)).Should().Equal(true).
+		If(endpoint.IsMatch(failure)).Should().Equal(false)
+
 }
 
 func TestVerbPost(t *testing.T) {
+	endpoint := µ.POST()
+	success := mock.Input(mock.Method("POST"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Post().IsMatch(gouldian.MockVerb("POST", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Post().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint.IsMatch(success)).Should().Equal(true).
+		If(endpoint.IsMatch(failure)).Should().Equal(false)
+
 }
 
 func TestVerbPut(t *testing.T) {
+	endpoint := µ.PUT()
+	success := mock.Input(mock.Method("PUT"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Put().IsMatch(gouldian.MockVerb("PUT", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Put().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint.IsMatch(success)).Should().Equal(true).
+		If(endpoint.IsMatch(failure)).Should().Equal(false)
+
 }
 
 func TestPath(t *testing.T) {
-	req := gouldian.Mock("/foo")
+	foo := µ.GET(µ.Path(path.Is("foo")))
+	bar := µ.GET(µ.Path(path.Is("bar")))
+	foobar := µ.GET(µ.Path(path.Is("foo"), path.Is("bar")))
+
+	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("bar").IsMatch(req)).
-		Should().Equal(false).
-		//
-		If(gouldian.Get().Path("foo").Path("bar").IsMatch(req)).
-		Should().Equal(false)
+		If(foo.IsMatch(req)).Should().Equal(true).
+		If(bar.IsMatch(req)).Should().Equal(false).
+		If(foobar.IsMatch(req)).Should().Equal(false)
 }
 
+/*
 func TestString(t *testing.T) {
 	req := gouldian.Mock("/foo/bar")
 	foo := ""
@@ -287,3 +292,4 @@ func TestAccessToken(t *testing.T) {
 		If(val.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
 		If(val.Scope).Should().Equal("a b")
 }
+*/
