@@ -18,6 +18,7 @@ package gouldian
 
 import (
 	"github.com/fogfish/gouldian/core"
+	"github.com/fogfish/gouldian/header"
 	"github.com/fogfish/gouldian/param"
 	"github.com/fogfish/gouldian/path"
 )
@@ -80,7 +81,7 @@ func Method(verb string) core.Endpoint {
 }
 
 // Path is an endpoint to match URL of HTTP request. The function takes
-// url matching primitives, which are define by the package `path`.
+// url matching primitives, which are defined by the package `path`.
 //
 //   import "github.com/fogfish/gouldian/path"
 //
@@ -102,7 +103,7 @@ func Path(arrows ...path.Arrow) core.Endpoint {
 }
 
 // Param is an endpoint to match URL Query parameters of HTTP request.
-// The function takes url query matching primitives, which are define
+// The function takes url query matching primitives, which are defined
 // by the package `param`.
 //
 //   import "github.com/fogfish/gouldian/param"
@@ -112,11 +113,34 @@ func Path(arrows ...path.Arrow) core.Endpoint {
 //   e.IsMatch(mock.Input(mock.URL("/?foo=baz"))) == false
 func Param(arrows ...param.Arrow) core.Endpoint {
 	return func(req *core.Input) error {
-		for i, f := range arrows {
-			if i > len(req.Path)-1 {
-				return core.NoMatch{}
-			}
+		for _, f := range arrows {
 			if err := f(req.APIGatewayProxyRequest.QueryStringParameters); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// Header is an endpoint to match Header(s) of HTTP request.
+// The function takes header matching primitives, which are defined
+// by the package `header`.
+//
+//   import "github.com/fogfish/gouldian/header"
+//
+//   e := µ.GET(
+//     µ.Header(
+//       param.Header("Content-Type", "application/json"),
+//     ),
+//   )
+//   Json := mock.Header("Content-Type", "application/json")
+//   Text := mock.Header("Content-Type", "text/plain")
+//   e.IsMatch(mock.Input(Json)) == true
+//   e.IsMatch(mock.Input(Text)) == false
+func Header(arrows ...header.Arrow) core.Endpoint {
+	return func(req *core.Input) error {
+		for _, f := range arrows {
+			if err := f(req.APIGatewayProxyRequest.Headers); err != nil {
 				return err
 			}
 		}
@@ -144,13 +168,6 @@ func (state *APIGateway) FMap(f func() error) core.Endpoint {
 }
 
 /*
-// HTTPHeader defines Endpoint(s) to match headers of HTTP request
-type HTTPHeader interface {
-	Head(name string, val string) HTTP
-	HasHead(name string) HTTP
-	HString(name string, val *string) HTTP
-}
-
 // HTTPBody defines Endpoint(s) to match body of HTTP Request
 type HTTPBody interface {
 	JSON(val interface{}) HTTP
@@ -170,53 +187,8 @@ type AccessToken struct {
 
 // HTTP defines Endpoint(s) to match elements of HTTP request
 type HTTP interface {
-	HTTPPath
-	HTTPQuery
-	HTTPHeader
 	HTTPBody
 	HTTPAuthorize
-
-	FMap(f func() error) Endpoint
-	IsMatch(req *Input) bool
-}
-
-// Head checks if HTTP header exists in request and
-// it value has defined prefix.
-func (state *APIGateway) Head(name string, val string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		head, exists := req.Headers[name]
-		if exists && strings.HasPrefix(head, val) {
-			return nil
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// HasHead checks if HTTP header exists in the request
-func (state *APIGateway) HasHead(name string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		_, exists := req.Headers[name]
-		if exists {
-			return nil
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// HString matches HTTP header and lifts its value
-func (state *APIGateway) HString(name string, val *string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		head, exists := req.Headers[name]
-		if exists {
-			*val = head
-			return nil
-		}
-		*val = ""
-		return nil
-	})
-	return state
 }
 
 // JSON decodes HTTP payload to struct
