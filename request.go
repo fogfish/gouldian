@@ -17,6 +17,8 @@
 package gouldian
 
 import (
+	"encoding/json"
+
 	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/header"
 	"github.com/fogfish/gouldian/param"
@@ -148,6 +150,30 @@ func Header(arrows ...header.Arrow) core.Endpoint {
 	}
 }
 
+// JSON decodes HTTP payload to struct
+func JSON(val interface{}) core.Endpoint {
+	return func(req *core.Input) error {
+		err := json.Unmarshal([]byte(req.Body), val)
+		if err == nil {
+			return nil
+		}
+		// TODO: pass error to api client
+		return core.NoMatch{}
+	}
+}
+
+// Text decodes HTTP payload to closed variable
+func Text(val *string) core.Endpoint {
+	return func(req *core.Input) error {
+		*val = ""
+		if req.Body != "" {
+			*val = req.Body
+			return nil
+		}
+		return core.NoMatch{}
+	}
+}
+
 // Do
 func (state *APIGateway) Do(arrows ...core.Endpoint) *APIGateway {
 	for _, f := range arrows {
@@ -191,27 +217,7 @@ type HTTP interface {
 	HTTPAuthorize
 }
 
-// JSON decodes HTTP payload to struct
-func (state *APIGateway) JSON(val interface{}) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		err := json.Unmarshal([]byte(req.Body), val)
-		if err == nil {
-			return nil
-		}
-		// TODO: pass error to api client
-		return NoMatch{}
-	})
-	return state
-}
 
-// Text decodes HTTP payload to text
-func (state *APIGateway) Text(val *string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		*val = req.Body
-		return nil
-	})
-	return state
-}
 
 // AccessToken decodes JWT token associated with the request
 func (state *APIGateway) AccessToken(val *AccessToken) HTTP {

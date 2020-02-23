@@ -17,6 +17,7 @@
 package mock
 
 import (
+	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -24,9 +25,10 @@ import (
 	"github.com/fogfish/gouldian/core"
 )
 
+// Mock is an option type to customize mock event
 type Mock func(*core.Input) *core.Input
 
-// Input mocks HTTP event
+// Input mocks HTTP event, takes mock options to customize event
 func Input(spec ...Mock) *core.Input {
 	input := core.Request(
 		events.APIGatewayProxyRequest{
@@ -41,7 +43,7 @@ func Input(spec ...Mock) *core.Input {
 	return input
 }
 
-// Method
+// Method changes the verb of mocked HTTP request
 func Method(verb string) Mock {
 	return func(mock *core.Input) *core.Input {
 		mock.APIGatewayProxyRequest.HTTPMethod = verb
@@ -49,7 +51,7 @@ func Method(verb string) Mock {
 	}
 }
 
-// URL
+// URL changes URL of mocked HTTP request
 func URL(httpURL string) Mock {
 	return func(mock *core.Input) *core.Input {
 		uri, _ := url.Parse(httpURL)
@@ -64,7 +66,7 @@ func URL(httpURL string) Mock {
 	}
 }
 
-// Header
+// Header adds Header to mocked HTTP request
 func Header(header string, value string) Mock {
 	return func(mock *core.Input) *core.Input {
 		mock.APIGatewayProxyRequest.Headers[header] = value
@@ -72,54 +74,24 @@ func Header(header string, value string) Mock {
 	}
 }
 
-/*
-
-// Mock creates new Input - HTTP GET request
-func Mock(httpURL string) *Input {
-	return MockVerb("GET", httpURL)
-}
-
-// MockVerb creates new Input with any verb
-func MockVerb(verb string, httpURL string) *Input {
-	uri, _ := url.Parse(httpURL)
-	query := map[string]string{}
-	for key, val := range uri.Query() {
-		query[key] = strings.Join(val, "")
+// JSON adds payload to mocked HTTP request
+func JSON(val interface{}) Mock {
+	return func(mock *core.Input) *core.Input {
+		body, _ := json.Marshal(val)
+		mock.Body = string(body)
+		return mock
 	}
-
-	return NewRequest(
-		events.APIGatewayProxyRequest{
-			HTTPMethod:            verb,
-			Path:                  uri.Path,
-			Headers:               map[string]string{},
-			QueryStringParameters: query,
-		},
-	)
 }
 
-// NewRequest creates new Input from API Gateway request
-func NewRequest(req events.APIGatewayProxyRequest) *Input {
-	return &Input{req, 1, strings.Split(req.Path, "/"), ""}
+// Text adds payload to mocked HTTP request
+func Text(val string) Mock {
+	return func(mock *core.Input) *core.Input {
+		mock.Body = val
+		return mock
+	}
 }
 
-// With adds HTTP header to mocked request
-func (input *Input) With(head string, value string) *Input {
-	input.Headers[head] = value
-	return input
-}
-
-// WithJSON adds Json payload to mocked request
-func (input *Input) WithJSON(val interface{}) *Input {
-	body, _ := json.Marshal(val)
-	input.Body = string(body)
-	return input
-}
-
-// WithText adds Text payload to mocked request
-func (input *Input) WithText(val string) *Input {
-	input.Body = val
-	return input
-}
+/*
 
 // WithAuthorizer adds Authorizer payload to mocked request
 func (input *Input) WithAuthorizer(claims map[string]interface{}) *Input {
