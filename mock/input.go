@@ -91,15 +91,14 @@ func Text(val string) Mock {
 	}
 }
 
-/*
-
-// WithAuthorizer adds Authorizer payload to mocked request
-func (input *Input) WithAuthorizer(claims map[string]interface{}) *Input {
-	input.RequestContext = events.APIGatewayProxyRequestContext{
-		Authorizer: map[string]interface{}{
-			"claims": claims,
-		},
+// Auth adds Authorizer payload to mocked HTTP request
+func Auth(claims map[string]interface{}) Mock {
+	return func(mock *core.Input) *core.Input {
+		mock.RequestContext = events.APIGatewayProxyRequestContext{
+			Authorizer: map[string]interface{}{
+				"claims": claims,
+			},
+		}
+		return mock
 	}
-	return input
 }
-*/

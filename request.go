@@ -150,6 +150,28 @@ func Header(arrows ...header.Arrow) core.Endpoint {
 	}
 }
 
+// AccessToken decodes JWT token associated with the request
+func AccessToken(val *core.AccessToken) core.Endpoint {
+	return func(req *core.Input) error {
+		if req.RequestContext.Authorizer == nil {
+			return core.NoMatch{}
+		}
+
+		if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
+			switch tkn := jwt.(type) {
+			case map[string]interface{}:
+				*val = core.AccessToken{
+					Sub:   tkn["sub"].(string),
+					Scope: tkn["scope"].(string),
+				}
+				return nil
+			}
+		}
+
+		return core.NoMatch{}
+	}
+}
+
 // JSON decodes HTTP payload to struct
 func JSON(val interface{}) core.Endpoint {
 	return func(req *core.Input) error {
@@ -192,52 +214,3 @@ func (state *APIGateway) IsMatch(in *core.Input) bool {
 func (state *APIGateway) FMap(f func() error) core.Endpoint {
 	return state.f.Then(func(req *core.Input) error { return f() })
 }
-
-/*
-// HTTPBody defines Endpoint(s) to match body of HTTP Request
-type HTTPBody interface {
-	JSON(val interface{}) HTTP
-	Text(val *string) HTTP
-}
-
-// HTTPAuthorize defines Endpoint(s) to match Access Token
-type HTTPAuthorize interface {
-	AccessToken(token *AccessToken) HTTP
-}
-
-// AccessToken is a container for user identity
-type AccessToken struct {
-	Sub   string
-	Scope string
-}
-
-// HTTP defines Endpoint(s) to match elements of HTTP request
-type HTTP interface {
-	HTTPBody
-	HTTPAuthorize
-}
-
-
-
-// AccessToken decodes JWT token associated with the request
-func (state *APIGateway) AccessToken(val *AccessToken) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		if req.RequestContext.Authorizer != nil {
-			if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
-				switch tkn := jwt.(type) {
-				case map[string]interface{}:
-					*val = AccessToken{
-						Sub:   tkn["sub"].(string),
-						Scope: tkn["scope"].(string),
-					}
-					return nil
-				}
-			}
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-
-*/

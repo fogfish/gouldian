@@ -17,9 +17,12 @@
 package gouldian_test
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/fogfish/gouldian"
 	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/header"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/param"
@@ -120,6 +123,24 @@ func TestHeader(t *testing.T) {
 		If(foobar.IsMatch(req)).Should().Equal(false)
 }
 
+func TestAccessToken(t *testing.T) {
+	var token core.AccessToken
+	foo := µ.GET(µ.AccessToken(&token))
+	req := mock.Input(
+		mock.Auth(
+			map[string]interface{}{
+				"sub":   "00000000-0000-0000-0000-000000000000",
+				"scope": "a b",
+			},
+		),
+	)
+
+	it.Ok(t).
+		If(foo.IsMatch(req)).Should().Equal(true).
+		If(token.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
+		If(token.Scope).Should().Equal("a b")
+}
+
 type foobar struct {
 	Foo string `json:"foo"`
 	Bar int    `json:"bar"`
@@ -151,47 +172,32 @@ func TestText(t *testing.T) {
 		If(foo.IsMatch(failure)).Should().Equal(false)
 }
 
-/*
-func TestThenSuccess(t *testing.T) {
-	req := gouldian.Mock("/foo")
-	handle := func() error { return gouldian.Ok().Text("bar") }
+func TestFMapSuccess(t *testing.T) {
+	foo := µ.GET(µ.Path(path.Is("foo"))).FMap(
+		func() error { return µ.Ok().Text("bar") },
+	)
+	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").FMap(handle)(req)).Should().
-		Assert(
-			func(be interface{}) bool {
-				var rsp *gouldian.Output
-				return errors.As(be.(error), &rsp)
-			},
-		)
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			var rsp *µ.Output
+			return errors.As(be.(error), &rsp)
+		},
+	)
 }
 
-func TestThenFailure(t *testing.T) {
-	req := gouldian.Mock("/foo")
-	handle := func() error { return gouldian.Unauthorized("") }
+func TestFMapFailure(t *testing.T) {
+	foo := µ.GET(µ.Path(path.Is("foo"))).FMap(
+		func() error { return µ.Unauthorized("") },
+	)
+	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").FMap(handle)(req)).Should().
-		Assert(
-			func(be interface{}) bool {
-				var rsp *gouldian.Output
-				return !errors.As(be.(error), &rsp)
-			},
-		)
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			var rsp *gouldian.Output
+			return !errors.As(be.(error), &rsp)
+		},
+	)
 }
-
-func TestAccessToken(t *testing.T) {
-	req := gouldian.Mock("/foo").
-		WithAuthorizer(map[string]interface{}{
-			"sub":   "00000000-0000-0000-0000-000000000000",
-			"scope": "a b",
-		})
-	val := gouldian.AccessToken{}
-
-	it.Ok(t).
-		If(gouldian.Get().Path("foo").AccessToken(&val).IsMatch(req)).
-		Should().Equal(true).
-		If(val.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
-		If(val.Scope).Should().Equal("a b")
-}
-*/
