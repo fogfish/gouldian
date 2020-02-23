@@ -84,3 +84,15 @@ func Or(seq ...Endpoint) Endpoint {
 		return NoMatch{}
 	}
 }
+
+// Join builds a product endpoint from sequence
+func Join(seq ...Endpoint) Endpoint {
+	return func(http *Input) (err error) {
+		for _, f := range seq {
+			if err = f(http); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}

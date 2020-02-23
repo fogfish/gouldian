@@ -31,8 +31,8 @@ func TestPathIs(t *testing.T) {
 	failure := mock.Input(mock.URL("/bar"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestPathAny(t *testing.T) {
@@ -41,8 +41,8 @@ func TestPathAny(t *testing.T) {
 	success2 := mock.Input(mock.URL("/foo/foo"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
-		If(foo.IsMatch(success2)).Should().Equal(true)
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil)
 }
 
 func TestPathString(t *testing.T) {
@@ -52,10 +52,10 @@ func TestPathString(t *testing.T) {
 	success2 := mock.Input(mock.URL("/foo/1"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
+		If(foo(success1)).Should().Equal(nil).
 		If(value).Should().Equal("bar").
 		//
-		If(foo.IsMatch(success2)).Should().Equal(true).
+		If(foo(success2)).Should().Equal(nil).
 		If(value).Should().Equal("1")
 }
 
@@ -66,10 +66,10 @@ func TestPathInt(t *testing.T) {
 	failure := mock.Input(mock.URL("/foo/bar"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1).
 		//
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestPathOr(t *testing.T) {
@@ -79,8 +79,7 @@ func TestPathOr(t *testing.T) {
 	failure := mock.Input(mock.URL("/baz"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
-		If(foo.IsMatch(success2)).Should().Equal(true).
-		If(foo.IsMatch(failure)).Should().Equal(false)
-
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
 }

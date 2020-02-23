@@ -16,7 +16,6 @@
 
 package gouldian_test
 
-/*
 import (
 	"errors"
 	"reflect"
@@ -89,4 +88,3 @@ func issue(t *testing.T, a, b *gouldian.Issue) {
 			},
 		)
 }
-*/

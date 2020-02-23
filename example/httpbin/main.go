@@ -22,7 +22,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/core"
 )
 
 type headers struct {
@@ -44,24 +45,38 @@ type response struct {
 //
 //-----------------------------------------------------------------------------
 
+//
+// High-Order Component to capture headers
+func (h *headers) headers() core.Endpoint {
+	return µ.Header(
+		header.MaybeString("Accept", &h.Accept),
+		header.MaybeString("Host", &h.Host),
+		header.MaybeString("Origin", &h.Origin),
+		header.MaybeString("Referer", &h.Referer),
+		header.MaybeString("User-Agent", &h.UserAgent),
+	)
+}
+
 func delete() gouldian.Endpoint {
-	return verb(gouldian.Delete(), "delete")
+	return µ.DELETE()
+
+	return verb(µ.DELETE, "delete")
 }
 
 func get() gouldian.Endpoint {
-	return verb(gouldian.Get(), "get")
+	return verb(µ.GET, "get")
 }
 
 func patch() gouldian.Endpoint {
-	return verb(gouldian.Patch(), "patch")
+	return verb(µ.PATCH, "patch")
 }
 
 func post() gouldian.Endpoint {
-	return verb(gouldian.Patch(), "post")
+	return verb(µ.POST, "post")
 }
 
 func put() gouldian.Endpoint {
-	return verb(gouldian.Patch(), "put")
+	return verb(µ.PUT, "put")
 }
 
 func verb(method gouldian.HTTP, path string) gouldian.Endpoint {

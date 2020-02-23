@@ -25,51 +25,44 @@ import (
 	"github.com/fogfish/gouldian/path"
 )
 
-// APIGateway implements Endpoints to process AWS API Gateway request(s).
-// There is a type constructor named after HTTP vers. It creates
-// Endpoint to match HTTP verbs (methods).
-type APIGateway struct {
-	f core.Endpoint
-}
-
 // DELETE composes product Endpoint match HTTP DELETE request.
 //   e := µ.DELETE()
-//   e.IsMatch(mock.Input(mock.Method("DELETE"))) == true
-//   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
-func DELETE(arrows ...core.Endpoint) *APIGateway {
-	return (&APIGateway{Method("DELETE")}).Do(arrows...)
+//   e(mock.Input(mock.Method("DELETE"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
+func DELETE(arrows ...core.Endpoint) core.Endpoint {
+	return Method("DELETE").Then(core.Join(arrows...))
 }
 
 // GET composes product Endpoint match HTTP GET request.
 //   e := µ.GET()
 //   e.IsMatch(mock.Input(mock.Method("GET"))) == true
 //   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
-func GET(arrows ...core.Endpoint) *APIGateway {
-	return (&APIGateway{Method("GET")}).Do(arrows...)
+func GET(arrows ...core.Endpoint) core.Endpoint {
+	return Method("GET").Then(core.Join(arrows...))
 }
 
 // PATCH composes product Endpoint match HTTP PATCH request.
 //   e := µ.PATCH()
 //   e.IsMatch(mock.Input(mock.Method("PATCH"))) == true
 //   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
-func PATCH(arrows ...core.Endpoint) *APIGateway {
-	return (&APIGateway{Method("PATCH")}).Do(arrows...)
+func PATCH(arrows ...core.Endpoint) core.Endpoint {
+	return Method("PATCH").Then(core.Join(arrows...))
 }
 
 // POST composes product Endpoint match HTTP POST request.
 //   e := µ.POST()
 //   e.IsMatch(mock.Input(mock.Method("POST"))) == true
 //   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
-func POST(arrows ...core.Endpoint) *APIGateway {
-	return (&APIGateway{Method("POST")}).Do(arrows...)
+func POST(arrows ...core.Endpoint) core.Endpoint {
+	return Method("POST").Then(core.Join(arrows...))
 }
 
 // PUT composes product Endpoint match HTTP PUT request.
 //   e := µ.PUT()
 //   e.IsMatch(mock.Input(mock.Method("PUT"))) == true
 //   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
-func PUT(arrows ...core.Endpoint) *APIGateway {
-	return (&APIGateway{Method("PUT")}).Do(arrows...)
+func PUT(arrows ...core.Endpoint) core.Endpoint {
+	return Method("PUT").Then(core.Join(arrows...))
 }
 
 // Method is an endpoint to match HTTP verb request
@@ -196,7 +189,14 @@ func Text(val *string) core.Endpoint {
 	}
 }
 
-// Do
+// FMap applies clojure to matched HTTP request.
+// A business logic in gouldian is an endpoint transformation.
+func FMap(f func() error) core.Endpoint {
+	return func(*core.Input) error { return f() }
+}
+
+/*
+// Do binds Endpoints
 func (state *APIGateway) Do(arrows ...core.Endpoint) *APIGateway {
 	for _, f := range arrows {
 		state.f = state.f.Then(f)
@@ -208,9 +208,4 @@ func (state *APIGateway) Do(arrows ...core.Endpoint) *APIGateway {
 func (state *APIGateway) IsMatch(in *core.Input) bool {
 	return state.f(in) == nil
 }
-
-// FMap applies clojure to matched HTTP request.
-// A business logic in gouldian is an endpoint transformation.
-func (state *APIGateway) FMap(f func() error) core.Endpoint {
-	return state.f.Then(func(req *core.Input) error { return f() })
-}
+*/
