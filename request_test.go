@@ -17,10 +17,8 @@
 package gouldian_test
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/fogfish/gouldian"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/header"
@@ -171,11 +169,6 @@ func TestText(t *testing.T) {
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
-//
-// TODO: tests with multiple FMaps, validate behavior FMap,
-// it MUST be executed only once
-//
-
 func TestFMapSuccess(t *testing.T) {
 	foo := µ.GET(
 		µ.Path(path.Is("foo")),
@@ -188,8 +181,26 @@ func TestFMapSuccess(t *testing.T) {
 	it.Ok(t).
 		If(foo(req)).Should().Assert(
 		func(be interface{}) bool {
-			var rsp *µ.Output
-			return errors.As(be.(error), &rsp)
+			return be.(error).Error() == "bar"
+		},
+	)
+}
+
+func TestFMap2Success(t *testing.T) {
+	foo := µ.GET(
+		µ.Path(path.Is("foo")),
+		µ.FMap(func() error { return µ.Ok().Text("bar") }),
+	)
+	bar := µ.GET(
+		µ.Path(path.Is("bar")),
+		µ.FMap(func() error { return µ.Ok().Text("foo") }),
+	)
+	req := mock.Input(mock.URL("/foo"))
+
+	it.Ok(t).
+		If(core.Or(foo, bar)(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "bar"
 		},
 	)
 }
@@ -206,8 +217,7 @@ func TestFMapFailure(t *testing.T) {
 	it.Ok(t).
 		If(foo(req)).Should().Assert(
 		func(be interface{}) bool {
-			var rsp *gouldian.Output
-			return !errors.As(be.(error), &rsp)
+			return be.(error).Error() == "401: Unauthorized"
 		},
 	)
 }

@@ -196,18 +196,3 @@ func Text(val *string) core.Endpoint {
 func FMap(f func() error) core.Endpoint {
 	return func(*core.Input) error { return f() }
 }
-
-/*
-// Do binds Endpoints
-func (state *APIGateway) Do(arrows ...core.Endpoint) *APIGateway {
-	for _, f := range arrows {
-		state.f = state.f.Then(f)
-	}
-	return state
-}
-
-// IsMatch evaluates Endpoint against mocked Input
-func (state *APIGateway) IsMatch(in *core.Input) bool {
-	return state.f(in) == nil
-}
-*/
