@@ -25,78 +25,78 @@ import (
 	"github.com/fogfish/it"
 )
 
-func TestParamIs(t *testing.T) {
+func TestHeaderIs(t *testing.T) {
 	foo := µ.GET(µ.Header(header.Is("Content-Type", "application/json")))
 	success := mock.Input(mock.Header("Content-Type", "application/json"))
 	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
-func TestParamAny(t *testing.T) {
+func TestHeaderAny(t *testing.T) {
 	foo := µ.GET(µ.Header(header.Any("Content-Type")))
 	success1 := mock.Input(mock.Header("Content-Type", "application/json"))
 	success2 := mock.Input(mock.Header("Content-Type", "text/plain"))
 	failure := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
-		If(foo.IsMatch(success2)).Should().Equal(true).
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
-func TestParamString(t *testing.T) {
+func TestHeaderString(t *testing.T) {
 	var value string
 	foo := µ.GET(µ.Header(header.String("Content-Type", &value)))
 	success := mock.Input(mock.Header("Content-Type", "application/json"))
 	failure := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal("application/json").
 		//
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
-func TestParamMaybeString(t *testing.T) {
+func TestHeaderMaybeString(t *testing.T) {
 	var value string
 	foo := µ.GET(µ.Header(header.MaybeString("Content-Type", &value)))
 	success1 := mock.Input(mock.Header("Content-Type", "application/json"))
 	success2 := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
+		If(foo(success1)).Should().Equal(nil).
 		If(value).Should().Equal("application/json").
 		//
-		If(foo.IsMatch(success2)).Should().Equal(true).
+		If(foo(success2)).Should().Equal(nil).
 		If(value).Should().Equal("")
 }
 
-func TestParamInt(t *testing.T) {
+func TestHeaderInt(t *testing.T) {
 	var value int
 	foo := µ.GET(µ.Header(header.Int("Content-Length", &value)))
 	success := mock.Input(mock.Header("Content-Length", "1024"))
 	failure := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1024).
 		//
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
-func TestParamMaybeInt(t *testing.T) {
+func TestHeaderMaybeInt(t *testing.T) {
 	var value int
 	foo := µ.GET(µ.Header(header.MaybeInt("Content-Length", &value)))
 	success := mock.Input(mock.Header("Content-Length", "1024"))
 	failure := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1024).
 		//
-		If(foo.IsMatch(failure)).Should().Equal(true).
+		If(foo(failure)).Should().Equal(nil).
 		If(value).Should().Equal(0)
 }

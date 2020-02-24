@@ -31,8 +31,8 @@ func TestParamIs(t *testing.T) {
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestParamAny(t *testing.T) {
@@ -43,10 +43,10 @@ func TestParamAny(t *testing.T) {
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
-		If(foo.IsMatch(success2)).Should().Equal(true).
-		If(foo.IsMatch(success3)).Should().Equal(true).
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil).
+		If(foo(success3)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestParamString(t *testing.T) {
@@ -57,13 +57,13 @@ func TestParamString(t *testing.T) {
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
+		If(foo(success1)).Should().Equal(nil).
 		If(value).Should().Equal("bar").
 		//
-		If(foo.IsMatch(success2)).Should().Equal(true).
+		If(foo(success2)).Should().Equal(nil).
 		If(value).Should().Equal("1").
 		//
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestParamMaybeString(t *testing.T) {
@@ -73,10 +73,10 @@ func TestParamMaybeString(t *testing.T) {
 	success2 := mock.Input(mock.URL("/?bar=foo"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success1)).Should().Equal(true).
+		If(foo(success1)).Should().Equal(nil).
 		If(value).Should().Equal("bar").
 		//
-		If(foo.IsMatch(success2)).Should().Equal(true).
+		If(foo(success2)).Should().Equal(nil).
 		If(value).Should().Equal("")
 }
 
@@ -87,10 +87,10 @@ func TestParamInt(t *testing.T) {
 	failure := mock.Input(mock.URL("/?foo=bar"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1).
 		//
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestParamMaybeInt(t *testing.T) {
@@ -100,9 +100,9 @@ func TestParamMaybeInt(t *testing.T) {
 	failure := mock.Input(mock.URL("/?foo=bar"))
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1).
 		//
-		If(foo.IsMatch(failure)).Should().Equal(true).
+		If(foo(failure)).Should().Equal(nil).
 		If(value).Should().Equal(0)
 }
