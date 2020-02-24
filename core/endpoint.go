@@ -73,18 +73,6 @@ func (a Endpoint) Or(b Endpoint) Endpoint {
 	}
 }
 
-// Or joins sequence of Endpoint(s) to co-product Endpoint.
-func Or(seq ...Endpoint) Endpoint {
-	return func(http *Input) (err error) {
-		for _, f := range seq {
-			if err = f(http); !errors.Is(err, NoMatch{}) {
-				return err
-			}
-		}
-		return NoMatch{}
-	}
-}
-
 // Join builds a product endpoint from sequence
 func Join(seq ...Endpoint) Endpoint {
 	return func(http *Input) (err error) {
@@ -94,5 +82,17 @@ func Join(seq ...Endpoint) Endpoint {
 			}
 		}
 		return nil
+	}
+}
+
+// Or joins sequence of Endpoint(s) to co-product Endpoint.
+func Or(seq ...Endpoint) Endpoint {
+	return func(http *Input) (err error) {
+		for _, f := range seq {
+			if err = f(http); !errors.Is(err, NoMatch{}) {
+				return err
+			}
+		}
+		return NoMatch{}
 	}
 }

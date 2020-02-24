@@ -49,8 +49,9 @@ func TestServeSuccess(t *testing.T) {
 func hello() core.Endpoint {
 	return µ.GET(
 		µ.Path(path.Is("hello")),
-	).FMap(
-		func() error { return µ.Ok().Text("Hello World!") },
+		µ.FMap(
+			func() error { return µ.Ok().Text("Hello World!") },
+		),
 	)
 }
 

@@ -36,8 +36,8 @@ func TestVerbDelete(t *testing.T) {
 	failure := mock.Input(mock.Method("OTHER"))
 
 	it.Ok(t).
-		If(endpoint.IsMatch(success)).Should().Equal(true).
-		If(endpoint.IsMatch(failure)).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 }
 
 func TestVerbGet(t *testing.T) {
@@ -46,9 +46,8 @@ func TestVerbGet(t *testing.T) {
 	failure := mock.Input(mock.Method("OTHER"))
 
 	it.Ok(t).
-		If(endpoint.IsMatch(success)).Should().Equal(true).
-		If(endpoint.IsMatch(failure)).Should().Equal(false)
-
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 }
 
 func TestVerbPatch(t *testing.T) {
@@ -57,8 +56,8 @@ func TestVerbPatch(t *testing.T) {
 	failure := mock.Input(mock.Method("OTHER"))
 
 	it.Ok(t).
-		If(endpoint.IsMatch(success)).Should().Equal(true).
-		If(endpoint.IsMatch(failure)).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 
 }
 
@@ -68,8 +67,8 @@ func TestVerbPost(t *testing.T) {
 	failure := mock.Input(mock.Method("OTHER"))
 
 	it.Ok(t).
-		If(endpoint.IsMatch(success)).Should().Equal(true).
-		If(endpoint.IsMatch(failure)).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 
 }
 
@@ -79,8 +78,8 @@ func TestVerbPut(t *testing.T) {
 	failure := mock.Input(mock.Method("OTHER"))
 
 	it.Ok(t).
-		If(endpoint.IsMatch(success)).Should().Equal(true).
-		If(endpoint.IsMatch(failure)).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 
 }
 
@@ -92,9 +91,9 @@ func TestPath(t *testing.T) {
 	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(foo.IsMatch(req)).Should().Equal(true).
-		If(bar.IsMatch(req)).Should().Equal(false).
-		If(foobar.IsMatch(req)).Should().Equal(false)
+		If(foo(req)).Should().Equal(nil).
+		If(bar(req)).ShouldNot().Equal(nil).
+		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
 func TestParam(t *testing.T) {
@@ -105,9 +104,9 @@ func TestParam(t *testing.T) {
 	req := mock.Input(mock.URL("/?foo=bar"))
 
 	it.Ok(t).
-		If(foo.IsMatch(req)).Should().Equal(true).
-		If(bar.IsMatch(req)).Should().Equal(false).
-		If(foobar.IsMatch(req)).Should().Equal(false)
+		If(foo(req)).Should().Equal(nil).
+		If(bar(req)).ShouldNot().Equal(nil).
+		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
 func TestHeader(t *testing.T) {
@@ -118,9 +117,9 @@ func TestHeader(t *testing.T) {
 	req := mock.Input(mock.Header("foo", "bar"))
 
 	it.Ok(t).
-		If(foo.IsMatch(req)).Should().Equal(true).
-		If(bar.IsMatch(req)).Should().Equal(false).
-		If(foobar.IsMatch(req)).Should().Equal(false)
+		If(foo(req)).Should().Equal(nil).
+		If(bar(req)).ShouldNot().Equal(nil).
+		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
 func TestAccessToken(t *testing.T) {
@@ -136,7 +135,7 @@ func TestAccessToken(t *testing.T) {
 	)
 
 	it.Ok(t).
-		If(foo.IsMatch(req)).Should().Equal(true).
+		If(foo(req)).Should().Equal(nil).
 		If(token.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
 		If(token.Scope).Should().Equal("a b")
 }
@@ -154,10 +153,10 @@ func TestJson(t *testing.T) {
 	failure2 := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(foobar{"foo", 10}).
-		If(foo.IsMatch(failure1)).Should().Equal(false).
-		If(foo.IsMatch(failure2)).Should().Equal(false)
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
 func TestText(t *testing.T) {
@@ -167,14 +166,22 @@ func TestText(t *testing.T) {
 	failure := mock.Input()
 
 	it.Ok(t).
-		If(foo.IsMatch(success)).Should().Equal(true).
+		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal("foobar").
-		If(foo.IsMatch(failure)).Should().Equal(false)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
+//
+// TODO: tests with multiple FMaps, validate behavior FMap,
+// it MUST be executed only once
+//
+
 func TestFMapSuccess(t *testing.T) {
-	foo := µ.GET(µ.Path(path.Is("foo"))).FMap(
-		func() error { return µ.Ok().Text("bar") },
+	foo := µ.GET(
+		µ.Path(path.Is("foo")),
+		µ.FMap(
+			func() error { return µ.Ok().Text("bar") },
+		),
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -188,8 +195,11 @@ func TestFMapSuccess(t *testing.T) {
 }
 
 func TestFMapFailure(t *testing.T) {
-	foo := µ.GET(µ.Path(path.Is("foo"))).FMap(
-		func() error { return µ.Unauthorized("") },
+	foo := µ.GET(
+		µ.Path(path.Is("foo")),
+		µ.FMap(
+			func() error { return µ.Unauthorized("") },
+		),
 	)
 	req := mock.Input(mock.URL("/foo"))
 

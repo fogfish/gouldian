@@ -35,32 +35,32 @@ func DELETE(arrows ...core.Endpoint) core.Endpoint {
 
 // GET composes product Endpoint match HTTP GET request.
 //   e := µ.GET()
-//   e.IsMatch(mock.Input(mock.Method("GET"))) == true
-//   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
+//   e(mock.Input(mock.Method("GET"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
 func GET(arrows ...core.Endpoint) core.Endpoint {
 	return Method("GET").Then(core.Join(arrows...))
 }
 
 // PATCH composes product Endpoint match HTTP PATCH request.
 //   e := µ.PATCH()
-//   e.IsMatch(mock.Input(mock.Method("PATCH"))) == true
-//   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
+//   e(mock.Input(mock.Method("PATCH"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
 func PATCH(arrows ...core.Endpoint) core.Endpoint {
 	return Method("PATCH").Then(core.Join(arrows...))
 }
 
 // POST composes product Endpoint match HTTP POST request.
 //   e := µ.POST()
-//   e.IsMatch(mock.Input(mock.Method("POST"))) == true
-//   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
+//   e(mock.Input(mock.Method("POST"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
 func POST(arrows ...core.Endpoint) core.Endpoint {
 	return Method("POST").Then(core.Join(arrows...))
 }
 
 // PUT composes product Endpoint match HTTP PUT request.
 //   e := µ.PUT()
-//   e.IsMatch(mock.Input(mock.Method("PUT"))) == true
-//   e.IsMatch(mock.Input(mock.Method("OTHER"))) == false
+//   e(mock.Input(mock.Method("PUT"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
 func PUT(arrows ...core.Endpoint) core.Endpoint {
 	return Method("PUT").Then(core.Join(arrows...))
 }
@@ -81,8 +81,8 @@ func Method(verb string) core.Endpoint {
 //   import "github.com/fogfish/gouldian/path"
 //
 //   e := µ.GET( µ.Path(path.Is("foo")) )
-//   e.IsMatch(mock.Input(mock.URL("/foo"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/bar"))) == false
+//   e(mock.Input(mock.URL("/foo"))) == nil
+//   e(mock.Input(mock.URL("/bar"))) != nil
 func Path(arrows ...path.Arrow) core.Endpoint {
 	return func(req *core.Input) error {
 		for i, f := range arrows {
@@ -104,8 +104,8 @@ func Path(arrows ...path.Arrow) core.Endpoint {
 //   import "github.com/fogfish/gouldian/param"
 //
 //   e := µ.GET( µ.Param(param.Is("foo", "bar")) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?foo=baz"))) == false
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+//   e(mock.Input(mock.URL("/?foo=baz"))) != nil
 func Param(arrows ...param.Arrow) core.Endpoint {
 	return func(req *core.Input) error {
 		for _, f := range arrows {
@@ -129,9 +129,10 @@ func Param(arrows ...param.Arrow) core.Endpoint {
 //     ),
 //   )
 //   Json := mock.Header("Content-Type", "application/json")
+//   e(mock.Input(Json)) == nil
+//
 //   Text := mock.Header("Content-Type", "text/plain")
-//   e.IsMatch(mock.Input(Json)) == true
-//   e.IsMatch(mock.Input(Text)) == false
+//   e(mock.Input(Text)) != nil
 func Header(arrows ...header.Arrow) core.Endpoint {
 	return func(req *core.Input) error {
 		for _, f := range arrows {
@@ -143,7 +144,8 @@ func Header(arrows ...header.Arrow) core.Endpoint {
 	}
 }
 
-// AccessToken decodes JWT token associated with the request
+// AccessToken decodes JWT token associated with the request.
+// Endpoint fails if Authentication context is not found in the request.
 func AccessToken(val *core.AccessToken) core.Endpoint {
 	return func(req *core.Input) error {
 		if req.RequestContext.Authorizer == nil {
