@@ -65,8 +65,20 @@ func PUT(arrows ...core.Endpoint) core.Endpoint {
 	return Method("PUT").Then(core.Join(arrows...))
 }
 
+// ANY composes product Endpoint match HTTP PUT request.
+//   e := µ.ANY()
+//   e(mock.Input(mock.Method("PUT"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) == nil
+func ANY(arrows ...core.Endpoint) core.Endpoint {
+	return Method("*").Then(core.Join(arrows...))
+}
+
 // Method is an endpoint to match HTTP verb request
 func Method(verb string) core.Endpoint {
+	if verb == "*" {
+		return func(http *core.Input) error { return nil }
+	}
+
 	return func(http *core.Input) error {
 		if http.HTTPMethod == verb {
 			return nil

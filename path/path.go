@@ -21,7 +21,7 @@ Package path defines primitives to match URL of HTTP requests.
 	import "github.com/fogfish/gouldian/path"
 
 	endpoint := µ.GET( µ.Path(path.Is("foo"), ...) )
-	endpoint.IsMatch(mock.Input(mock.URL("/foo"))) == true
+	endpoint(mock.Input(mock.URL("/foo"))) == nil
 
 */
 package path
@@ -38,9 +38,9 @@ type Arrow func(string) error
 
 // Or is a co-product of path match arrows
 //   e := µ.GET( µ.Path(path.Or(path.Is("foo"), path.Is("bar"))) )
-//   e.IsMatch(mock.Input(mock.URL("/foo"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/bar"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/baz"))) == false
+//   e(mock.Input(mock.URL("/foo"))) == nil
+//   e(mock.Input(mock.URL("/bar"))) == nil
+//   e(mock.Input(mock.URL("/baz"))) != nil
 func Or(arrows ...Arrow) Arrow {
 	return func(segment string) error {
 		for _, f := range arrows {
@@ -54,9 +54,13 @@ func Or(arrows ...Arrow) Arrow {
 
 // Is matches a path segment to defined literal
 //   e := µ.GET( µ.Path(path.Is("foo")) )
-//   e.IsMatch(mock.Input(mock.URL("/foo"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/bar"))) == false
+//   e(mock.Input(mock.URL("/foo"))) == nil
+//   e(mock.Input(mock.URL("/bar"))) != nil
 func Is(val string) Arrow {
+	if val == "*" {
+		return func(string) error { return nil }
+	}
+
 	return func(segment string) error {
 		if segment == val {
 			return nil
@@ -67,8 +71,8 @@ func Is(val string) Arrow {
 
 // Any is a wildcard matcher of path segment
 //   e := µ.GET( µ.Path(path.Any()) )
-//   e.IsMatch(mock.Input(mock.URL("/foo"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/bar"))) == true
+//   e(mock.Input(mock.URL("/foo"))) == nil
+//   e(mock.Input(mock.URL("/bar"))) == nil
 func Any() Arrow {
 	return func(string) error {
 		return nil
@@ -78,8 +82,8 @@ func Any() Arrow {
 // String matches a path segment to closed variable of string type.
 //   var value string
 //   e := µ.GET( µ.Path(path.String(&value)) )
-//   e.IsMatch(mock.Input(mock.URL("/foo"))) == true && value == "foo"
-//   e.IsMatch(mock.Input(mock.URL("/1"))) == true && value == "1"
+//   e(mock.Input(mock.URL("/foo"))) == nil && value == "foo"
+//   e(mock.Input(mock.URL("/1"))) == nil && value == "1"
 func String(val *string) Arrow {
 	return func(segment string) error {
 		*val = segment
@@ -90,8 +94,8 @@ func String(val *string) Arrow {
 // Int matches a path segment to closed variable of int type
 //   var value int
 //   e := µ.GET( µ.Path(path.Int(&value)) )
-//   e.IsMatch(mock.Input(mock.URL("/1"))) == true && value == 1
-//   e.IsMatch(mock.Input(mock.URL("/foo"))) == false
+//   e(mock.Input(mock.URL("/1"))) == nil && value == 1
+//   e(mock.Input(mock.URL("/foo"))) != nil
 func Int(val *int) Arrow {
 	return func(segment string) error {
 		if value, err := strconv.Atoi(segment); err == nil {

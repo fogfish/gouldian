@@ -28,6 +28,17 @@ import (
 	"github.com/fogfish/it"
 )
 
+func TestVerbAny(t *testing.T) {
+	endpoint := µ.ANY()
+
+	success1 := mock.Input(mock.Method("GET"))
+	success2 := mock.Input(mock.Method("OTHER"))
+
+	it.Ok(t).
+		If(endpoint(success1)).Should().Equal(nil).
+		If(endpoint(success2)).Should().Equal(nil)
+}
+
 func TestVerbDelete(t *testing.T) {
 	endpoint := µ.DELETE()
 	success := mock.Input(mock.Method("DELETE"))
