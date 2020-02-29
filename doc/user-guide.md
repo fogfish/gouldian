@@ -186,17 +186,61 @@ The library defines a type `core.AccessToken` and `func AccessToken(val *core.Ac
 
 ## High-order Endpoints
 
-tbd.
+Usage of combinators is an essential part to specify API from primitive endpoints. The library define `and-then` product and `or-else` coproduct combinators. They have been discussed earlier in this guide. 
 
 **Product endpoint**
 
+Use the product combinator to declare *conjunctive conditions*. All variadic functions implemented by the library are product.
+
+```go
+// Endpoint product 
+both := core.Join(µ.Path(/*...*/), µ.Param(/*...*/))
+
+// Path product
+both := µ.Path(path.String(/*... */), path.Int(/* ... */))
+```
+
 **Coproduct endpoint**
 
+A co-product represents either-or endpoint evaluation.
+
+```go
+// Endpoint coproduct
+either := core.Or(µ.Path(/*...*/), µ.Path(/*...*/))
+
+// Path coproduct matches /foo and /bar
+either := µ.Path(path.Or(path.Is("foo"), path.Is("bar"))
+```
 
 ## Mapping Endpoints
 
+A business logic is defined as Endpoint mapper with help of closure functions `Ø ⟼ Output`. The library provides `func FMap(f func() error) core.Endpoint` function. It lifts a transformer into Endpoint so that it is composable with other Endpoints.
+
+```go
+µ.GET(
+  µ.Path(path.Is("foo")),
+  µ.FMap(func() error { µ.Ok() }),
+)
+```
 
 ## Outputs
+
+Every returned value from the mapper/transformer is `Output`, which is implemented as `error` value. The library supplies [primitives](../output.go) to declare output of HTTP response. You *maps* the request either to successful HTTP status code or failure. The failures are RFC 7807: Problem Details for HTTP APIs.
+
+The library provides factory functions named after HTTP status codes. Use them to declare your intent
+
+```go
+µ.GET(
+  µ.Path(path.Is("foo")),
+  µ.FMap(
+    func() error {
+      µ.Ok().
+        With("Content-Type", "application/json").
+        JSON(User{"Joe Doe"})
+    }
+  ),
+)
+```
 
 
 ## Unit testing
