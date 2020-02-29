@@ -31,5 +31,9 @@ type Input struct {
 
 // Request creates new Input from API Gateway request
 func Request(req events.APIGatewayProxyRequest) *Input {
-	return &Input{req, strings.Split(req.Path, "/")[1:], ""}
+	segments := strings.Split(req.Path, "/")[1:]
+	if len(segments) == 1 && segments[0] == "" {
+		segments = []string{}
+	}
+	return &Input{req, segments, ""}
 }

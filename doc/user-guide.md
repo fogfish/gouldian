@@ -102,10 +102,6 @@ e := µ.GET(/* ... */)
 e(mock.Input())
 ```
 
-**Match Root**
-
-**Match All**
-
 **Match Path**
 
 `func Path(arrows ...path.Arrow) core.Endpoint` builds an `Endpoint` that matches arbitrary URL path from HTTP request. The endpoint considers a path as a sequence of segments, it takes a corresponding product of segment pattern matchers/extractors (they are defined in [`path`](../path/path.go) package).
@@ -114,6 +110,15 @@ e(mock.Input())
 e := µ.Path(path.Is("foo"))
 e(mock.Input(mock.URL("/foo")))
 ```
+
+Often, implementation of **root** `Endpoint` is required, use `µ.Path` with empty definition.
+
+```go
+e := µ.Path()
+e(mock.Input(mock.URL("/")))
+```
+
+Skip `µ.Path` definition to match all the segments, entire path of URL.
 
 **Extract Path**
 

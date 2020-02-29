@@ -61,7 +61,11 @@ func URL(httpURL string) Mock {
 		}
 		mock.APIGatewayProxyRequest.Path = uri.Path
 		mock.APIGatewayProxyRequest.QueryStringParameters = query
-		mock.Path = strings.Split(uri.Path, "/")[1:]
+		segments := strings.Split(uri.Path, "/")[1:]
+		if len(segments) == 1 && segments[0] == "" {
+			segments = []string{}
+		}
+		mock.Path = segments
 		return mock
 	}
 }

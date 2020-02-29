@@ -97,8 +97,16 @@ func Method(verb string) core.Endpoint {
 //   e(mock.Input(mock.URL("/bar"))) != nil
 func Path(arrows ...path.Arrow) core.Endpoint {
 	return func(req *core.Input) error {
+		plen := len(req.Path)
+		if len(arrows) == 0 {
+			if plen == 0 {
+				return nil
+			}
+			return core.NoMatch{}
+		}
+
 		for i, f := range arrows {
-			if i > len(req.Path)-1 {
+			if i == plen {
 				return core.NoMatch{}
 			}
 			if err := f(req.Path[i]); err != nil {

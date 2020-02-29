@@ -105,6 +105,17 @@ func TestPath(t *testing.T) {
 		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
+func TestPathRoot(t *testing.T) {
+	root := µ.GET(µ.Path())
+
+	success := mock.Input(mock.URL("/"))
+	failure := mock.Input(mock.URL("/foo"))
+
+	it.Ok(t).
+		If(root(success)).Should().Equal(nil).
+		If(root(failure)).ShouldNot().Equal(nil)
+}
+
 func TestParam(t *testing.T) {
 	foo := µ.GET(µ.Param(param.Is("foo", "bar")))
 	bar := µ.GET(µ.Param(param.Is("bar", "foo")))
