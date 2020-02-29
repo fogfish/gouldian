@@ -140,13 +140,48 @@ A handing of query string params for HTTP request is consistent with matching/ex
 
 ```go
 var text string
-e := µ.Param(param.Is("foo", "bar"), param.String("q", &text))
+e := µ.Param(
+  param.Is("foo", "bar"),
+  param.String("q", &text),
+)
 e(mock.Input(mock.URL("/?foo=bar&q=text")))
 ```
 
 **Headers**
 
-**Body**
+A handing of query string params for HTTP request is consistent with matching/extraction of path segments.
+
+`func Header(arrows ...header.Arrow) core.Endpoint` builds an `Endpoint` that matches HTTP request headers. The endpoint considers headers as a hashmap, it takes a product of header matchers/extractors (they are defined in [`header`](../header/header.go) package). Functions `header.Is` and `header.Any` matches headers; `header.String`, `header.MaybeString`, `header.Int` and `header.MaybeInt` extracts values.
+
+```go
+var length int
+e := µ.Header(
+  header.Is("Content-Type", "application/json"),
+  header.Int("Content-Length", &length),
+)
+e(mock.Input(
+  mock.Header("Content-Type", "application/json"),
+  mock.Header("Content-Length", "1024"),
+))
+```
+
+**Bodies**
+
+The library defines `Endpoint` to decode and extract body of HTTP request. It supports `µ.Text` and `µ.JSON`. The JSON endpoint would not match is `json.Unmarshal` returns error.
+
+```go
+type User struct {
+  Username string `json:"username"` 
+}
+
+var user User
+e := µ.Body(&user)
+e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
+```
+
+**Authentication with AWS Cognito**
+
+The library defines a type `core.AccessToken` and `func AccessToken(val *core.AccessToken) core.Endpoint` to extract JWT access token as it is provided by AWS Cognito service.
 
 
 ## High-order Endpoints

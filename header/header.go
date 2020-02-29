@@ -51,9 +51,9 @@ type Arrow func(map[string]string) error
 //       )
 //     )
 //   )
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "application/json"))) == true
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "text/plain"))) == true
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "text/html"))) == false
+//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
+//   e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
+//   e(mock.Input(mock.Header("Content-Type", "text/html"))) != nil
 func Or(arrows ...Arrow) Arrow {
 	return func(headers map[string]string) error {
 		for _, f := range arrows {
@@ -67,8 +67,8 @@ func Or(arrows ...Arrow) Arrow {
 
 // Is matches a header to defined literal value
 //   e := µ.GET( µ.Header(header.Is("Content-Type", "application/json")) )
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "application/json"))) == true
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "text/plain"))) == false
+//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
+//   e(mock.Input(mock.Header("Content-Type", "text/plain"))) != nil
 func Is(key string, val string) Arrow {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
@@ -81,9 +81,9 @@ func Is(key string, val string) Arrow {
 
 // Any is a wildcard matcher of header. It fails if header is not defined.
 //   e := µ.GET( µ.Header(header.Any("Content-Type")) )
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "application/json"))) == true
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "text/plain"))) == true
-//   e.IsMatch(mock.Input()) == false
+//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
+//   e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
+//   e(mock.Input()) != nil
 func Any(key string) Arrow {
 	return func(headers map[string]string) error {
 		_, exists := headers[key]
@@ -98,8 +98,8 @@ func Any(key string) Arrow {
 // It fails if header is not defined.
 //   var value string
 //   e := µ.GET( µ.Header(header.String("Content-Type", &value)) )
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "application/json"))) == true && value == "application/json"
-//   e.IsMatch(mock.Input()) == false
+//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
+//   e(mock.Input()) != nil
 func String(key string, val *string) Arrow {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
@@ -115,8 +115,8 @@ func String(key string, val *string) Arrow {
 // It does not fail if header is not defined.
 //   var value string
 //   e := µ.GET( µ.Header(header.String("foo", &value)) )
-//   e.IsMatch(mock.Input(mock.Header("Content-Type", "application/json"))) == true && value == "application/json"
-//   e.IsMatch(mock.Input()) == true
+//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
+//   e(mock.Input()) == nil
 func MaybeString(key string, val *string) Arrow {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
@@ -132,8 +132,8 @@ func MaybeString(key string, val *string) Arrow {
 // It fails if header is not defined.
 //   var value int
 //   e := µ.GET( µ.Header(header.Int("Content-Length", &value)) )
-//   e.IsMatch(mock.Input(mock.Header("Content-Length", "1024"))) == true && value == 1024
-//   e.IsMatch(mock.Input()) == false
+//   e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
+//   e(mock.Input()) != nil
 func Int(key string, val *int) Arrow {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
@@ -151,8 +151,8 @@ func Int(key string, val *int) Arrow {
 // It does not fail if header is not defined.
 //   var value int
 //   e := µ.GET( µ.Header(header.MaybeInt("Content-Length", &value)) )
-//   e.IsMatch(mock.Input(mock.Header("Content-Length", "1024"))) == true && value == 1024
-//   e.IsMatch(mock.Input()) == true
+//   e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
+//   e(mock.Input()) == nil
 func MaybeInt(key string, val *int) Arrow {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
