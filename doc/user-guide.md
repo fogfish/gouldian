@@ -134,6 +134,16 @@ e(mock.Input(mock.URL("/foo/bar")))
 
 **Params**
 
+A handing of query string params for HTTP request is consistent with matching/extraction of path segments.
+
+`func Param(arrows ...param.Arrow) core.Endpoint` builds an `Endpoint` that matches URL query string from HTTP request. The endpoint considers a query params as a hashmap, it takes a product of params matchers/extractors (they are defined in [`param`](../param/param.go) package). Functions `param.Is` and `param.Any` matches query params; `param.String`, `param.MaybeString`, `param.Int` and `param.MaybeInt` extracts values.
+
+```go
+var text string
+e := µ.Param(param.Is("foo", "bar"), param.String("q", &text))
+e(mock.Input(mock.URL("/?foo=bar&q=text")))
+```
+
 **Headers**
 
 **Body**

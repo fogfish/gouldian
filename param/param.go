@@ -21,7 +21,7 @@ Package param defines primitives to match URL Query parameters of HTTP requests.
 	import "github.com/fogfish/gouldian/param"
 
 	endpoint := µ.GET( µ.Param(param.Is("foo", "bar"), ...) )
-	endpoint.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true
+	endpoint(mock.Input(mock.URL("/?foo=bar"))) == nil
 
 */
 package param
@@ -38,9 +38,9 @@ type Arrow func(map[string]string) error
 
 // Or is a co-product of query param match arrows
 //   e := µ.GET( µ.Param(param.Or(param.Is("foo", "bar"), param.Is("bar", "foo"))) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?bar=foo"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?foo=baz"))) == false
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+//   e(mock.Input(mock.URL("/?bar=foo"))) == nil
+//   e(mock.Input(mock.URL("/?foo=baz"))) != nil
 func Or(arrows ...Arrow) Arrow {
 	return func(params map[string]string) error {
 		for _, f := range arrows {
@@ -54,8 +54,8 @@ func Or(arrows ...Arrow) Arrow {
 
 // Is matches a param key to defined literal value
 //   e := µ.GET( µ.Param(param.Is("foo", "bar")) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?bar=foo"))) == false
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+//   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 func Is(key string, val string) Arrow {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
@@ -68,10 +68,10 @@ func Is(key string, val string) Arrow {
 
 // Any is a wildcard matcher of param key. It fails if key is not defined.
 //   e := µ.GET( µ.Param(param.Any("foo")) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?foo=baz"))) == true
-//   e.IsMatch(mock.Input(mock.URL("/?bar=foo"))) == false
+//   e(mock.Input(mock.URL("/?foo"))) == nil
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+//   e(mock.Input(mock.URL("/?foo=baz"))) == nil
+//   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 func Any(key string) Arrow {
 	return func(params map[string]string) error {
 		_, exists := params[key]
@@ -86,8 +86,8 @@ func Any(key string) Arrow {
 // It fails if key is not defined.
 //   var value string
 //   e := µ.GET( µ.Param(param.String("foo", &value)) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true && value == "bar"
-//   e.IsMatch(mock.Input(mock.URL("/?foo=1"))) == true && value == "1"
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == "bar"
+//   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == "1"
 func String(key string, val *string) Arrow {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
@@ -103,8 +103,8 @@ func String(key string, val *string) Arrow {
 // It does not fail if key is not defined.
 //   var value string
 //   e := µ.GET( µ.Param(param.String("foo", &value)) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == true && value == "bar"
-//   e.IsMatch(mock.Input(mock.URL("/?foo=1"))) == true && value == "1"
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == "bar"
+//   e(mock.Input(mock.URL("/?bar=1"))) == nil && value == ""
 func MaybeString(key string, val *string) Arrow {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
@@ -120,8 +120,8 @@ func MaybeString(key string, val *string) Arrow {
 // It fails if key is not defined.
 //   var value int
 //   e := µ.GET( µ.Param(param.Int("foo", &value)) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=1"))) == true && value == 1
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == false
+//   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
+//   e(mock.Input(mock.URL("/?foo=bar"))) != nil
 func Int(key string, val *int) Arrow {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
@@ -139,8 +139,8 @@ func Int(key string, val *int) Arrow {
 // It does not fail if key is not defined.
 //   var value int
 //   e := µ.GET( µ.Param(param.Int("foo", &value)) )
-//   e.IsMatch(mock.Input(mock.URL("/?foo=1"))) == true && value == 1
-//   e.IsMatch(mock.Input(mock.URL("/?foo=bar"))) == false
+//   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == 0
 func MaybeInt(key string, val *int) Arrow {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
