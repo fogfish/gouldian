@@ -242,7 +242,15 @@ The library provides factory functions named after HTTP status codes. Use them t
 )
 ```
 
-
 ## Unit testing
 
-tbd.
+Gouildian support unit testing of API without a needs to spawn actual HTTP server.
+Each `Endpoint` is a function, mock HTTP Input and validate its result.
+
+```go
+endpoint := µ.GET(/* ... */)
+
+request := mock.Input(mock.URL("/foo"))
+
+endpoint(request).Body == "{\"username\":\"Joe Doe\"}"
+```

@@ -36,9 +36,9 @@ func Serve(seq ...core.Endpoint) func(events.APIGatewayProxyRequest) (events.API
 		err := api(http)
 		if errors.As(err, &output) {
 			return events.APIGatewayProxyResponse{
-				Body:       output.body,
-				StatusCode: output.status,
-				Headers:    joinHead(defaultCORS(req), output.headers),
+				Body:       output.Body,
+				StatusCode: output.Status,
+				Headers:    joinHead(defaultCORS(req), output.Headers),
 			}, nil
 		} else if errors.As(err, &issue) {
 			text, _ := json.Marshal(issue)

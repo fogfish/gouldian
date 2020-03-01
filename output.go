@@ -29,13 +29,13 @@ import (
 // status code.
 //   gouldian.Ok().With("X-Header", "value").Json(MyStruct{})
 type Output struct {
-	status  int
-	headers map[string]string
-	body    string
+	Status  int
+	Headers map[string]string
+	Body    string
 }
 
 func (out Output) Error() string {
-	return out.body
+	return out.Body
 }
 
 // Success creates HTTP response with given HTTP Status code
@@ -88,21 +88,21 @@ func PermanentRedirect(uri url.URL) *Output {
 // JSON appends application/json payload to HTTP response
 func (out *Output) JSON(val interface{}) *Output {
 	body, _ := json.Marshal(val)
-	out.headers["Content-Type"] = "application/json"
-	out.body = string(body)
+	out.Headers["Content-Type"] = "application/json"
+	out.Body = string(body)
 	return out
 }
 
 // Text appends text/plain payload to HTTP response
 func (out *Output) Text(text string) *Output {
-	out.body = text
-	out.headers["Content-Type"] = "text/plain"
+	out.Body = text
+	out.Headers["Content-Type"] = "text/plain"
 	return out
 }
 
 // With sets HTTP header to the response
 func (out *Output) With(head string, value string) *Output {
-	out.headers[head] = value
+	out.Headers[head] = value
 	return out
 }
 
