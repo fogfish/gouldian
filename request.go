@@ -18,313 +18,201 @@ package gouldian
 
 import (
 	"encoding/json"
-	"fmt"
-	"strconv"
-	"strings"
+
+	"github.com/fogfish/gouldian/core"
+	"github.com/fogfish/gouldian/header"
+	"github.com/fogfish/gouldian/param"
+	"github.com/fogfish/gouldian/path"
 )
 
-// HTTPPath defines Endpoint(s) to match path elements of HTTP request
-type HTTPPath interface {
-	Path(segment string) HTTP
-	String(val *string) HTTP
-	Int(val *int) HTTP
+// DELETE composes product Endpoint match HTTP DELETE request.
+//   e := µ.DELETE()
+//   e(mock.Input(mock.Method("DELETE"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
+func DELETE(arrows ...core.Endpoint) core.Endpoint {
+	return Method("DELETE").Then(core.Join(arrows...))
 }
 
-// HTTPQuery defines Endpoint(s) to match query elements of HTTP request
-type HTTPQuery interface {
-	Param(name string, val string) HTTP
-	HasParam(name string) HTTP
-	QString(name string, val *string) HTTP
-	QInt(name string, val *int) HTTP
+// GET composes product Endpoint match HTTP GET request.
+//   e := µ.GET()
+//   e(mock.Input(mock.Method("GET"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
+func GET(arrows ...core.Endpoint) core.Endpoint {
+	return Method("GET").Then(core.Join(arrows...))
 }
 
-// HTTPHeader defines Endpoint(s) to match headers of HTTP request
-type HTTPHeader interface {
-	Head(name string, val string) HTTP
-	HasHead(name string) HTTP
-	HString(name string, val *string) HTTP
+// PATCH composes product Endpoint match HTTP PATCH request.
+//   e := µ.PATCH()
+//   e(mock.Input(mock.Method("PATCH"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
+func PATCH(arrows ...core.Endpoint) core.Endpoint {
+	return Method("PATCH").Then(core.Join(arrows...))
 }
 
-// HTTPBody defines Endpoint(s) to match body of HTTP Request
-type HTTPBody interface {
-	JSON(val interface{}) HTTP
-	Text(val *string) HTTP
+// POST composes product Endpoint match HTTP POST request.
+//   e := µ.POST()
+//   e(mock.Input(mock.Method("POST"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
+func POST(arrows ...core.Endpoint) core.Endpoint {
+	return Method("POST").Then(core.Join(arrows...))
 }
 
-// HTTPAuthorize defines Endpoint(s) to match Access Token
-type HTTPAuthorize interface {
-	AccessToken(token *AccessToken) HTTP
+// PUT composes product Endpoint match HTTP PUT request.
+//   e := µ.PUT()
+//   e(mock.Input(mock.Method("PUT"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) != nil
+func PUT(arrows ...core.Endpoint) core.Endpoint {
+	return Method("PUT").Then(core.Join(arrows...))
 }
 
-// AccessToken is a container for user identity
-type AccessToken struct {
-	Sub   string
-	Scope string
+// ANY composes product Endpoint match HTTP PUT request.
+//   e := µ.ANY()
+//   e(mock.Input(mock.Method("PUT"))) == nil
+//   e(mock.Input(mock.Method("OTHER"))) == nil
+func ANY(arrows ...core.Endpoint) core.Endpoint {
+	return Method("*").Then(core.Join(arrows...))
 }
 
-// HTTP defines Endpoint(s) to match elements of HTTP request
-type HTTP interface {
-	HTTPPath
-	HTTPQuery
-	HTTPHeader
-	HTTPBody
-	HTTPAuthorize
+// Method is an endpoint to match HTTP verb request
+func Method(verb string) core.Endpoint {
+	if verb == "*" {
+		return func(http *core.Input) error { return nil }
+	}
 
-	FMap(f func() error) Endpoint
-	IsMatch(req *Input) bool
-}
-
-// NoMatch is returned by Endpoint if Input is not matched.
-type NoMatch struct{}
-
-func (err NoMatch) Error() string {
-	return fmt.Sprintf("No Match")
-}
-
-// APIGateway implements Endpoints to process AWS API Gateway request(s).
-// There is a type constructor named after HTTP vers. It creates
-// Endpoint to match HTTP verbs (methods).
-type APIGateway struct {
-	f Endpoint
-}
-
-// Delete is Endpoint to match HTTP DELETE verb.
-func Delete() HTTP {
-	return &APIGateway{isVerb("DELETE")}
-}
-
-// Get is Endpoint to match HTTP GET verb.
-func Get() HTTP {
-	return &APIGateway{isVerb("GET")}
-}
-
-// Patch is Endpoint to match HTTP PATCH verb.
-func Patch() HTTP {
-	return &APIGateway{isVerb("PATCH")}
-}
-
-// Post is Endpoint to match HTTP POST verb.
-func Post() HTTP {
-	return &APIGateway{isVerb("POST")}
-}
-
-// Put is Endpoint to match HTTP PUT verb.
-func Put() HTTP {
-	return &APIGateway{isVerb("PUT")}
-}
-
-func isVerb(verb string) Endpoint {
-	return func(http *Input) error {
+	return func(http *core.Input) error {
 		if http.HTTPMethod == verb {
-			http.segment = 1
 			return nil
 		}
-		return NoMatch{}
+		return core.NoMatch{}
 	}
 }
 
-func hasSegment(req *Input) error {
-	if len(req.path) > req.segment {
-		return nil
-	}
-	return NoMatch{}
-}
-
-// Path matches the current path segment
-//   e := gouldian.Get().Path("foo")
-//   e.IsMatch(gouldian.New("/foo")) == true
-//   e.IsMatch(gouldian.New("/bar")) == false
-func (state *APIGateway) Path(segment string) HTTP {
-	state.f = state.f.Then(hasSegment).Then(func(req *Input) error {
-		if req.path[req.segment] == segment {
-			req.segment++
-			return nil
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// String matches the current path segment to string type,
-// matched segment is returned to closure
-//   var value string
-//   e := gouldian.Get().String(&value)
-//   e.IsMatch(gouldian.New("/foo")) == true && value == "foo"
-//   e.IsMatch(gouldian.New("/1")) == true && value == "1"
-func (state *APIGateway) String(val *string) HTTP {
-	state.f = state.f.Then(hasSegment).Then(func(req *Input) error {
-		*val = req.path[req.segment]
-		req.segment++
-		return nil
-	})
-	return state
-}
-
-// Int matches the current path segment to int type,
-// matched segment is returned to closure.
-// Endpoint fails if value cannot be converted to int
-//   var value int
-//   e := gouldian.Get().String(&value)
-//   e.IsMatch(gouldian.New("/1")) == true && value == 1
-//   e.IsMatch(gouldian.New("/foo")) == false
-func (state *APIGateway) Int(val *int) HTTP {
-	state.f = state.f.Then(hasSegment).Then(func(req *Input) error {
-		value, err := strconv.Atoi(req.path[req.segment])
-		if err != nil {
-			return NoMatch{}
-		}
-		*val = value
-		req.segment++
-		return nil
-	})
-	return state
-}
-
-// Param checks if query param present in URL query string and
-// it value equals defined one.
-func (state *APIGateway) Param(name string, val string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		opt, exists := req.QueryStringParameters[name]
-		if exists && opt == val {
-			return nil
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// HasParam check presence of URL query parameter
-func (state *APIGateway) HasParam(name string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		_, exists := req.QueryStringParameters[name]
-		if exists {
-			return nil
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// QString matches parameter and lifts its value
-func (state *APIGateway) QString(name string, val *string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		opt, exists := req.QueryStringParameters[name]
-		if exists {
-			*val = opt
-			return nil
-		}
-		*val = ""
-		return nil
-	})
-	return state
-}
-
-// QInt matches parameter to int type and lifts its value
-func (state *APIGateway) QInt(name string, val *int) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		opt, exists := req.QueryStringParameters[name]
-		if exists {
-			value, err := strconv.Atoi(opt)
-			if err != nil {
-				return NoMatch{}
+// Path is an endpoint to match URL of HTTP request. The function takes
+// url matching primitives, which are defined by the package `path`.
+//
+//   import "github.com/fogfish/gouldian/path"
+//
+//   e := µ.GET( µ.Path(path.Is("foo")) )
+//   e(mock.Input(mock.URL("/foo"))) == nil
+//   e(mock.Input(mock.URL("/bar"))) != nil
+func Path(arrows ...path.Arrow) core.Endpoint {
+	return func(req *core.Input) error {
+		plen := len(req.Path)
+		if len(arrows) == 0 {
+			if plen == 0 {
+				return nil
 			}
-			*val = value
-			return nil
+			return core.NoMatch{}
 		}
-		*val = 0
+
+		for i, f := range arrows {
+			if i == plen {
+				return core.NoMatch{}
+			}
+			if err := f(req.Path[i]); err != nil {
+				return err
+			}
+		}
 		return nil
-	})
-	return state
+	}
 }
 
-// Head checks if HTTP header exists in request and
-// it value has defined prefix.
-func (state *APIGateway) Head(name string, val string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		head, exists := req.Headers[name]
-		if exists && strings.HasPrefix(head, val) {
-			return nil
+// Param is an endpoint to match URL Query parameters of HTTP request.
+// The function takes url query matching primitives, which are defined
+// by the package `param`.
+//
+//   import "github.com/fogfish/gouldian/param"
+//
+//   e := µ.GET( µ.Param(param.Is("foo", "bar")) )
+//   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+//   e(mock.Input(mock.URL("/?foo=baz"))) != nil
+func Param(arrows ...param.Arrow) core.Endpoint {
+	return func(req *core.Input) error {
+		for _, f := range arrows {
+			if err := f(req.APIGatewayProxyRequest.QueryStringParameters); err != nil {
+				return err
+			}
 		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// HasHead checks if HTTP header exists in the request
-func (state *APIGateway) HasHead(name string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		_, exists := req.Headers[name]
-		if exists {
-			return nil
-		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// HString matches HTTP header and lifts its value
-func (state *APIGateway) HString(name string, val *string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		head, exists := req.Headers[name]
-		if exists {
-			*val = head
-			return nil
-		}
-		*val = ""
 		return nil
-	})
-	return state
+	}
+}
+
+// Header is an endpoint to match Header(s) of HTTP request.
+// The function takes header matching primitives, which are defined
+// by the package `header`.
+//
+//   import "github.com/fogfish/gouldian/header"
+//
+//   e := µ.GET(
+//     µ.Header(
+//       param.Header("Content-Type", "application/json"),
+//     ),
+//   )
+//   Json := mock.Header("Content-Type", "application/json")
+//   e(mock.Input(Json)) == nil
+//
+//   Text := mock.Header("Content-Type", "text/plain")
+//   e(mock.Input(Text)) != nil
+func Header(arrows ...header.Arrow) core.Endpoint {
+	return func(req *core.Input) error {
+		for _, f := range arrows {
+			if err := f(req.APIGatewayProxyRequest.Headers); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// AccessToken decodes JWT token associated with the request.
+// Endpoint fails if Authentication context is not found in the request.
+func AccessToken(val *core.AccessToken) core.Endpoint {
+	return func(req *core.Input) error {
+		if req.RequestContext.Authorizer == nil {
+			return core.NoMatch{}
+		}
+
+		if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
+			switch tkn := jwt.(type) {
+			case map[string]interface{}:
+				*val = core.AccessToken{
+					Sub:   tkn["sub"].(string),
+					Scope: tkn["scope"].(string),
+				}
+				return nil
+			}
+		}
+
+		return core.NoMatch{}
+	}
 }
 
 // JSON decodes HTTP payload to struct
-func (state *APIGateway) JSON(val interface{}) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
+func JSON(val interface{}) core.Endpoint {
+	return func(req *core.Input) error {
 		err := json.Unmarshal([]byte(req.Body), val)
 		if err == nil {
 			return nil
 		}
 		// TODO: pass error to api client
-		return NoMatch{}
-	})
-	return state
+		return core.NoMatch{}
+	}
 }
 
-// Text decodes HTTP payload to text
-func (state *APIGateway) Text(val *string) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		*val = req.Body
-		return nil
-	})
-	return state
-}
-
-// AccessToken decodes JWT token associated with the request
-func (state *APIGateway) AccessToken(val *AccessToken) HTTP {
-	state.f = state.f.Then(func(req *Input) error {
-		if req.RequestContext.Authorizer != nil {
-			if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
-				switch tkn := jwt.(type) {
-				case map[string]interface{}:
-					*val = AccessToken{
-						Sub:   tkn["sub"].(string),
-						Scope: tkn["scope"].(string),
-					}
-					return nil
-				}
-			}
+// Text decodes HTTP payload to closed variable
+func Text(val *string) core.Endpoint {
+	return func(req *core.Input) error {
+		*val = ""
+		if req.Body != "" {
+			*val = req.Body
+			return nil
 		}
-		return NoMatch{}
-	})
-	return state
-}
-
-// IsMatch evaluates Endpoint against mocked Input
-func (state *APIGateway) IsMatch(in *Input) bool {
-	return state.f(in) == nil
+		return core.NoMatch{}
+	}
 }
 
 // FMap applies clojure to matched HTTP request.
 // A business logic in gouldian is an endpoint transformation.
-func (state *APIGateway) FMap(f func() error) Endpoint {
-	return state.f.Then(func(req *Input) error { return f() })
+func FMap(f func() error) core.Endpoint {
+	return func(*core.Input) error { return f() }
 }

@@ -17,210 +17,147 @@
 package gouldian_test
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/core"
+	"github.com/fogfish/gouldian/header"
+	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/param"
+	"github.com/fogfish/gouldian/path"
 	"github.com/fogfish/it"
 )
 
-func TestVerbDelete(t *testing.T) {
+func TestVerbAny(t *testing.T) {
+	endpoint := µ.ANY()
+
+	success1 := mock.Input(mock.Method("GET"))
+	success2 := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Delete().IsMatch(gouldian.MockVerb("DELETE", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Delete().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint(success1)).Should().Equal(nil).
+		If(endpoint(success2)).Should().Equal(nil)
+}
+
+func TestVerbDelete(t *testing.T) {
+	endpoint := µ.DELETE()
+	success := mock.Input(mock.Method("DELETE"))
+	failure := mock.Input(mock.Method("OTHER"))
+
+	it.Ok(t).
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 }
 
 func TestVerbGet(t *testing.T) {
+	endpoint := µ.GET()
+	success := mock.Input(mock.Method("GET"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Get().IsMatch(gouldian.MockVerb("GET", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Get().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
 }
 
 func TestVerbPatch(t *testing.T) {
+	endpoint := µ.PATCH()
+	success := mock.Input(mock.Method("PATCH"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Patch().IsMatch(gouldian.MockVerb("PATCH", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Patch().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
+
 }
 
 func TestVerbPost(t *testing.T) {
+	endpoint := µ.POST()
+	success := mock.Input(mock.Method("POST"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Post().IsMatch(gouldian.MockVerb("POST", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Post().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
+
 }
 
 func TestVerbPut(t *testing.T) {
+	endpoint := µ.PUT()
+	success := mock.Input(mock.Method("PUT"))
+	failure := mock.Input(mock.Method("OTHER"))
+
 	it.Ok(t).
-		If(
-			gouldian.Put().IsMatch(gouldian.MockVerb("PUT", "")),
-		).Should().Equal(true).
-		If(
-			gouldian.Put().IsMatch(gouldian.MockVerb("XXX", "")),
-		).Should().Equal(false)
+		If(endpoint(success)).Should().Equal(nil).
+		If(endpoint(failure)).ShouldNot().Equal(nil)
+
 }
 
 func TestPath(t *testing.T) {
-	req := gouldian.Mock("/foo")
+	foo := µ.GET(µ.Path(path.Is("foo")))
+	bar := µ.GET(µ.Path(path.Is("bar")))
+	foobar := µ.GET(µ.Path(path.Is("foo"), path.Is("bar")))
+
+	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("bar").IsMatch(req)).
-		Should().Equal(false).
-		//
-		If(gouldian.Get().Path("foo").Path("bar").IsMatch(req)).
-		Should().Equal(false)
+		If(foo(req)).Should().Equal(nil).
+		If(bar(req)).ShouldNot().Equal(nil).
+		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
-func TestString(t *testing.T) {
-	req := gouldian.Mock("/foo/bar")
-	foo := ""
+func TestPathRoot(t *testing.T) {
+	root := µ.GET(µ.Path())
+
+	success := mock.Input(mock.URL("/"))
+	failure := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").String(&foo).IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(foo).Should().Equal("bar").
-		//
-		If(gouldian.Get().Path("foo").Path("bar").String(&foo).IsMatch(req)).
-		Should().Equal(false)
-}
-
-func TestInt(t *testing.T) {
-	req := gouldian.Mock("/foo/10")
-	inv := gouldian.Mock("/foo/bar")
-	foo := 0
-
-	it.Ok(t).
-		If(gouldian.Get().Path("foo").Int(&foo).IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(foo).Should().Equal(10).
-		//
-		If(gouldian.Get().Path("foo").Path("bar").Int(&foo).IsMatch(req)).
-		Should().Equal(false).
-		//
-		If(gouldian.Get().Path("foo").Int(&foo).IsMatch(inv)).
-		Should().Equal(false)
+		If(root(success)).Should().Equal(nil).
+		If(root(failure)).ShouldNot().Equal(nil)
 }
 
 func TestParam(t *testing.T) {
-	req := gouldian.Mock("/foo?bar=foo")
+	foo := µ.GET(µ.Param(param.Is("foo", "bar")))
+	bar := µ.GET(µ.Param(param.Is("bar", "foo")))
+	foobar := µ.GET(µ.Param(param.Is("foo", "bar"), param.Is("bar", "foo")))
+
+	req := mock.Input(mock.URL("/?foo=bar"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").Param("bar", "foo").IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("foo").Param("bar", "bar").IsMatch(req)).
-		Should().Equal(false).
-		//
-		If(gouldian.Get().Path("foo").Param("foo", "").IsMatch(req)).
-		Should().Equal(false)
+		If(foo(req)).Should().Equal(nil).
+		If(bar(req)).ShouldNot().Equal(nil).
+		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
-func TestHasParam(t *testing.T) {
-	req := gouldian.Mock("/foo?bar")
-	foo := gouldian.Mock("/foo?bar=foo")
+func TestHeader(t *testing.T) {
+	foo := µ.GET(µ.Header(header.Is("foo", "bar")))
+	bar := µ.GET(µ.Header(header.Is("bar", "foo")))
+	foobar := µ.GET(µ.Header(header.Is("foo", "bar"), header.Is("bar", "foo")))
+
+	req := mock.Input(mock.Header("foo", "bar"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").HasParam("bar").IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("foo").HasParam("bar").IsMatch(foo)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("foo").HasParam("foo").IsMatch(req)).
-		Should().Equal(false)
+		If(foo(req)).Should().Equal(nil).
+		If(bar(req)).ShouldNot().Equal(nil).
+		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
-func TestQString(t *testing.T) {
-	req := gouldian.Mock("/foo?bar=foo")
-	bar := ""
+func TestAccessToken(t *testing.T) {
+	var token core.AccessToken
+	foo := µ.GET(µ.AccessToken(&token))
+	req := mock.Input(
+		mock.Auth(
+			map[string]interface{}{
+				"sub":   "00000000-0000-0000-0000-000000000000",
+				"scope": "a b",
+			},
+		),
+	)
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").QString("bar", &bar).IsMatch(req)).
-		Should().Equal(true).
-		If(bar).Should().Equal("foo").
-		//
-		If(gouldian.Get().Path("foo").QString("foo", &bar).IsMatch(req)).
-		Should().Equal(true).
-		If(bar).Should().Equal("")
-}
-
-func TestQInt(t *testing.T) {
-	req := gouldian.Mock("/foo?bar=10")
-	inv := gouldian.Mock("/foo?bar=foo")
-	bar := 0
-
-	it.Ok(t).
-		If(gouldian.Get().Path("foo").QInt("bar", &bar).IsMatch(req)).
-		Should().Equal(true).
-		If(bar).Should().Equal(10).
-		//
-		If(gouldian.Get().Path("foo").QInt("foo", &bar).IsMatch(req)).
-		Should().Equal(true).
-		If(bar).Should().Equal(0).
-		//
-		If(gouldian.Get().Path("foo").QInt("bar", &bar).IsMatch(inv)).
-		Should().Equal(false)
-}
-
-func TestHead(t *testing.T) {
-	req := gouldian.Mock("/foo").
-		With("Content-Type", "application/json")
-
-	it.Ok(t).
-		If(gouldian.Get().Path("foo").Head("Content-Type", "application/json").IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("foo").Head("Content-Type", "text/plain").IsMatch(req)).
-		Should().Equal(false).
-		//
-		If(gouldian.Get().Path("foo").Head("Accept", "application/json").IsMatch(req)).
-		Should().Equal(false)
-}
-
-func TestHasHead(t *testing.T) {
-	req := gouldian.Mock("/foo").
-		With("Content-Type", "application/json")
-
-	it.Ok(t).
-		If(gouldian.Get().Path("foo").HasHead("Content-Type").IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(gouldian.Get().Path("foo").HasHead("Accept").IsMatch(req)).
-		Should().Equal(false)
-}
-
-func TestHeadString(t *testing.T) {
-	req := gouldian.Mock("/foo").
-		With("Content-Type", "application/json")
-	content := ""
-
-	it.Ok(t).
-		If(gouldian.Get().Path("foo").HString("Content-Type", &content).IsMatch(req)).
-		Should().Equal(true).
-		If(content).Should().Equal("application/json").
-		//
-		If(gouldian.Get().Path("foo").HString("Accept", &content).IsMatch(req)).
-		Should().Equal(true).
-		If(content).Should().Equal("")
+		If(foo(req)).Should().Equal(nil).
+		If(token.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
+		If(token.Scope).Should().Equal("a b")
 }
 
 type foobar struct {
@@ -229,61 +166,80 @@ type foobar struct {
 }
 
 func TestJson(t *testing.T) {
-	req := gouldian.Mock("/foo").
-		WithJSON(foobar{"foo", 10})
-	inv := gouldian.Mock("/foo").
-		WithText("foobar")
-	val := foobar{}
+	var value foobar
+	foo := µ.GET(µ.JSON(&value))
+	success := mock.Input(mock.JSON(foobar{"foo", 10}))
+	failure1 := mock.Input(mock.Text("foobar"))
+	failure2 := mock.Input()
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").JSON(&val).IsMatch(req)).
-		Should().Equal(true).
-		//
-		If(val).Should().Equal(foobar{"foo", 10}).
-		//
-		If(gouldian.Get().Path("foo").JSON(&val).IsMatch(inv)).
-		Should().Equal(false)
+		If(foo(success)).Should().Equal(nil).
+		If(value).Should().Equal(foobar{"foo", 10}).
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
-func TestThenSuccess(t *testing.T) {
-	req := gouldian.Mock("/foo")
-	handle := func() error { return gouldian.Ok().Text("bar") }
+func TestText(t *testing.T) {
+	var value string
+	foo := µ.GET(µ.Text(&value))
+	success := mock.Input(mock.Text("foobar"))
+	failure := mock.Input()
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").FMap(handle)(req)).Should().
-		Assert(
-			func(be interface{}) bool {
-				var rsp *gouldian.Output
-				return errors.As(be.(error), &rsp)
-			},
-		)
+		If(foo(success)).Should().Equal(nil).
+		If(value).Should().Equal("foobar").
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
-func TestThenFailure(t *testing.T) {
-	req := gouldian.Mock("/foo")
-	handle := func() error { return gouldian.Unauthorized("") }
+func TestFMapSuccess(t *testing.T) {
+	foo := µ.GET(
+		µ.Path(path.Is("foo")),
+		µ.FMap(
+			func() error { return µ.Ok().Text("bar") },
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").FMap(handle)(req)).Should().
-		Assert(
-			func(be interface{}) bool {
-				var rsp *gouldian.Output
-				return !errors.As(be.(error), &rsp)
-			},
-		)
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "bar"
+		},
+	)
 }
 
-func TestAccessToken(t *testing.T) {
-	req := gouldian.Mock("/foo").
-		WithAuthorizer(map[string]interface{}{
-			"sub":   "00000000-0000-0000-0000-000000000000",
-			"scope": "a b",
-		})
-	val := gouldian.AccessToken{}
+func TestFMap2Success(t *testing.T) {
+	foo := µ.GET(
+		µ.Path(path.Is("foo")),
+		µ.FMap(func() error { return µ.Ok().Text("bar") }),
+	)
+	bar := µ.GET(
+		µ.Path(path.Is("bar")),
+		µ.FMap(func() error { return µ.Ok().Text("foo") }),
+	)
+	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(gouldian.Get().Path("foo").AccessToken(&val).IsMatch(req)).
-		Should().Equal(true).
-		If(val.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
-		If(val.Scope).Should().Equal("a b")
+		If(core.Or(foo, bar)(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "bar"
+		},
+	)
+}
+
+func TestFMapFailure(t *testing.T) {
+	foo := µ.GET(
+		µ.Path(path.Is("foo")),
+		µ.FMap(
+			func() error { return µ.Unauthorized("") },
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "401: Unauthorized"
+		},
+	)
 }

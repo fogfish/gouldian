@@ -14,24 +14,10 @@
 //   limitations under the License.
 //
 
-package main
+package core
 
-import (
-	"github.com/aws/aws-lambda-go/lambda"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
-	"github.com/fogfish/gouldian/path"
-)
-
-func main() {
-	lambda.Start(µ.Serve(hello()))
-}
-
-func hello() core.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("hello")),
-		µ.FMap(
-			func() error { return µ.Ok().Text("Hello World!") },
-		),
-	)
+// AccessToken is a container for user identity
+type AccessToken struct {
+	Sub   string
+	Scope string
 }

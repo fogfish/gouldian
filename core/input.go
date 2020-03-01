@@ -14,24 +14,26 @@
 //   limitations under the License.
 //
 
-package main
+package core
 
 import (
-	"github.com/aws/aws-lambda-go/lambda"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
-	"github.com/fogfish/gouldian/path"
+	"strings"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
-func main() {
-	lambda.Start(µ.Serve(hello()))
+// Input wraps HTTP request
+type Input struct {
+	events.APIGatewayProxyRequest
+	Path []string
+	Body string
 }
 
-func hello() core.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("hello")),
-		µ.FMap(
-			func() error { return µ.Ok().Text("Hello World!") },
-		),
-	)
+// Request creates new Input from API Gateway request
+func Request(req events.APIGatewayProxyRequest) *Input {
+	segments := strings.Split(req.Path, "/")[1:]
+	if len(segments) == 1 && segments[0] == "" {
+		segments = []string{}
+	}
+	return &Input{req, segments, ""}
 }

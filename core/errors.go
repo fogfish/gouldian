@@ -13,25 +13,13 @@
 //   See the License for the specific language governing permissions and
 //   limitations under the License.
 //
+package core
 
-package main
+import "fmt"
 
-import (
-	"github.com/aws/aws-lambda-go/lambda"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
-	"github.com/fogfish/gouldian/path"
-)
+// NoMatch is returned by Endpoint if Input is not matched.
+type NoMatch struct{}
 
-func main() {
-	lambda.Start(µ.Serve(hello()))
-}
-
-func hello() core.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("hello")),
-		µ.FMap(
-			func() error { return µ.Ok().Text("Hello World!") },
-		),
-	)
+func (err NoMatch) Error() string {
+	return fmt.Sprintf("No Match")
 }

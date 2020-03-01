@@ -14,30 +14,33 @@
 //   limitations under the License.
 //
 
-package gouldian_test
+package core_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/core"
+	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/it"
 )
 
 func TestEndpointThen(t *testing.T) {
 	var ok = errors.New("b")
-	var a gouldian.Endpoint = func(x *gouldian.Input) error { return nil }
-	var b gouldian.Endpoint = func(x *gouldian.Input) error { return ok }
+	var a core.Endpoint = func(x *core.Input) error { return nil }
+	var b core.Endpoint = func(x *core.Input) error { return ok }
+	var c core.Endpoint = a.Then(b)
 
 	it.Ok(t).
-		If(a.Then(b)(gouldian.Mock(""))).Should().Equal(ok)
+		If(c(mock.Input())).Should().Equal(ok)
 }
 
 func TestEndpointOr(t *testing.T) {
 	var ok = errors.New("a")
-	var a gouldian.Endpoint = func(x *gouldian.Input) error { return ok }
-	var b gouldian.Endpoint = func(x *gouldian.Input) error { return nil }
+	var a core.Endpoint = func(x *core.Input) error { return ok }
+	var b core.Endpoint = func(x *core.Input) error { return nil }
+	var c core.Endpoint = a.Or(b)
 
 	it.Ok(t).
-		If(a.Or(b)(gouldian.Mock(""))).Should().Equal(ok)
+		If(c(mock.Input())).Should().Equal(ok)
 }

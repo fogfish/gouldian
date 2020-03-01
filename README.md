@@ -33,6 +33,9 @@ The library is a thin layer of purely functional abstractions on top
 of AWS Gateway API. It resolves a challenge of building simple and
 declarative api implementations in the absence of pattern matching.
 
+[User Guide](./doc/user-guide.md) |
+[Example](./example/httpbin/main.go)
+
 
 ## Inspiration
 
@@ -75,7 +78,7 @@ See [example](example) folder for advanced use-case. The library  [api specifica
 
 ## Next steps
 
-* Study [Endpoint](endpoint.go) type and its composition
+* Study [Endpoint](core/endpoint.go) type and its composition
 
 * Check build-in [collection of endpoints](request.go) to deal with HTTP request. See types: [HTTP](http://godoc.org/github.com/fogfish/gouldian/#HTTP), [APIGateway](http://godoc.org/github.com/fogfish/gouldian/#APIGateway)
 

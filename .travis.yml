@@ -3,11 +3,10 @@ dist: bionic
 language: go
 go:
   - 1.13.x
-  - master
 
 before_install:
   - go get github.com/mattn/goveralls
 
 script:
-  - go test -cover -coverprofile=coverage.out
+  - go test -cover -coverprofile=coverage.out -v ./...
   - $GOPATH/bin/goveralls -service=travis-ci

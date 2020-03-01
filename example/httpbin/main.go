@@ -23,6 +23,11 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/core"
+	"github.com/fogfish/gouldian/header"
+	"github.com/fogfish/gouldian/param"
+	"github.com/fogfish/gouldian/path"
 )
 
 type headers struct {
@@ -44,39 +49,45 @@ type response struct {
 //
 //-----------------------------------------------------------------------------
 
-func delete() gouldian.Endpoint {
-	return verb(gouldian.Delete(), "delete")
+func anyMethod(subpath string) core.Endpoint {
+	var h headers
+
+	return core.Join(
+		µ.Path(path.Is(subpath)),
+		µ.Header(
+			header.MaybeString("Accept", &h.Accept),
+			header.MaybeString("Host", &h.Host),
+			header.MaybeString("Origin", &h.Origin),
+			header.MaybeString("Referer", &h.Referer),
+			header.MaybeString("User-Agent", &h.UserAgent),
+		),
+		µ.FMap(
+			func() error {
+				return µ.Ok().
+					JSON(response{h, fmt.Sprintf("https://%v/%v", h.Host, subpath)})
+			},
+		),
+	)
 }
 
-func get() gouldian.Endpoint {
-	return verb(gouldian.Get(), "get")
+func delete() core.Endpoint {
+	return µ.DELETE(anyMethod("delete"))
 }
 
-func patch() gouldian.Endpoint {
-	return verb(gouldian.Patch(), "patch")
+func get() core.Endpoint {
+	return µ.GET(anyMethod("get"))
 }
 
-func post() gouldian.Endpoint {
-	return verb(gouldian.Patch(), "post")
+func patch() core.Endpoint {
+	return µ.PATCH(anyMethod("patch"))
 }
 
-func put() gouldian.Endpoint {
-	return verb(gouldian.Patch(), "put")
+func post() core.Endpoint {
+	return µ.POST(anyMethod("post"))
 }
 
-func verb(method gouldian.HTTP, path string) gouldian.Endpoint {
-	h := headers{}
-
-	return method.Path(path).
-		HString("Accept", &h.Accept).
-		HString("Host", &h.Host).
-		HString("Origin", &h.Origin).
-		HString("Referer", &h.Referer).
-		HString("User-Agent", &h.UserAgent).
-		FMap(func() error {
-			return gouldian.Ok().
-				JSON(response{h, fmt.Sprintf("https://%v/%v", h.Host, path)})
-		})
+func put() core.Endpoint {
+	return µ.PUT(anyMethod("put"))
 }
 
 //-----------------------------------------------------------------------------
@@ -85,13 +96,17 @@ func verb(method gouldian.HTTP, path string) gouldian.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func bearer() gouldian.Endpoint {
+func bearer() core.Endpoint {
 	var token string
-	return gouldian.Get().Path("bearer").
-		HString("Authorization", &token).
-		FMap(func() error {
-			return gouldian.Unauthorized("Invalid token: " + token)
-		})
+	return µ.GET(
+		µ.Path(path.Is("bearer")),
+		µ.Header(header.String("Authorization", &token)),
+		µ.FMap(
+			func() error {
+				return gouldian.Unauthorized("Invalid token: " + token)
+			},
+		),
+	)
 }
 
 //-----------------------------------------------------------------------------
@@ -100,12 +115,16 @@ func bearer() gouldian.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func status() gouldian.Endpoint {
+func status() core.Endpoint {
 	var code int
-	return gouldian.Get().Path("status").Int(&code).
-		FMap(func() error {
-			return gouldian.Success(code)
-		})
+	return µ.GET(
+		µ.Path(path.Is("status"), path.Int(&code)),
+		µ.FMap(
+			func() error {
+				return gouldian.Success(code)
+			},
+		),
+	)
 }
 
 //-----------------------------------------------------------------------------
@@ -114,36 +133,50 @@ func status() gouldian.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func header() gouldian.Endpoint {
-	h := headers{}
+func head() core.Endpoint {
+	var h headers
 
-	return gouldian.Get().Path("headers").
-		HString("Accept", &h.Accept).
-		HString("Host", &h.Host).
-		HString("Origin", &h.Origin).
-		HString("Referer", &h.Referer).
-		HString("User-Agent", &h.UserAgent).
-		FMap(func() error {
-			return gouldian.Ok().JSON(h)
-		})
+	return µ.GET(
+		µ.Path(path.Is("headers")),
+		µ.Header(
+			header.MaybeString("Accept", &h.Accept),
+			header.MaybeString("Host", &h.Host),
+			header.MaybeString("Origin", &h.Origin),
+			header.MaybeString("Referer", &h.Referer),
+			header.MaybeString("User-Agent", &h.UserAgent),
+		),
+		µ.FMap(
+			func() error {
+				return µ.Ok().JSON(h)
+			},
+		),
+	)
 }
 
-func ip() gouldian.Endpoint {
+func ip() core.Endpoint {
 	var ip string
-	return gouldian.Get().Path("ip").
-		HString("X-Forwarded-For", &ip).
-		FMap(func() error {
-			return gouldian.Ok().JSON(ip)
-		})
+	return µ.GET(
+		µ.Path(path.Is("ip")),
+		µ.Header(header.String("X-Forwarded-For", &ip)),
+		µ.FMap(
+			func() error {
+				return gouldian.Ok().JSON(ip)
+			},
+		),
+	)
 }
 
-func ua() gouldian.Endpoint {
+func ua() core.Endpoint {
 	var ua string
-	return gouldian.Get().Path("user-agent").
-		HString("User-Agent", &ua).
-		FMap(func() error {
-			return gouldian.Ok().JSON(ua)
-		})
+	return µ.GET(
+		µ.Path(path.Is("user-agent")),
+		µ.Header(header.String("User-Agent", &ua)),
+		µ.FMap(
+			func() error {
+				return gouldian.Ok().JSON(ip)
+			},
+		),
+	)
 }
 
 //-----------------------------------------------------------------------------
@@ -152,38 +185,46 @@ func ua() gouldian.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func redirect1() gouldian.Endpoint {
-	return gouldian.Get().Path("redirect").Path("1").
-		FMap(func() error {
-			return gouldian.Found(
-				url.URL{Scheme: "https", Host: "example.com"},
-			)
-		})
+func redirect1() core.Endpoint {
+	return µ.GET(
+		µ.Path(path.Is("redirect"), path.Is("1")),
+		µ.FMap(
+			func() error {
+				return µ.Found(url.URL{Scheme: "https", Host: "example.com"})
+			},
+		),
+	)
 }
 
-func redirectN() gouldian.Endpoint {
+func redirectN() core.Endpoint {
 	var host string
 	var n int
-	return gouldian.Get().Path("redirect").Int(&n).
-		HString("Host", &host).
-		FMap(func() error {
-			return gouldian.Found(
-				url.URL{Scheme: "https", Host: host, Path: fmt.Sprintf("/api/redirect/%v", n-1)},
-			)
-		})
+	return µ.GET(
+		µ.Path(path.Is("redirect"), path.Int(&n)),
+		µ.Header(header.String("Host", &host)),
+		µ.FMap(
+			func() error {
+				return µ.Found(url.URL{Scheme: "https", Host: host, Path: fmt.Sprintf("/api/redirect/%v", n-1)})
+			},
+		),
+	)
 }
 
-func redirectTo() gouldian.Endpoint {
+func redirectTo() core.Endpoint {
 	var to string
-	return gouldian.Get().Path("redirect-to").
-		QString("url", &to).
-		FMap(func() error {
-			redirect, err := url.Parse(to)
-			if err == nil {
-				return gouldian.Found(*redirect)
-			}
-			return gouldian.BadRequest("Invalid url: " + to)
-		})
+	return µ.GET(
+		µ.Path(path.Is("redirect-to")),
+		µ.Param(param.String("url", &to)),
+		µ.FMap(
+			func() error {
+				redirect, err := url.Parse(to)
+				if err == nil {
+					return gouldian.Found(*redirect)
+				}
+				return gouldian.BadRequest("Invalid url: " + to)
+			},
+		),
+	)
 }
 
 func main() {
@@ -192,7 +233,7 @@ func main() {
 			delete(), get(), patch(), post(), put(),
 			bearer(),
 			status(),
-			header(), ip(), ua(),
+			head(), ip(), ua(),
 			redirect1(), redirectN(), redirectTo(),
 		),
 	)
