@@ -27,7 +27,7 @@ Package header defines primitives to match Headers of HTTP requests.
 		)
 	)
 	Json := mock.Header("Content-Type", "application/json")
-	endpoint.IsMatch(mock.Input(Json)) == true
+	endpoint(mock.Input(Json)) == nil
 
 */
 package header
@@ -39,10 +39,10 @@ import (
 	"github.com/fogfish/gouldian/core"
 )
 
-// Arrow is a type-safe definition of URL Query matcher
+// Arrow is a type-safe definition of Header matcher
 type Arrow func(map[string]string) error
 
-// Or is a co-product of query param match arrows
+// Or is a co-product of header match arrows
 //   e := µ.GET(
 //     µ.Header(
 //       header.Or(
