@@ -1,5 +1,14 @@
 # User Guide
 
+- [Overview](#overview)
+- [Composition](#composition)
+- [Life-cycle](#life-cycle)
+- [Endpoint types](#endpoint-types)
+- [High-Order Endpoints](#high-order-endpoints)
+- [Mapping Endpoints](#mapping-endpoints)
+- [Outputs](#outputs)
+- [Unit Testing](#unit-testing)
+
 ## Overview
 
 An `core.Endpoint` is a key abstraction in the framework. It is a *pure function* that takes HTTP request as Input and return Output, result of request evaluation.
@@ -186,18 +195,25 @@ The library defines a type `core.AccessToken` and `func AccessToken(val *core.Ac
 
 ## High-order Endpoints
 
-Usage of combinators is an essential part to specify API from primitive endpoints. The library define `and-then` product and `or-else` coproduct combinators. They have been discussed earlier in this guide. 
+Usage of combinators is an essential part to specify API from primitive endpoints. The library define `and-then` product and `or-else` coproduct combinators. They have been discussed earlier in this guide. These combinator is an essential tools to declare re-usage high-order endpoints
 
 **Product endpoint**
 
 Use the product combinator to declare *conjunctive conditions*. All variadic functions implemented by the library are product.
 
 ```go
-// Endpoint product 
-both := core.Join(µ.Path(/*...*/), µ.Param(/*...*/))
+// High Order Product Endpoint
+//  /search?q=:text
+func search(q *string) core.Endpoint {
+  return core.Join(
+    µ.Path(path.Is("search")),
+    µ.Param(param.String("q", q))
+  )
+}
 
-// Path product
-both := µ.Path(path.String(/*... */), path.Int(/* ... */))
+// Use HoC
+var q string
+µ.GET( search(&q) )
 ```
 
 **Coproduct endpoint**
@@ -205,6 +221,20 @@ both := µ.Path(path.String(/*... */), path.Int(/* ... */))
 A co-product represents either-or endpoint evaluation.
 
 ```go
+// High Order CoProduct Endpoint
+//  /search?q=:text
+//  /search/:text
+func search(q *string) core.Endpoint {
+  return core.Or(
+    µ.Path(path.Is("search"), path.String(q)),
+    core.Join(
+      µ.Path(path.Is("search")),
+      µ.Param(param.String("q", q)),
+    ),
+  )
+}
+
+
 // Endpoint coproduct
 either := core.Or(µ.Path(/*...*/), µ.Path(/*...*/))
 
