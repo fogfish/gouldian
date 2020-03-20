@@ -82,7 +82,7 @@ func Header(header string, value string) Mock {
 func JSON(val interface{}) Mock {
 	return func(mock *core.Input) *core.Input {
 		body, _ := json.Marshal(val)
-		mock.Body = string(body)
+		mock.APIGatewayProxyRequest.Body = string(body)
 		return mock
 	}
 }
@@ -90,7 +90,7 @@ func JSON(val interface{}) Mock {
 // Text adds payload to mocked HTTP request
 func Text(val string) Mock {
 	return func(mock *core.Input) *core.Input {
-		mock.Body = val
+		mock.APIGatewayProxyRequest.Body = val
 		return mock
 	}
 }
