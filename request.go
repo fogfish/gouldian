@@ -190,7 +190,7 @@ func AccessToken(val *core.AccessToken) core.Endpoint {
 // JSON decodes HTTP payload to struct
 func JSON(val interface{}) core.Endpoint {
 	return func(req *core.Input) error {
-		err := json.Unmarshal([]byte(req.Body), val)
+		err := json.Unmarshal([]byte(req.APIGatewayProxyRequest.Body), val)
 		if err == nil {
 			return nil
 		}
@@ -203,8 +203,8 @@ func JSON(val interface{}) core.Endpoint {
 func Text(val *string) core.Endpoint {
 	return func(req *core.Input) error {
 		*val = ""
-		if req.Body != "" {
-			*val = req.Body
+		if req.APIGatewayProxyRequest.Body != "" {
+			*val = req.APIGatewayProxyRequest.Body
 			return nil
 		}
 		return core.NoMatch{}
