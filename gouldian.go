@@ -21,18 +21,17 @@ import (
 	"errors"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/fogfish/gouldian/core"
 )
 
 // Serve HTTP service
-func Serve(seq ...core.Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	api := core.Or(seq...)
+func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	api := Or(seq...)
 
 	return func(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		var output *Output
 		var issue *Issue
 
-		http := core.Request(req)
+		http := Request(req)
 		err := api(http)
 		if errors.As(err, &output) {
 			return events.APIGatewayProxyResponse{
@@ -47,7 +46,7 @@ func Serve(seq ...core.Endpoint) func(events.APIGatewayProxyRequest) (events.API
 				StatusCode: issue.Status,
 				Headers:    joinHead(defaultCORS(req), map[string]string{"Content-Type": "application/json"}),
 			}, nil
-		} else if errors.Is(err, core.NoMatch{}) {
+		} else if errors.Is(err, NoMatch{}) {
 			return events.APIGatewayProxyResponse{
 				StatusCode: 501,
 				Headers:    defaultCORS(req),

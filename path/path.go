@@ -30,25 +30,22 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/fogfish/gouldian/core"
+	µ "github.com/fogfish/gouldian"
 )
-
-// Arrow is a type-safe definition of URL segment matcher
-type Arrow func(string) error
 
 // Or is a co-product of path match arrows
 //   e := µ.GET( µ.Path(path.Or(path.Is("foo"), path.Is("bar"))) )
 //   e(mock.Input(mock.URL("/foo"))) == nil
 //   e(mock.Input(mock.URL("/bar"))) == nil
 //   e(mock.Input(mock.URL("/baz"))) != nil
-func Or(arrows ...Arrow) Arrow {
+func Or(arrows ...µ.ArrowPath) µ.ArrowPath {
 	return func(segment string) error {
 		for _, f := range arrows {
-			if err := f(segment); !errors.Is(err, core.NoMatch{}) {
+			if err := f(segment); !errors.Is(err, µ.NoMatch{}) {
 				return err
 			}
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -56,7 +53,7 @@ func Or(arrows ...Arrow) Arrow {
 //   e := µ.GET( µ.Path(path.Is("foo")) )
 //   e(mock.Input(mock.URL("/foo"))) == nil
 //   e(mock.Input(mock.URL("/bar"))) != nil
-func Is(val string) Arrow {
+func Is(val string) µ.ArrowPath {
 	if val == "*" {
 		return func(string) error { return nil }
 	}
@@ -65,7 +62,7 @@ func Is(val string) Arrow {
 		if segment == val {
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -73,7 +70,7 @@ func Is(val string) Arrow {
 //   e := µ.GET( µ.Path(path.Any()) )
 //   e(mock.Input(mock.URL("/foo"))) == nil
 //   e(mock.Input(mock.URL("/bar"))) == nil
-func Any() Arrow {
+func Any() µ.ArrowPath {
 	return func(string) error {
 		return nil
 	}
@@ -84,7 +81,7 @@ func Any() Arrow {
 //   e := µ.GET( µ.Path(path.String(&value)) )
 //   e(mock.Input(mock.URL("/foo"))) == nil && value == "foo"
 //   e(mock.Input(mock.URL("/1"))) == nil && value == "1"
-func String(val *string) Arrow {
+func String(val *string) µ.ArrowPath {
 	return func(segment string) error {
 		*val = segment
 		return nil
@@ -96,12 +93,12 @@ func String(val *string) Arrow {
 //   e := µ.GET( µ.Path(path.Int(&value)) )
 //   e(mock.Input(mock.URL("/1"))) == nil && value == 1
 //   e(mock.Input(mock.URL("/foo"))) != nil
-func Int(val *int) Arrow {
+func Int(val *int) µ.ArrowPath {
 	return func(segment string) error {
 		if value, err := strconv.Atoi(segment); err == nil {
 			*val = value
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }

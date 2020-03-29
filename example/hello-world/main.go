@@ -19,7 +19,6 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/path"
 )
 
@@ -27,7 +26,7 @@ func main() {
 	lambda.Start(µ.Serve(hello()))
 }
 
-func hello() core.Endpoint {
+func hello() µ.Endpoint {
 	return µ.GET(
 		µ.Path(path.Is("hello")),
 		µ.FMap(

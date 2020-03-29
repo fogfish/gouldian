@@ -11,7 +11,7 @@
 
 ## Overview
 
-A `core.Endpoint` is a key abstraction in the framework. It is a *pure function* that takes HTTP request as Input and return Output (result of request evaluation).
+A `µ.Endpoint` is a key abstraction in the framework. It is a *pure function* that takes HTTP request as Input and return Output (result of request evaluation).
 
 ```go
 /*
@@ -38,11 +38,11 @@ Golang is missing generics and type variance. Therefore, the Output is always an
 
 **and-then**
 
-Use `and-then` to build product Endpoint: `A × B ⟼ C`. The product type matches Input if each composed function successfully matches it. Compose them with `Then` function or variadic alternative `core.Join`.
+Use `and-then` to build product Endpoint: `A × B ⟼ C`. The product type matches Input if each composed function successfully matches it. Compose them with `Then` function or variadic alternative `µ.Join`.
 
 ```go
-var a: core.Endpoint = /* ... */
-var b: core.Endpoint = /* ... */
+var a: µ.Endpoint = /* ... */
+var b: µ.Endpoint = /* ... */
 
 //
 // You can use `Then` method declared for the Endpoint type
@@ -50,7 +50,7 @@ c := a.Then(b)
 
 //
 // Alternatively, variadic function `Join` does same for sequence of Endpoints
-c := core.Join(a, b)
+c := µ.Join(a, b)
 ```
 
 **or-else**
@@ -58,8 +58,8 @@ c := core.Join(a, b)
 Use `or-else` to build co-product Endpoint: `A ⨁ B ⟼ C`. The co-product is also known as sum-type that matches the first successful function.
 
 ```go
-var a: core.Endpoint = /* ... */
-var b: core.Endpoint = /* ... */
+var a: µ.Endpoint = /* ... */
+var b: µ.Endpoint = /* ... */
 
 //
 // You can use `Or` method declared for the Endpoint type
@@ -67,7 +67,7 @@ c := a.Or(b)
 
 //
 // Alternatively, variadic `Or` variant does same for sequence of Endpoints
-c := core.Or(a, b)
+c := µ.Or(a, b)
 ```
 
 These rules of Endpoint composition allow developers to build any complex HTTP request handling from small re-usable block.
@@ -99,10 +99,10 @@ Gouldian library delivers set of built-in endpoints to deal with HTTP request pr
 
 **Match HTTP Verb/Method**
 
-`func Method(verb string) core.Endpoint` builds the `Endpoint` that matches HTTP Verb. You supplies either a valid HTTP Verb or wildcard to match anything.
+`func Method(verb string) µ.Endpoint` builds the `Endpoint` that matches HTTP Verb. You supplies either a valid HTTP Verb or wildcard to match anything.
 
 ```go
-e := core.Join(µ.Method("GET"), /* ... */)
+e := µ.Join(µ.Method("GET"), /* ... */)
 e(mock.Input())
 
 // The library implements a syntax sugar for mostly used HTTP Verbs
@@ -112,7 +112,7 @@ e(mock.Input())
 
 **Match Path**
 
-`func Path(arrows ...path.Arrow) core.Endpoint` builds the `Endpoint` that matches URL path from HTTP request. The endpoint considers the path as an ordered sequence of segments, it takes a corresponding product of segment pattern matchers/extractors (they are defined in [`path`](../path/path.go) package).
+`func Path(arrows ...path.Arrow) µ.Endpoint` builds the `Endpoint` that matches URL path from HTTP request. The endpoint considers the path as an ordered sequence of segments, it takes a corresponding product of segment pattern matchers/extractors (they are defined in [`path`](../path/path.go) package).
 
 ```go
 e := µ.Path(path.Is("foo"), path.Is("bar"))
@@ -144,7 +144,7 @@ e(mock.Input(mock.URL("/foo/bar")))
 
 A handing of query string params for HTTP request is consistent with matching/extracting path segments.
 
-`func Param(arrows ...param.Arrow) core.Endpoint` builds the `Endpoint` that matches URL query string from HTTP request. The endpoint considers a query params as a hashmap, it takes a product of params matchers/extractors (they are defined in [`param`](../param/param.go) package). Functions `param.Is` and `param.Any` matches query params; `param.String`, `param.MaybeString`, `param.Int` and `param.MaybeInt` extracts values.
+`func Param(arrows ...param.Arrow) µ.Endpoint` builds the `Endpoint` that matches URL query string from HTTP request. The endpoint considers a query params as a hashmap, it takes a product of params matchers/extractors (they are defined in [`param`](../param/param.go) package). Functions `param.Is` and `param.Any` matches query params; `param.String`, `param.MaybeString`, `param.Int` and `param.MaybeInt` extracts values.
 
 ```go
 var text string
@@ -159,7 +159,7 @@ e(mock.Input(mock.URL("/?foo=bar&q=text")))
 
 A handing of HTTP headers is consistent with matching/extracting path segments.
 
-`func Header(arrows ...header.Arrow) core.Endpoint` builds the `Endpoint` that matches HTTP request headers. The endpoint considers headers as a hashmap, it takes a product of header matchers/extractors (they are defined in [`header`](../header/header.go) package). Functions `header.Is` and `header.Any` matches headers; `header.String`, `header.MaybeString`, `header.Int` and `header.MaybeInt` extracts values.
+`func Header(arrows ...header.Arrow) µ.Endpoint` builds the `Endpoint` that matches HTTP request headers. The endpoint considers headers as a hashmap, it takes a product of header matchers/extractors (they are defined in [`header`](../header/header.go) package). Functions `header.Is` and `header.Any` matches headers; `header.String`, `header.MaybeString`, `header.Int` and `header.MaybeInt` extracts values.
 
 ```go
 var length int
@@ -189,7 +189,7 @@ e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
 
 **Authentication with AWS Cognito**
 
-The library defines a type `core.AccessToken` and `func AccessToken(val *core.AccessToken) core.Endpoint` to extract JWT access token, which is provided by AWS Cognito service.
+The library defines a type `µ.AccessToken` and `func JWT(val *µ.AccessToken) µ.Endpoint` to extract JWT access token, which is provided by AWS Cognito service.
 
 
 ## High-order Endpoints
@@ -203,8 +203,8 @@ Use the product combinator to declare *conjunctive conditions*.
 ```go
 // High Order Product Endpoint
 //  /search?q=:text
-func search(q *string) core.Endpoint {
-  return core.Join(
+func search(q *string) µ.Endpoint {
+  return µ.Join(
     µ.Path(path.Is("search")),
     µ.Param(param.String("q", q))
   )
@@ -223,10 +223,10 @@ A co-product represents either-or endpoint evaluation.
 // High Order CoProduct Endpoint
 //  /search?q=:text
 //  /search/:text
-func search(q *string) core.Endpoint {
-  return core.Or(
+func search(q *string) µ.Endpoint {
+  return µ.Or(
     µ.Path(path.Is("search"), path.String(q)),
-    core.Join(
+    µ.Join(
       µ.Path(path.Is("search")),
       µ.Param(param.String("q", q)),
     ),
@@ -240,7 +240,7 @@ var q string
 
 ## Mapping Endpoints
 
-A business logic is defined as Endpoint mapper with help of closure functions `Ø ⟼ Output`. The library provides `func FMap(f func() error) core.Endpoint` function. It lifts a transformer into Endpoint so that it is composable with other Endpoints.
+A business logic is defined as Endpoint mapper with help of closure functions `Ø ⟼ Output`. The library provides `func FMap(f func() error) µ.Endpoint` function. It lifts a transformer into Endpoint so that it is composable with other Endpoints.
 
 ```go
 µ.GET(

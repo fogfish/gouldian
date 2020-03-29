@@ -100,3 +100,21 @@ func TestHeaderMaybeInt(t *testing.T) {
 		If(foo(failure)).Should().Equal(nil).
 		If(value).Should().Equal(0)
 }
+
+func TestParamOr(t *testing.T) {
+	foo := µ.GET(µ.Header(
+		header.Or(
+			header.Is("Content-Type", "application/json"),
+			header.Is("Content-Type", "text/html"),
+		),
+	))
+
+	success1 := mock.Input(mock.Header("Content-Type", "application/json"))
+	success2 := mock.Input(mock.Header("Content-Type", "text/html"))
+	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
+
+	it.Ok(t).
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}

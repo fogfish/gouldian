@@ -36,11 +36,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/fogfish/gouldian/core"
+	µ "github.com/fogfish/gouldian"
 )
-
-// Arrow is a type-safe definition of Header matcher
-type Arrow func(map[string]string) error
 
 // Or is a co-product of header match arrows
 //   e := µ.GET(
@@ -54,14 +51,14 @@ type Arrow func(map[string]string) error
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
 //   e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
 //   e(mock.Input(mock.Header("Content-Type", "text/html"))) != nil
-func Or(arrows ...Arrow) Arrow {
+func Or(arrows ...µ.ArrowHeader) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		for _, f := range arrows {
-			if err := f(headers); !errors.Is(err, core.NoMatch{}) {
+			if err := f(headers); !errors.Is(err, µ.NoMatch{}) {
 				return err
 			}
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -69,13 +66,13 @@ func Or(arrows ...Arrow) Arrow {
 //   e := µ.GET( µ.Header(header.Is("Content-Type", "application/json")) )
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
 //   e(mock.Input(mock.Header("Content-Type", "text/plain"))) != nil
-func Is(key string, val string) Arrow {
+func Is(key string, val string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
 		if exists && opt == val {
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -84,13 +81,13 @@ func Is(key string, val string) Arrow {
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
 //   e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
 //   e(mock.Input()) != nil
-func Any(key string) Arrow {
+func Any(key string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		_, exists := headers[key]
 		if exists {
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -100,14 +97,14 @@ func Any(key string) Arrow {
 //   e := µ.GET( µ.Header(header.String("Content-Type", &value)) )
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
 //   e(mock.Input()) != nil
-func String(key string, val *string) Arrow {
+func String(key string, val *string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
 		if exists {
 			*val = opt
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -117,7 +114,7 @@ func String(key string, val *string) Arrow {
 //   e := µ.GET( µ.Header(header.String("foo", &value)) )
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
 //   e(mock.Input()) == nil
-func MaybeString(key string, val *string) Arrow {
+func MaybeString(key string, val *string) µ.ArrowHeader {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
 		*val = ""
@@ -134,7 +131,7 @@ func MaybeString(key string, val *string) Arrow {
 //   e := µ.GET( µ.Header(header.Int("Content-Length", &value)) )
 //   e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
 //   e(mock.Input()) != nil
-func Int(key string, val *int) Arrow {
+func Int(key string, val *int) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
 		if exists {
@@ -143,7 +140,7 @@ func Int(key string, val *int) Arrow {
 				return nil
 			}
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -153,7 +150,7 @@ func Int(key string, val *int) Arrow {
 //   e := µ.GET( µ.Header(header.MaybeInt("Content-Length", &value)) )
 //   e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
 //   e(mock.Input()) == nil
-func MaybeInt(key string, val *int) Arrow {
+func MaybeInt(key string, val *int) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		opt, exists := headers[key]
 		*val = 0

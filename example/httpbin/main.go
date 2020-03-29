@@ -24,7 +24,6 @@ import (
 
 	"github.com/fogfish/gouldian"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/header"
 	"github.com/fogfish/gouldian/param"
 	"github.com/fogfish/gouldian/path"
@@ -49,10 +48,10 @@ type response struct {
 //
 //-----------------------------------------------------------------------------
 
-func anyMethod(subpath string) core.Endpoint {
+func anyMethod(subpath string) µ.Endpoint {
 	var h headers
 
-	return core.Join(
+	return µ.Join(
 		µ.Path(path.Is(subpath)),
 		µ.Header(
 			header.MaybeString("Accept", &h.Accept),
@@ -70,23 +69,23 @@ func anyMethod(subpath string) core.Endpoint {
 	)
 }
 
-func delete() core.Endpoint {
+func delete() µ.Endpoint {
 	return µ.DELETE(anyMethod("delete"))
 }
 
-func get() core.Endpoint {
+func get() µ.Endpoint {
 	return µ.GET(anyMethod("get"))
 }
 
-func patch() core.Endpoint {
+func patch() µ.Endpoint {
 	return µ.PATCH(anyMethod("patch"))
 }
 
-func post() core.Endpoint {
+func post() µ.Endpoint {
 	return µ.POST(anyMethod("post"))
 }
 
-func put() core.Endpoint {
+func put() µ.Endpoint {
 	return µ.PUT(anyMethod("put"))
 }
 
@@ -96,7 +95,7 @@ func put() core.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func bearer() core.Endpoint {
+func bearer() µ.Endpoint {
 	var token string
 	return µ.GET(
 		µ.Path(path.Is("bearer")),
@@ -115,7 +114,7 @@ func bearer() core.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func status() core.Endpoint {
+func status() µ.Endpoint {
 	var code int
 	return µ.GET(
 		µ.Path(path.Is("status"), path.Int(&code)),
@@ -133,7 +132,7 @@ func status() core.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func head() core.Endpoint {
+func head() µ.Endpoint {
 	var h headers
 
 	return µ.GET(
@@ -153,7 +152,7 @@ func head() core.Endpoint {
 	)
 }
 
-func ip() core.Endpoint {
+func ip() µ.Endpoint {
 	var ip string
 	return µ.GET(
 		µ.Path(path.Is("ip")),
@@ -166,7 +165,7 @@ func ip() core.Endpoint {
 	)
 }
 
-func ua() core.Endpoint {
+func ua() µ.Endpoint {
 	var ua string
 	return µ.GET(
 		µ.Path(path.Is("user-agent")),
@@ -185,7 +184,7 @@ func ua() core.Endpoint {
 //
 //-----------------------------------------------------------------------------
 
-func redirect1() core.Endpoint {
+func redirect1() µ.Endpoint {
 	return µ.GET(
 		µ.Path(path.Is("redirect"), path.Is("1")),
 		µ.FMap(
@@ -196,7 +195,7 @@ func redirect1() core.Endpoint {
 	)
 }
 
-func redirectN() core.Endpoint {
+func redirectN() µ.Endpoint {
 	var host string
 	var n int
 	return µ.GET(
@@ -210,7 +209,7 @@ func redirectN() core.Endpoint {
 	)
 }
 
-func redirectTo() core.Endpoint {
+func redirectTo() µ.Endpoint {
 	var to string
 	return µ.GET(
 		µ.Path(path.Is("redirect-to")),

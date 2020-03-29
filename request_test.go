@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/header"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/param"
@@ -142,9 +141,9 @@ func TestHeader(t *testing.T) {
 		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
-func TestAccessToken(t *testing.T) {
-	var token core.AccessToken
-	foo := µ.GET(µ.AccessToken(&token))
+func TestJWT(t *testing.T) {
+	var token µ.AccessToken
+	foo := µ.GET(µ.JWT(&token))
 	req := mock.Input(
 		mock.Auth(
 			map[string]interface{}{
@@ -220,7 +219,7 @@ func TestFMap2Success(t *testing.T) {
 	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
-		If(core.Or(foo, bar)(req)).Should().Assert(
+		If(µ.Or(foo, bar)(req)).Should().Assert(
 		func(be interface{}) bool {
 			return be.(error).Error() == "bar"
 		},

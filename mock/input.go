@@ -22,15 +22,15 @@ import (
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/fogfish/gouldian/core"
+	µ "github.com/fogfish/gouldian"
 )
 
 // Mock is an option type to customize mock event
-type Mock func(*core.Input) *core.Input
+type Mock func(*µ.Input) *µ.Input
 
 // Input mocks HTTP event, takes mock options to customize event
-func Input(spec ...Mock) *core.Input {
-	input := core.Request(
+func Input(spec ...Mock) *µ.Input {
+	input := µ.Request(
 		events.APIGatewayProxyRequest{
 			HTTPMethod: "GET",
 			Path:       "/",
@@ -45,7 +45,7 @@ func Input(spec ...Mock) *core.Input {
 
 // Method changes the verb of mocked HTTP request
 func Method(verb string) Mock {
-	return func(mock *core.Input) *core.Input {
+	return func(mock *µ.Input) *µ.Input {
 		mock.APIGatewayProxyRequest.HTTPMethod = verb
 		return mock
 	}
@@ -53,7 +53,7 @@ func Method(verb string) Mock {
 
 // URL changes URL of mocked HTTP request
 func URL(httpURL string) Mock {
-	return func(mock *core.Input) *core.Input {
+	return func(mock *µ.Input) *µ.Input {
 		uri, _ := url.Parse(httpURL)
 		query := map[string]string{}
 		for key, val := range uri.Query() {
@@ -72,7 +72,7 @@ func URL(httpURL string) Mock {
 
 // Header adds Header to mocked HTTP request
 func Header(header string, value string) Mock {
-	return func(mock *core.Input) *core.Input {
+	return func(mock *µ.Input) *µ.Input {
 		mock.APIGatewayProxyRequest.Headers[header] = value
 		return mock
 	}
@@ -80,7 +80,7 @@ func Header(header string, value string) Mock {
 
 // JSON adds payload to mocked HTTP request
 func JSON(val interface{}) Mock {
-	return func(mock *core.Input) *core.Input {
+	return func(mock *µ.Input) *µ.Input {
 		body, _ := json.Marshal(val)
 		mock.APIGatewayProxyRequest.Body = string(body)
 		return mock
@@ -89,7 +89,7 @@ func JSON(val interface{}) Mock {
 
 // Text adds payload to mocked HTTP request
 func Text(val string) Mock {
-	return func(mock *core.Input) *core.Input {
+	return func(mock *µ.Input) *µ.Input {
 		mock.APIGatewayProxyRequest.Body = val
 		return mock
 	}
@@ -97,7 +97,7 @@ func Text(val string) Mock {
 
 // Auth adds Authorizer payload to mocked HTTP request
 func Auth(claims map[string]interface{}) Mock {
-	return func(mock *core.Input) *core.Input {
+	return func(mock *µ.Input) *µ.Input {
 		mock.RequestContext = events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"claims": claims,
