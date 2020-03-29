@@ -106,3 +106,17 @@ func TestParamMaybeInt(t *testing.T) {
 		If(foo(failure)).Should().Equal(nil).
 		If(value).Should().Equal(0)
 }
+
+func TestParamOr(t *testing.T) {
+	foo := µ.GET(µ.Param(
+		param.Or(param.Any("foo"), param.Any("bar")),
+	))
+	success1 := mock.Input(mock.URL("/?foo"))
+	success2 := mock.Input(mock.URL("/?bar"))
+	failure := mock.Input(mock.URL("/?baz"))
+
+	it.Ok(t).
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
