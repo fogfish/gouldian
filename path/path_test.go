@@ -37,12 +37,15 @@ func TestPathIs(t *testing.T) {
 
 func TestPathAny(t *testing.T) {
 	foo := µ.GET(µ.Path(path.Is("foo"), path.Any()))
+	bar := µ.GET(µ.Path(path.Is("foo"), path.Is("*")))
 	success1 := mock.Input(mock.URL("/foo/bar"))
 	success2 := mock.Input(mock.URL("/foo/foo"))
 
 	it.Ok(t).
 		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil)
+		If(foo(success2)).Should().Equal(nil).
+		If(bar(success1)).Should().Equal(nil).
+		If(bar(success2)).Should().Equal(nil)
 }
 
 func TestPathString(t *testing.T) {
