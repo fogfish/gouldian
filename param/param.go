@@ -30,25 +30,22 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/fogfish/gouldian/core"
+	µ "github.com/fogfish/gouldian"
 )
-
-// Arrow is a type-safe definition of URL Query matcher
-type Arrow func(map[string]string) error
 
 // Or is a co-product of query param match arrows
 //   e := µ.GET( µ.Param(param.Or(param.Is("foo", "bar"), param.Is("bar", "foo"))) )
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil
 //   e(mock.Input(mock.URL("/?bar=foo"))) == nil
 //   e(mock.Input(mock.URL("/?foo=baz"))) != nil
-func Or(arrows ...Arrow) Arrow {
+func Or(arrows ...µ.ArrowParam) µ.ArrowParam {
 	return func(params map[string]string) error {
 		for _, f := range arrows {
-			if err := f(params); !errors.Is(err, core.NoMatch{}) {
+			if err := f(params); !errors.Is(err, µ.NoMatch{}) {
 				return err
 			}
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -56,13 +53,13 @@ func Or(arrows ...Arrow) Arrow {
 //   e := µ.GET( µ.Param(param.Is("foo", "bar")) )
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil
 //   e(mock.Input(mock.URL("/?bar=foo"))) != nil
-func Is(key string, val string) Arrow {
+func Is(key string, val string) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
 		if exists && opt == val {
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -72,13 +69,13 @@ func Is(key string, val string) Arrow {
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil
 //   e(mock.Input(mock.URL("/?foo=baz"))) == nil
 //   e(mock.Input(mock.URL("/?bar=foo"))) != nil
-func Any(key string) Arrow {
+func Any(key string) µ.ArrowParam {
 	return func(params map[string]string) error {
 		_, exists := params[key]
 		if exists {
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -88,14 +85,14 @@ func Any(key string) Arrow {
 //   e := µ.GET( µ.Param(param.String("foo", &value)) )
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == "bar"
 //   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == "1"
-func String(key string, val *string) Arrow {
+func String(key string, val *string) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
 		if exists {
 			*val = opt
 			return nil
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -105,7 +102,7 @@ func String(key string, val *string) Arrow {
 //   e := µ.GET( µ.Param(param.String("foo", &value)) )
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == "bar"
 //   e(mock.Input(mock.URL("/?bar=1"))) == nil && value == ""
-func MaybeString(key string, val *string) Arrow {
+func MaybeString(key string, val *string) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
 		*val = ""
@@ -122,7 +119,7 @@ func MaybeString(key string, val *string) Arrow {
 //   e := µ.GET( µ.Param(param.Int("foo", &value)) )
 //   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
 //   e(mock.Input(mock.URL("/?foo=bar"))) != nil
-func Int(key string, val *int) Arrow {
+func Int(key string, val *int) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
 		if exists {
@@ -131,7 +128,7 @@ func Int(key string, val *int) Arrow {
 				return nil
 			}
 		}
-		return core.NoMatch{}
+		return µ.NoMatch{}
 	}
 }
 
@@ -141,7 +138,7 @@ func Int(key string, val *int) Arrow {
 //   e := µ.GET( µ.Param(param.Int("foo", &value)) )
 //   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == 0
-func MaybeInt(key string, val *int) Arrow {
+func MaybeInt(key string, val *int) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
 		*val = 0

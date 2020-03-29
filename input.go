@@ -14,10 +14,26 @@
 //   limitations under the License.
 //
 
-package core
+package gouldian
 
-// AccessToken is a container for user identity
-type AccessToken struct {
-	Sub   string
-	Scope string
+import (
+	"strings"
+
+	"github.com/aws/aws-lambda-go/events"
+)
+
+// Input wraps HTTP request
+type Input struct {
+	events.APIGatewayProxyRequest
+	Path []string
+	Body string
+}
+
+// Request creates new Input from API Gateway request
+func Request(req events.APIGatewayProxyRequest) *Input {
+	segments := strings.Split(req.Path, "/")[1:]
+	if len(segments) == 1 && segments[0] == "" {
+		segments = []string{}
+	}
+	return &Input{req, segments, ""}
 }

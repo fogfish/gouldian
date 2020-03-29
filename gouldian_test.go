@@ -21,7 +21,6 @@ import (
 
 	"github.com/fogfish/gouldian"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/path"
 	"github.com/fogfish/it"
@@ -46,7 +45,7 @@ func TestServeSuccess(t *testing.T) {
 		If(rsp.Body).Should().Equal("Hello World!")
 }
 
-func hello() core.Endpoint {
+func hello() µ.Endpoint {
 	return µ.GET(
 		µ.Path(path.Is("hello")),
 		µ.FMap(

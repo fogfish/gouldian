@@ -18,72 +18,76 @@ package gouldian
 
 import (
 	"encoding/json"
-
-	"github.com/fogfish/gouldian/core"
-	"github.com/fogfish/gouldian/header"
-	"github.com/fogfish/gouldian/param"
-	"github.com/fogfish/gouldian/path"
 )
+
+// ArrowHeader is a type-safe definition of Header matcher
+type ArrowHeader func(map[string]string) error
+
+// ArrowParam is a type-safe definition of URL Query matcher
+type ArrowParam func(map[string]string) error
+
+// ArrowPath is a type-safe definition of URL segment matcher
+type ArrowPath func(string) error
 
 // DELETE composes product Endpoint match HTTP DELETE request.
 //   e := µ.DELETE()
 //   e(mock.Input(mock.Method("DELETE"))) == nil
 //   e(mock.Input(mock.Method("OTHER"))) != nil
-func DELETE(arrows ...core.Endpoint) core.Endpoint {
-	return Method("DELETE").Then(core.Join(arrows...))
+func DELETE(arrows ...Endpoint) Endpoint {
+	return Method("DELETE").Then(Join(arrows...))
 }
 
 // GET composes product Endpoint match HTTP GET request.
 //   e := µ.GET()
 //   e(mock.Input(mock.Method("GET"))) == nil
 //   e(mock.Input(mock.Method("OTHER"))) != nil
-func GET(arrows ...core.Endpoint) core.Endpoint {
-	return Method("GET").Then(core.Join(arrows...))
+func GET(arrows ...Endpoint) Endpoint {
+	return Method("GET").Then(Join(arrows...))
 }
 
 // PATCH composes product Endpoint match HTTP PATCH request.
 //   e := µ.PATCH()
 //   e(mock.Input(mock.Method("PATCH"))) == nil
 //   e(mock.Input(mock.Method("OTHER"))) != nil
-func PATCH(arrows ...core.Endpoint) core.Endpoint {
-	return Method("PATCH").Then(core.Join(arrows...))
+func PATCH(arrows ...Endpoint) Endpoint {
+	return Method("PATCH").Then(Join(arrows...))
 }
 
 // POST composes product Endpoint match HTTP POST request.
 //   e := µ.POST()
 //   e(mock.Input(mock.Method("POST"))) == nil
 //   e(mock.Input(mock.Method("OTHER"))) != nil
-func POST(arrows ...core.Endpoint) core.Endpoint {
-	return Method("POST").Then(core.Join(arrows...))
+func POST(arrows ...Endpoint) Endpoint {
+	return Method("POST").Then(Join(arrows...))
 }
 
 // PUT composes product Endpoint match HTTP PUT request.
 //   e := µ.PUT()
 //   e(mock.Input(mock.Method("PUT"))) == nil
 //   e(mock.Input(mock.Method("OTHER"))) != nil
-func PUT(arrows ...core.Endpoint) core.Endpoint {
-	return Method("PUT").Then(core.Join(arrows...))
+func PUT(arrows ...Endpoint) Endpoint {
+	return Method("PUT").Then(Join(arrows...))
 }
 
 // ANY composes product Endpoint match HTTP PUT request.
 //   e := µ.ANY()
 //   e(mock.Input(mock.Method("PUT"))) == nil
 //   e(mock.Input(mock.Method("OTHER"))) == nil
-func ANY(arrows ...core.Endpoint) core.Endpoint {
-	return Method("*").Then(core.Join(arrows...))
+func ANY(arrows ...Endpoint) Endpoint {
+	return Method("*").Then(Join(arrows...))
 }
 
 // Method is an endpoint to match HTTP verb request
-func Method(verb string) core.Endpoint {
+func Method(verb string) Endpoint {
 	if verb == "*" {
-		return func(http *core.Input) error { return nil }
+		return func(http *Input) error { return nil }
 	}
 
-	return func(http *core.Input) error {
+	return func(http *Input) error {
 		if http.HTTPMethod == verb {
 			return nil
 		}
-		return core.NoMatch{}
+		return NoMatch{}
 	}
 }
 
@@ -95,19 +99,19 @@ func Method(verb string) core.Endpoint {
 //   e := µ.GET( µ.Path(path.Is("foo")) )
 //   e(mock.Input(mock.URL("/foo"))) == nil
 //   e(mock.Input(mock.URL("/bar"))) != nil
-func Path(arrows ...path.Arrow) core.Endpoint {
-	return func(req *core.Input) error {
+func Path(arrows ...ArrowPath) Endpoint {
+	return func(req *Input) error {
 		plen := len(req.Path)
 		if len(arrows) == 0 {
 			if plen == 0 {
 				return nil
 			}
-			return core.NoMatch{}
+			return NoMatch{}
 		}
 
 		for i, f := range arrows {
 			if i == plen {
-				return core.NoMatch{}
+				return NoMatch{}
 			}
 			if err := f(req.Path[i]); err != nil {
 				return err
@@ -126,8 +130,8 @@ func Path(arrows ...path.Arrow) core.Endpoint {
 //   e := µ.GET( µ.Param(param.Is("foo", "bar")) )
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil
 //   e(mock.Input(mock.URL("/?foo=baz"))) != nil
-func Param(arrows ...param.Arrow) core.Endpoint {
-	return func(req *core.Input) error {
+func Param(arrows ...ArrowParam) Endpoint {
+	return func(req *Input) error {
 		for _, f := range arrows {
 			if err := f(req.APIGatewayProxyRequest.QueryStringParameters); err != nil {
 				return err
@@ -153,8 +157,8 @@ func Param(arrows ...param.Arrow) core.Endpoint {
 //
 //   Text := mock.Header("Content-Type", "text/plain")
 //   e(mock.Input(Text)) != nil
-func Header(arrows ...header.Arrow) core.Endpoint {
-	return func(req *core.Input) error {
+func Header(arrows ...ArrowHeader) Endpoint {
+	return func(req *Input) error {
 		for _, f := range arrows {
 			if err := f(req.APIGatewayProxyRequest.Headers); err != nil {
 				return err
@@ -164,18 +168,18 @@ func Header(arrows ...header.Arrow) core.Endpoint {
 	}
 }
 
-// AccessToken decodes JWT token associated with the request.
+// JWT decodes token associated with the request.
 // Endpoint fails if Authentication context is not found in the request.
-func AccessToken(val *core.AccessToken) core.Endpoint {
-	return func(req *core.Input) error {
+func JWT(val *AccessToken) Endpoint {
+	return func(req *Input) error {
 		if req.RequestContext.Authorizer == nil {
-			return core.NoMatch{}
+			return NoMatch{}
 		}
 
 		if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
 			switch tkn := jwt.(type) {
 			case map[string]interface{}:
-				*val = core.AccessToken{
+				*val = AccessToken{
 					Sub:   tkn["sub"].(string),
 					Scope: tkn["scope"].(string),
 				}
@@ -183,36 +187,36 @@ func AccessToken(val *core.AccessToken) core.Endpoint {
 			}
 		}
 
-		return core.NoMatch{}
+		return NoMatch{}
 	}
 }
 
 // JSON decodes HTTP payload to struct
-func JSON(val interface{}) core.Endpoint {
-	return func(req *core.Input) error {
+func JSON(val interface{}) Endpoint {
+	return func(req *Input) error {
 		err := json.Unmarshal([]byte(req.APIGatewayProxyRequest.Body), val)
 		if err == nil {
 			return nil
 		}
 		// TODO: pass error to api client
-		return core.NoMatch{}
+		return NoMatch{}
 	}
 }
 
 // Text decodes HTTP payload to closed variable
-func Text(val *string) core.Endpoint {
-	return func(req *core.Input) error {
+func Text(val *string) Endpoint {
+	return func(req *Input) error {
 		*val = ""
 		if req.APIGatewayProxyRequest.Body != "" {
 			*val = req.APIGatewayProxyRequest.Body
 			return nil
 		}
-		return core.NoMatch{}
+		return NoMatch{}
 	}
 }
 
 // FMap applies clojure to matched HTTP request.
 // A business logic in gouldian is an endpoint transformation.
-func FMap(f func() error) core.Endpoint {
-	return func(*core.Input) error { return f() }
+func FMap(f func() error) Endpoint {
+	return func(*Input) error { return f() }
 }

@@ -59,7 +59,6 @@ package main
 import (
 	"github.com/aws/aws-lambda-go/lambda"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/core"
 	"github.com/fogfish/gouldian/path"
 )
 
@@ -67,7 +66,7 @@ func main() {
 	lambda.Start(µ.Serve(hello()))
 }
 
-func hello() core.Endpoint {
+func hello() µ.Endpoint {
 	return µ.GET(
 		µ.Path(path.Is("hello")),
 		µ.FMap(
@@ -83,9 +82,9 @@ See [example](example) folder for advanced use-case. The library  [api specifica
 
 ## Next steps
 
-* Study [Endpoint](core/endpoint.go) type and its composition
+* Study [User Guide](doc/user-guide.md).
 
-* Check build-in [collection of endpoints](request.go) to deal with HTTP request. See types: [HTTP](http://godoc.org/github.com/fogfish/gouldian/#HTTP), [APIGateway](http://godoc.org/github.com/fogfish/gouldian/#APIGateway)
+* Check build-in collection of endpoints to deal with HTTP request: [path](path/path.go), [query param](param/param.go), [http header](header/header.go), [body and other](request.go) 
 
 * Endpoint always returns some `Output` that defines HTTP response. There are three cases of output: HTTP Success, HTTP Failure and general error. See [Output](http://godoc.org/github.com/fogfish/gouldian/#Output), [Issue](http://godoc.org/github.com/fogfish/gouldian/#Issue) types.
 
