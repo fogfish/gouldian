@@ -35,6 +35,26 @@ func TestHeaderIs(t *testing.T) {
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
+func TestContentJSON(t *testing.T) {
+	foo := µ.GET(µ.Header(header.ContentJSON()))
+	success := mock.Input(mock.Header("Content-Type", "application/json"))
+	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
+func TestContentForm(t *testing.T) {
+	foo := µ.GET(µ.Header(header.ContentForm()))
+	success := mock.Input(mock.Header("Content-Type", "application/x-www-form-urlencoded"))
+	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
 func TestHeaderAny(t *testing.T) {
 	foo := µ.GET(µ.Header(header.Any("Content-Type")))
 	success1 := mock.Input(mock.Header("Content-Type", "application/json"))

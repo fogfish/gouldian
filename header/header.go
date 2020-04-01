@@ -76,6 +76,16 @@ func Is(key string, val string) µ.ArrowHeader {
 	}
 }
 
+// ContentJSON is a syntax sugar to header.Is("Content-Type", "application/json")
+func ContentJSON() µ.ArrowHeader {
+	return Is("Content-Type", "application/json")
+}
+
+// ContentForm is a syntax sugar to header.Is("Content-Type", "application/x-www-form-urlencoded")
+func ContentForm() µ.ArrowHeader {
+	return Is("Content-Type", "application/x-www-form-urlencoded")
+}
+
 // Any is a wildcard matcher of header. It fails if header is not defined.
 //   e := µ.GET( µ.Header(header.Any("Content-Type")) )
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil

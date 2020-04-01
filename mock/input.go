@@ -82,6 +82,7 @@ func Header(header string, value string) Mock {
 func JSON(val interface{}) Mock {
 	return func(mock *µ.Input) *µ.Input {
 		body, _ := json.Marshal(val)
+		mock.APIGatewayProxyRequest.Headers["Content-Type"] = "application/json"
 		mock.APIGatewayProxyRequest.Body = string(body)
 		return mock
 	}
