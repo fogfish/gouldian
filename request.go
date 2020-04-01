@@ -17,7 +17,11 @@
 package gouldian
 
 import (
+	"bytes"
 	"encoding/json"
+	"strings"
+
+	"github.com/ajg/form"
 )
 
 // ArrowHeader is a type-safe definition of Header matcher
@@ -191,16 +195,35 @@ func JWT(val *AccessToken) Endpoint {
 	}
 }
 
-// JSON decodes HTTP payload to struct
-func JSON(val interface{}) Endpoint {
+//
+func Body(val interface{}) Endpoint {
 	return func(req *Input) error {
-		err := json.Unmarshal([]byte(req.APIGatewayProxyRequest.Body), val)
-		if err == nil {
-			return nil
+		content := req.APIGatewayProxyRequest.Headers["Content-Type"]
+		switch {
+		case strings.HasPrefix(content, "application/json"):
+			return decodeJSON(req.APIGatewayProxyRequest.Body, &val)
+		case strings.HasPrefix(content, "application/x-www-form-urlencoded"):
+			return decodeForm(req.APIGatewayProxyRequest.Body, &val)
 		}
+		return NoMatch{}
+	}
+}
+
+func decodeJSON(body string, val interface{}) error {
+	if err := json.Unmarshal([]byte(body), val); err != nil {
 		// TODO: pass error to api client
 		return NoMatch{}
 	}
+	return nil
+}
+
+func decodeForm(body string, val interface{}) error {
+	buf := bytes.NewBuffer([]byte(body))
+	if err := form.NewDecoder(buf).Decode(val); err != nil {
+		// TODO: pass error to api client
+		return NoMatch{}
+	}
+	return nil
 }
 
 // Text decodes HTTP payload to closed variable
