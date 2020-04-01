@@ -168,7 +168,10 @@ func TestBodyJSON(t *testing.T) {
 	var value foobar
 	foo := µ.GET(µ.Body(&value))
 	success := mock.Input(mock.JSON(foobar{"foo", 10}))
-	failure1 := mock.Input(mock.Text("foobar"))
+	failure1 := mock.Input(
+		mock.Header("Content-Type", "application/json"),
+		mock.Text("foobar"),
+	)
 	failure2 := mock.Input()
 
 	it.Ok(t).
@@ -185,7 +188,10 @@ func TestBodyForm(t *testing.T) {
 		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
 		mock.Text("foo=foo&bar=10"),
 	)
-	failure1 := mock.Input(mock.Text("foobar"))
+	failure1 := mock.Input(
+		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
+		mock.Text("foobar"),
+	)
 	failure2 := mock.Input()
 
 	it.Ok(t).
