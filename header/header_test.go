@@ -35,6 +35,16 @@ func TestHeaderIs(t *testing.T) {
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
+func TestHeaderIsLowerCase(t *testing.T) {
+	foo := µ.GET(µ.Header(header.Is("Content-Type", "application/json")))
+	success := mock.Input(mock.Header("content-type", "application/json"))
+	failure := mock.Input(mock.Header("content-type", "text/plain"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
 func TestContentJSON(t *testing.T) {
 	foo := µ.GET(µ.Header(header.ContentJSON()))
 	success := mock.Input(mock.Header("Content-Type", "application/json"))

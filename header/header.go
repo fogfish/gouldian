@@ -35,6 +35,7 @@ package header
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	µ "github.com/fogfish/gouldian"
 )
@@ -62,13 +63,23 @@ func Or(arrows ...µ.ArrowHeader) µ.ArrowHeader {
 	}
 }
 
+// value return header with lower case support
+func value(headers map[string]string, key string) (string, bool) {
+	v, exists := headers[key]
+	if !exists {
+		v, exists = headers[strings.ToLower(key)]
+		return v, exists
+	}
+	return v, exists
+}
+
 // Is matches a header to defined literal value
 //   e := µ.GET( µ.Header(header.Is("Content-Type", "application/json")) )
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
 //   e(mock.Input(mock.Header("Content-Type", "text/plain"))) != nil
 func Is(key string, val string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
-		opt, exists := headers[key]
+		opt, exists := value(headers, key)
 		if exists && opt == val {
 			return nil
 		}
@@ -93,7 +104,7 @@ func ContentForm() µ.ArrowHeader {
 //   e(mock.Input()) != nil
 func Any(key string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
-		_, exists := headers[key]
+		_, exists := value(headers, key)
 		if exists {
 			return nil
 		}
@@ -109,7 +120,7 @@ func Any(key string) µ.ArrowHeader {
 //   e(mock.Input()) != nil
 func String(key string, val *string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
-		opt, exists := headers[key]
+		opt, exists := value(headers, key)
 		if exists {
 			*val = opt
 			return nil
@@ -125,8 +136,8 @@ func String(key string, val *string) µ.ArrowHeader {
 //   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
 //   e(mock.Input()) == nil
 func MaybeString(key string, val *string) µ.ArrowHeader {
-	return func(params map[string]string) error {
-		opt, exists := params[key]
+	return func(headers map[string]string) error {
+		opt, exists := value(headers, key)
 		*val = ""
 		if exists {
 			*val = opt
@@ -143,7 +154,7 @@ func MaybeString(key string, val *string) µ.ArrowHeader {
 //   e(mock.Input()) != nil
 func Int(key string, val *int) µ.ArrowHeader {
 	return func(headers map[string]string) error {
-		opt, exists := headers[key]
+		opt, exists := value(headers, key)
 		if exists {
 			if value, err := strconv.Atoi(opt); err == nil {
 				*val = value
@@ -162,7 +173,7 @@ func Int(key string, val *int) µ.ArrowHeader {
 //   e(mock.Input()) == nil
 func MaybeInt(key string, val *int) µ.ArrowHeader {
 	return func(headers map[string]string) error {
-		opt, exists := headers[key]
+		opt, exists := value(headers, key)
 		*val = 0
 		if exists {
 			if value, err := strconv.Atoi(opt); err == nil {

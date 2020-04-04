@@ -86,8 +86,8 @@ func joinHead(a, b map[string]string) map[string]string {
 // NoMatchLogger logs the request
 func NoMatchLogger() Endpoint {
 	return func(req *Input) error {
-		bytes, _ := json.MarshalIndent(req, "|", "  ")
-		log.Printf("No Match: %v\n", string(bytes))
+		bytes, _ := json.Marshal(req)
+		log.Printf("No Match:\n%v\n", string(bytes))
 		return NoMatch{}
 	}
 }
