@@ -195,13 +195,10 @@ func JWT(val *AccessToken) Endpoint {
 	}
 }
 
-//
+// Body decodes HTTP request body to struct
 func Body(val interface{}) Endpoint {
 	return func(req *Input) error {
-		content, exists := req.APIGatewayProxyRequest.Headers["Content-Type"]
-		if !exists {
-			content = req.APIGatewayProxyRequest.Headers["content-type"]
-		}
+		content, _ := req.Header("Content-Type")
 		switch {
 		case strings.HasPrefix(content, "application/json"):
 			return decodeJSON(req.APIGatewayProxyRequest.Body, &val)
