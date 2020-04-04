@@ -167,7 +167,11 @@ type foobar struct {
 func TestBodyJSON(t *testing.T) {
 	var value foobar
 	foo := µ.GET(µ.Body(&value))
-	success := mock.Input(mock.JSON(foobar{"foo", 10}))
+	success1 := mock.Input(mock.JSON(foobar{"foo1", 10}))
+	success2 := mock.Input(
+		mock.Header("content-type", "application/json"),
+		mock.Text("{\"foo\":\"foo2\",\"bar\":10}"),
+	)
 	failure1 := mock.Input(
 		mock.Header("Content-Type", "application/json"),
 		mock.Text("foobar"),
@@ -175,8 +179,10 @@ func TestBodyJSON(t *testing.T) {
 	failure2 := mock.Input()
 
 	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(foobar{"foo", 10}).
+		If(foo(success1)).Should().Equal(nil).
+		If(value).Should().Equal(foobar{"foo1", 10}).
+		If(foo(success2)).Should().Equal(nil).
+		If(value).Should().Equal(foobar{"foo2", 10}).
 		If(foo(failure1)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
@@ -184,9 +190,13 @@ func TestBodyJSON(t *testing.T) {
 func TestBodyForm(t *testing.T) {
 	var value foobar
 	foo := µ.GET(µ.Body(&value))
-	success := mock.Input(
+	success1 := mock.Input(
 		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
-		mock.Text("foo=foo&bar=10"),
+		mock.Text("foo=foo1&bar=10"),
+	)
+	success2 := mock.Input(
+		mock.Header("content-type", "application/x-www-form-urlencoded"),
+		mock.Text("foo=foo2&bar=10"),
 	)
 	failure1 := mock.Input(
 		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
@@ -195,8 +205,10 @@ func TestBodyForm(t *testing.T) {
 	failure2 := mock.Input()
 
 	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(foobar{"foo", 10}).
+		If(foo(success1)).Should().Equal(nil).
+		If(value).Should().Equal(foobar{"foo1", 10}).
+		If(foo(success2)).Should().Equal(nil).
+		If(value).Should().Equal(foobar{"foo2", 10}).
 		If(foo(failure1)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
