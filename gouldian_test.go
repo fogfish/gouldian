@@ -19,7 +19,7 @@ package gouldian_test
 import (
 	"testing"
 
-	"github.com/fogfish/gouldian"
+	"github.com/aws/aws-lambda-go/events"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/path"
@@ -27,7 +27,7 @@ import (
 )
 
 func TestServeSuccess(t *testing.T) {
-	fun := gouldian.Serve(hello())
+	fun := µ.Serve(hello())
 	req := mock.Input(mock.URL("/hello"))
 	rsp, _ := fun(req.APIGatewayProxyRequest)
 
@@ -54,9 +54,8 @@ func hello() µ.Endpoint {
 	)
 }
 
-/*
 func TestServeFailure(t *testing.T) {
-	fun := gouldian.Serve(unauthorized())
+	fun := µ.Serve(unauthorized())
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/issue",
@@ -76,14 +75,15 @@ func TestServeFailure(t *testing.T) {
 		If(rsp.Body).Should().Equal("{\"type\":\"https://httpstatuses.com/401\",\"status\":401,\"title\":\"Unauthorized\",\"details\":\"some reason\"}")
 }
 
-func unauthorized() gouldian.Endpoint {
-	return gouldian.Get().Path("issue").FMap(
-		func() error { return gouldian.Unauthorized("some reason") },
+func unauthorized() µ.Endpoint {
+	return µ.GET(
+		µ.Path(path.Is("issue")),
+		µ.FMap(func() error { return µ.Unauthorized("some reason") }),
 	)
 }
 
 func TestServeNoMatch(t *testing.T) {
-	fun := gouldian.Serve(hello())
+	fun := µ.Serve(hello())
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/issue",
@@ -100,4 +100,22 @@ func TestServeNoMatch(t *testing.T) {
 		If(rsp.StatusCode).Should().Equal(501).
 		If(rsp.Headers).Should().Equal(head)
 }
-*/
+
+func TestServeNoMatchLogger(t *testing.T) {
+	fun := µ.Serve(µ.NoMatchLogger())
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "GET",
+		Path:       "/issue",
+	}
+	head := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+		"Access-Control-Max-Age":       "600",
+	}
+	rsp, _ := fun(req)
+
+	it.Ok(t).
+		If(rsp.StatusCode).Should().Equal(501).
+		If(rsp.Headers).Should().Equal(head)
+}
