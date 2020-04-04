@@ -19,6 +19,7 @@ package gouldian
 import (
 	"encoding/json"
 	"errors"
+	"log"
 
 	"github.com/aws/aws-lambda-go/events"
 )
@@ -80,4 +81,13 @@ func joinHead(a, b map[string]string) map[string]string {
 		}
 	}
 	return b
+}
+
+// NoMatchLogger logs the request
+func NoMatchLogger() Endpoint {
+	return func(req *Input) error {
+		bytes, _ := json.MarshalIndent(req, "", " ")
+		log.Printf("No Match: %v\n", string(bytes))
+		return NoMatch{}
+	}
 }
