@@ -19,7 +19,6 @@ package gouldian
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/ajg/form"
@@ -196,32 +195,7 @@ func JWT(val *AccessToken) Endpoint {
 	}
 }
 
-// Auth validates content of HTTP Authorization header
-func Auth(authType string, f func(string) error) Endpoint {
-	return func(req *Input) error {
-		auth, exists := req.Header("Authorization")
-		if !exists {
-			return Unauthorized(fmt.Errorf("Unauthorized %v", req.APIGatewayProxyRequest.Path))
-		}
-
-		cred := strings.Split(auth, " ")
-		if len(cred) != 2 {
-			return Unauthorized(fmt.Errorf("Unauthorized %v", req.APIGatewayProxyRequest.Path))
-		}
-
-		if cred[0] != authType {
-			return Unauthorized(fmt.Errorf("Unauthorized %v", req.APIGatewayProxyRequest.Path))
-		}
-
-		if err := f(cred[1]); err != nil {
-			return Unauthorized(err)
-		}
-
-		return nil
-	}
-}
-
-//
+// Body decodes HTTP request body to struct
 func Body(val interface{}) Endpoint {
 	return func(req *Input) error {
 		content, _ := req.Header("Content-Type")
