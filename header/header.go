@@ -34,6 +34,7 @@ package header
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -180,6 +181,31 @@ func MaybeInt(key string, val *int) µ.ArrowHeader {
 				*val = value
 			}
 		}
+		return nil
+	}
+}
+
+// Authorize validates content of HTTP Authorization header
+func Authorize(authType string, f func(string) error) µ.Endpoint {
+	return func(req *µ.Input) error {
+		auth, exists := req.Header("Authorization")
+		if !exists {
+			return µ.Unauthorized(fmt.Errorf("Unauthorized %v", req.APIGatewayProxyRequest.Path))
+		}
+
+		cred := strings.Split(auth, " ")
+		if len(cred) != 2 {
+			return µ.Unauthorized(fmt.Errorf("Unauthorized %v", req.APIGatewayProxyRequest.Path))
+		}
+
+		if strings.ToLower(cred[0]) != strings.ToLower(authType) {
+			return µ.Unauthorized(fmt.Errorf("Unauthorized %v", req.APIGatewayProxyRequest.Path))
+		}
+
+		if err := f(cred[1]); err != nil {
+			return µ.Unauthorized(err)
+		}
+
 		return nil
 	}
 }

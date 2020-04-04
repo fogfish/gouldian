@@ -17,6 +17,7 @@
 package header_test
 
 import (
+	"errors"
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
@@ -142,6 +143,25 @@ func TestParamOr(t *testing.T) {
 	success1 := mock.Input(mock.Header("Content-Type", "application/json"))
 	success2 := mock.Input(mock.Header("Content-Type", "text/html"))
 	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
+
+	it.Ok(t).
+		If(foo(success1)).Should().Equal(nil).
+		If(foo(success2)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
+func TestAuthorize(t *testing.T) {
+	auth := func(token string) error {
+		if token == "foo" {
+			return nil
+		}
+		return errors.New("unauthorized")
+	}
+	foo := µ.GET(header.Authorize("Bearer", auth))
+
+	success1 := mock.Input(mock.Header("Authorization", "Bearer foo"))
+	success2 := mock.Input(mock.Header("authorization", "bearer foo"))
+	failure := mock.Input(mock.Header("Authorization", "Bearer bar"))
 
 	it.Ok(t).
 		If(foo(success1)).Should().Equal(nil).
