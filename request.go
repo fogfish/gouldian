@@ -121,6 +121,11 @@ func Path(arrows ...ArrowPath) Endpoint {
 				return err
 			}
 		}
+
+		if len(arrows) != plen {
+			return NoMatch{}
+		}
+
 		return nil
 	}
 }
