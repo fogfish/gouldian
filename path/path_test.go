@@ -86,3 +86,13 @@ func TestPathOr(t *testing.T) {
 		If(foo(success2)).Should().Equal(nil).
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
+
+func TestPathVariableLen(t *testing.T) {
+	foo := µ.GET(µ.Path(path.Is("foo")))
+	success := mock.Input(mock.URL("/foo"))
+	failure := mock.Input(mock.URL("/foo/bar"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
