@@ -17,6 +17,7 @@
 package gouldian_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -78,7 +79,7 @@ func TestServeFailure(t *testing.T) {
 func unauthorized() µ.Endpoint {
 	return µ.GET(
 		µ.Path(path.Is("issue")),
-		µ.FMap(func() error { return µ.Unauthorized("some reason") }),
+		µ.FMap(func() error { return µ.Unauthorized(errors.New("some reason")) }),
 	)
 }
 

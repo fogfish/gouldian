@@ -17,6 +17,7 @@
 package gouldian_test
 
 import (
+	"fmt"
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
@@ -265,7 +266,7 @@ func TestFMapFailure(t *testing.T) {
 	foo := µ.GET(
 		µ.Path(path.Is("foo")),
 		µ.FMap(
-			func() error { return µ.Unauthorized("") },
+			func() error { return µ.Unauthorized(fmt.Errorf("")) },
 		),
 	)
 	req := mock.Input(mock.URL("/foo"))

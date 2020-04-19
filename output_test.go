@@ -18,6 +18,7 @@ package gouldian_test
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -35,14 +36,15 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestIssue(t *testing.T) {
+	err := fmt.Errorf("issue")
 	issue(t, µ.Failure(500), µ.Failure(500))
-	issue(t, µ.BadRequest("issue"), µ.Failure(400).Reason("issue"))
-	issue(t, µ.Unauthorized("issue"), µ.Failure(401).Reason("issue"))
-	issue(t, µ.Forbidden("issue"), µ.Failure(403).Reason("issue"))
-	issue(t, µ.NotFound("issue"), µ.Failure(404).Reason("issue"))
-	issue(t, µ.InternalServerError("issue"), µ.Failure(500).Reason("issue"))
-	issue(t, µ.NotImplemented("issue"), µ.Failure(501).Reason("issue"))
-	issue(t, µ.ServiceUnavailable("issue"), µ.Failure(503).Reason("issue"))
+	issue(t, µ.BadRequest(err), µ.Failure(400).Reason(err))
+	issue(t, µ.Unauthorized(err), µ.Failure(401).Reason(err))
+	issue(t, µ.Forbidden(err), µ.Failure(403).Reason(err))
+	issue(t, µ.NotFound(err), µ.Failure(404).Reason(err))
+	issue(t, µ.InternalServerError(err), µ.Failure(500).Reason(err))
+	issue(t, µ.NotImplemented(err), µ.Failure(501).Reason(err))
+	issue(t, µ.ServiceUnavailable(err), µ.Failure(503).Reason(err))
 }
 
 type myT struct {

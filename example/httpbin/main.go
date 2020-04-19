@@ -102,7 +102,7 @@ func bearer() µ.Endpoint {
 		µ.Header(header.String("Authorization", &token)),
 		µ.FMap(
 			func() error {
-				return gouldian.Unauthorized("Invalid token: " + token)
+				return gouldian.Unauthorized(fmt.Errorf("Invalid token: %v", token))
 			},
 		),
 	)
@@ -220,7 +220,7 @@ func redirectTo() µ.Endpoint {
 				if err == nil {
 					return gouldian.Found(*redirect)
 				}
-				return gouldian.BadRequest("Invalid url: " + to)
+				return gouldian.BadRequest(fmt.Errorf("Invalid url: %v", to))
 			},
 		),
 	)

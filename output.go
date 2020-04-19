@@ -108,10 +108,10 @@ func (out *Output) With(head string, value string) *Output {
 
 // Issue implements RFC 7807: Problem Details for HTTP APIs
 type Issue struct {
-	Type    string      `json:"type"`
-	Status  int         `json:"status"`
-	Title   string      `json:"title"`
-	Details interface{} `json:"details"`
+	Type    string `json:"type"`
+	Status  int    `json:"status"`
+	Title   string `json:"title"`
+	Details string `json:"details"`
 }
 
 func (err Issue) Error() string {
@@ -119,8 +119,8 @@ func (err Issue) Error() string {
 }
 
 // Reason defines details of the issue
-func (err *Issue) Reason(reason interface{}) *Issue {
-	err.Details = reason
+func (err *Issue) Reason(reason error) *Issue {
+	err.Details = reason.Error()
 	return err
 }
 
@@ -130,37 +130,37 @@ func Failure(status int) *Issue {
 }
 
 // BadRequest is an alias of "400 Bad Request" issue
-func BadRequest(reason interface{}) *Issue {
+func BadRequest(reason error) *Issue {
 	return Failure(http.StatusBadRequest).Reason(reason)
 }
 
 // Unauthorized is an alias of "401 Unauthorized" issue
-func Unauthorized(reason interface{}) *Issue {
+func Unauthorized(reason error) *Issue {
 	return Failure(http.StatusUnauthorized).Reason(reason)
 }
 
 // Forbidden is an alias of "403 Forbidden" issue
-func Forbidden(reason interface{}) *Issue {
+func Forbidden(reason error) *Issue {
 	return Failure(http.StatusForbidden).Reason(reason)
 }
 
 // NotFound is an alias of "404 Not Found" issue
-func NotFound(reason interface{}) *Issue {
+func NotFound(reason error) *Issue {
 	return Failure(http.StatusNotFound).Reason(reason)
 }
 
 // InternalServerError is an alias of "500 Internal Server Error" issue
-func InternalServerError(reason interface{}) *Issue {
+func InternalServerError(reason error) *Issue {
 	return Failure(http.StatusInternalServerError).Reason(reason)
 }
 
 // NotImplemented is an alias of "501 Not Implemented" issue
-func NotImplemented(reason interface{}) *Issue {
+func NotImplemented(reason error) *Issue {
 	return Failure(http.StatusNotImplemented).Reason(reason)
 }
 
 // ServiceUnavailable is an alias of "503 Service Unavailable" issue
-func ServiceUnavailable(reason interface{}) *Issue {
+func ServiceUnavailable(reason error) *Issue {
 	return Failure(http.StatusServiceUnavailable).Reason(reason)
 }
 
