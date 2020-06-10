@@ -19,6 +19,7 @@ package gouldian_test
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -56,6 +57,13 @@ func TestJSON(t *testing.T) {
 		µ.Ok().JSON(myT{"Hello"}),
 		µ.Ok().JSON(myT{"Hello"}),
 	)
+}
+
+func TestErrorOnJSON(t *testing.T) {
+	output := µ.Ok().JSON(make(chan int))
+
+	it.Ok(t).
+		If(output.Status).Should().Equal(http.StatusInternalServerError)
 }
 
 func output(t *testing.T, a, b *µ.Output) {

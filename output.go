@@ -93,7 +93,8 @@ func (out *Output) JSON(val interface{}) *Output {
 		log.Println(err)
 		out.Status = http.StatusInternalServerError
 		out.Headers["Content-Type"] = "text/plain"
-		out.Body = "Unable to convert application output to JSON."
+		out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
+
 		return out
 	}
 
