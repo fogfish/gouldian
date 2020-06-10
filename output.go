@@ -19,6 +19,7 @@ package gouldian
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -87,7 +88,16 @@ func PermanentRedirect(uri url.URL) *Output {
 
 // JSON appends application/json payload to HTTP response
 func (out *Output) JSON(val interface{}) *Output {
-	body, _ := json.Marshal(val)
+	body, err := json.Marshal(val)
+	if err != nil {
+		log.Println(err)
+		out.Status = http.StatusInternalServerError
+		out.Headers["Content-Type"] = "text/plain"
+		out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
+
+		return out
+	}
+
 	out.Headers["Content-Type"] = "application/json"
 	out.Body = string(body)
 	return out
