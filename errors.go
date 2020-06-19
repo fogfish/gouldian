@@ -24,3 +24,10 @@ type NoMatch struct{}
 func (err NoMatch) Error() string {
 	return fmt.Sprintf("No Match")
 }
+
+// Match is returned by Arrow if multiple elements are matched.
+type Match struct{ N int }
+
+func (err Match) Error() string {
+	return fmt.Sprintf("Match %v elements.", err.N)
+}
