@@ -76,7 +76,8 @@ func TestPathInt(t *testing.T) {
 }
 
 func TestPathOr(t *testing.T) {
-	foo := µ.GET(µ.Path(path.Or(path.Is("foo"), path.Is("bar"))))
+	pat := path.Is("foo").Or(path.Is("bar"))
+	foo := µ.GET(µ.Path(pat))
 	success1 := mock.Input(mock.URL("/foo"))
 	success2 := mock.Input(mock.URL("/bar"))
 	failure := mock.Input(mock.URL("/baz"))
@@ -87,6 +88,19 @@ func TestPathOr(t *testing.T) {
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
+func TestPathThen(t *testing.T) {
+	pat := path.Is("foo").Then(path.Is("bar"))
+	foo := µ.GET(µ.Path(pat))
+	success := mock.Input(mock.URL("/foo/bar"))
+	failure1 := mock.Input(mock.URL("/foo"))
+	failure2 := mock.Input(mock.URL("/foo/bar/baz"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
+}
+
 func TestPathVariableLen(t *testing.T) {
 	foo := µ.GET(µ.Path(path.Is("foo")))
 	success := mock.Input(mock.URL("/foo"))
@@ -95,4 +109,40 @@ func TestPathVariableLen(t *testing.T) {
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
 		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
+//
+type MyType []string
+
+func (id *MyType) Pattern() µ.ArrowPath {
+	return func(segments []string) error {
+		var (
+			a string
+			b string
+		)
+
+		f := path.String(&a).Then(path.String(&b))
+		switch err := f(segments).(type) {
+		case µ.Match:
+			*id = []string{a, b}
+			return err
+		default:
+			return err
+		}
+	}
+}
+
+func TestPathTypeSafePattern(t *testing.T) {
+	var id MyType
+
+	foo := µ.GET(µ.Path(path.Is("foo"), id.Pattern()))
+	success := mock.Input(mock.URL("/foo/a/b"))
+	failure1 := mock.Input(mock.URL("/foo/a"))
+	failure2 := mock.Input(mock.URL("/foo/a/b/c"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(id).Should().Equal([]string{"a", "b"}).
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
 }

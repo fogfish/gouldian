@@ -27,27 +27,10 @@ Package path defines primitives to match URL of HTTP requests.
 package path
 
 import (
-	"errors"
 	"strconv"
 
 	µ "github.com/fogfish/gouldian"
 )
-
-// Or is a co-product of path match arrows
-//   e := µ.GET( µ.Path(path.Or(path.Is("foo"), path.Is("bar"))) )
-//   e(mock.Input(mock.URL("/foo"))) == nil
-//   e(mock.Input(mock.URL("/bar"))) == nil
-//   e(mock.Input(mock.URL("/baz"))) != nil
-func Or(arrows ...µ.ArrowPath) µ.ArrowPath {
-	return func(segment string) error {
-		for _, f := range arrows {
-			if err := f(segment); !errors.Is(err, µ.NoMatch{}) {
-				return err
-			}
-		}
-		return µ.NoMatch{}
-	}
-}
 
 // Is matches a path segment to defined literal
 //   e := µ.GET( µ.Path(path.Is("foo")) )
@@ -55,11 +38,11 @@ func Or(arrows ...µ.ArrowPath) µ.ArrowPath {
 //   e(mock.Input(mock.URL("/bar"))) != nil
 func Is(val string) µ.ArrowPath {
 	if val == "*" {
-		return func(string) error { return nil }
+		return func([]string) error { return nil }
 	}
 
-	return func(segment string) error {
-		if segment == val {
+	return func(segments []string) error {
+		if segments[0] == val {
 			return nil
 		}
 		return µ.NoMatch{}
@@ -71,7 +54,7 @@ func Is(val string) µ.ArrowPath {
 //   e(mock.Input(mock.URL("/foo"))) == nil
 //   e(mock.Input(mock.URL("/bar"))) == nil
 func Any() µ.ArrowPath {
-	return func(string) error {
+	return func([]string) error {
 		return nil
 	}
 }
@@ -82,8 +65,8 @@ func Any() µ.ArrowPath {
 //   e(mock.Input(mock.URL("/foo"))) == nil && value == "foo"
 //   e(mock.Input(mock.URL("/1"))) == nil && value == "1"
 func String(val *string) µ.ArrowPath {
-	return func(segment string) error {
-		*val = segment
+	return func(segments []string) error {
+		*val = segments[0]
 		return nil
 	}
 }
@@ -94,8 +77,8 @@ func String(val *string) µ.ArrowPath {
 //   e(mock.Input(mock.URL("/1"))) == nil && value == 1
 //   e(mock.Input(mock.URL("/foo"))) != nil
 func Int(val *int) µ.ArrowPath {
-	return func(segment string) error {
-		if value, err := strconv.Atoi(segment); err == nil {
+	return func(segments []string) error {
+		if value, err := strconv.Atoi(segments[0]); err == nil {
 			*val = value
 			return nil
 		}

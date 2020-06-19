@@ -19,6 +19,7 @@ package gouldian
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/ajg/form"
@@ -31,7 +32,44 @@ type ArrowHeader func(map[string]string) error
 type ArrowParam func(map[string]string) error
 
 // ArrowPath is a type-safe definition of URL segment matcher
-type ArrowPath func(string) error
+type ArrowPath func([]string) error
+
+// Then is a product of path match arrows. It helps to build a group of
+// composable patterns for sup path(es)
+func (arrow ArrowPath) Then(x ArrowPath) ArrowPath {
+	return func(segments []string) error {
+		sz := len(segments)
+		at := 0
+
+		for _, f := range []ArrowPath{arrow, x} {
+			if sz <= at {
+				return NoMatch{}
+			}
+			switch err := f(segments[at:]).(type) {
+			case nil:
+				at++
+			case Match:
+				at = at + err.N
+			default:
+				return err
+			}
+		}
+
+		return Match{N: at}
+	}
+}
+
+// Or is a co-product of path match arrows.
+func (arrow ArrowPath) Or(x ArrowPath) ArrowPath {
+	return func(segments []string) error {
+		for _, f := range []ArrowPath{arrow, x} {
+			if err := f(segments); !errors.Is(err, NoMatch{}) {
+				return err
+			}
+		}
+		return NoMatch{}
+	}
+}
 
 // DELETE composes product Endpoint match HTTP DELETE request.
 //   e := µ.DELETE()
@@ -105,24 +143,24 @@ func Method(verb string) Endpoint {
 //   e(mock.Input(mock.URL("/bar"))) != nil
 func Path(arrows ...ArrowPath) Endpoint {
 	return func(req *Input) error {
-		plen := len(req.Path)
-		if len(arrows) == 0 {
-			if plen == 0 {
-				return nil
-			}
-			return NoMatch{}
-		}
+		sz := len(req.Path)
+		at := 0
 
-		for i, f := range arrows {
-			if i == plen {
+		for _, f := range arrows {
+			if sz <= at {
 				return NoMatch{}
 			}
-			if err := f(req.Path[i]); err != nil {
+			switch err := f(req.Path[at:]).(type) {
+			case nil:
+				at++
+			case Match:
+				at = at + err.N
+			default:
 				return err
 			}
 		}
 
-		if len(arrows) != plen {
+		if sz > at {
 			return NoMatch{}
 		}
 
