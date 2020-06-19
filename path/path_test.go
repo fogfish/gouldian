@@ -142,7 +142,8 @@ func TestPathTypeSafePattern(t *testing.T) {
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
-		If(id).Should().Equal([]string{"a", "b"}).
+		If(id[0]).Should().Equal("a").
+		If(id[1]).Should().Equal("b").
 		If(foo(failure1)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
