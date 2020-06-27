@@ -116,6 +116,24 @@ func TestPathRoot(t *testing.T) {
 		If(root(failure)).ShouldNot().Equal(nil)
 }
 
+func TestPathEscaped(t *testing.T) {
+	var segment string
+	root := µ.GET(µ.Path(path.String(&segment)))
+
+	success1 := mock.Input(mock.URL("/abc"))
+	success2 := mock.Input(mock.URL("/a%20c"))
+	success3 := mock.Input(mock.URL("/abc"))
+	success3.Path = []string{"a%rtc"}
+
+	it.Ok(t).
+		If(root(success1)).Should().Equal(nil).
+		If(segment).Should().Equal("abc").
+		If(root(success2)).Should().Equal(nil).
+		If(segment).Should().Equal("a c").
+		If(root(success3)).Should().Equal(nil).
+		If(segment).Should().Equal("a%rtc")
+}
+
 func TestParam(t *testing.T) {
 	foo := µ.GET(µ.Param(param.Is("foo", "bar")))
 	bar := µ.GET(µ.Param(param.Is("bar", "foo")))
