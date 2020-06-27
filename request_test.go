@@ -116,6 +116,43 @@ func TestPathRoot(t *testing.T) {
 		If(root(failure)).ShouldNot().Equal(nil)
 }
 
+//
+type MyType []string
+
+func (id *MyType) Pattern() µ.ArrowPath {
+	return func(segments []string) error {
+		var (
+			a string
+			b string
+		)
+
+		f := path.String(&a).Then(path.String(&b))
+		switch err := f(segments).(type) {
+		case µ.Match:
+			*id = []string{a, b}
+			return err
+		default:
+			return err
+		}
+	}
+}
+
+func TestPathTypeSafePattern(t *testing.T) {
+	var id MyType
+
+	foo := µ.GET(µ.Path(path.Is("foo"), id.Pattern()))
+	success := mock.Input(mock.URL("/foo/a/b"))
+	failure1 := mock.Input(mock.URL("/foo/a"))
+	failure2 := mock.Input(mock.URL("/foo/a/b/c"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(id[0]).Should().Equal("a").
+		If(id[1]).Should().Equal("b").
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
+}
+
 func TestParam(t *testing.T) {
 	foo := µ.GET(µ.Param(param.Is("foo", "bar")))
 	bar := µ.GET(µ.Param(param.Is("bar", "foo")))
