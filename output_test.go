@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -29,11 +30,19 @@ import (
 )
 
 func TestSuccess(t *testing.T) {
+	uri, _ := url.Parse("/")
+
 	output(t, µ.Success(200), µ.Success(200))
 	output(t, µ.Ok(), µ.Success(200))
 	output(t, µ.Created(), µ.Success(201))
 	output(t, µ.Accepted(), µ.Success(202))
 	output(t, µ.NoContent(), µ.Success(204))
+	output(t, µ.MovedPermanently(*uri), µ.Success(301).With("Location", "/"))
+	output(t, µ.Found(*uri), µ.Success(302).With("Location", "/"))
+	output(t, µ.SeeOther(*uri), µ.Success(303).With("Location", "/"))
+	output(t, µ.NotModified(*uri), µ.Success(304).With("Location", "/"))
+	output(t, µ.TemporaryRedirect(*uri), µ.Success(307).With("Location", "/"))
+	output(t, µ.PermanentRedirect(*uri), µ.Success(308).With("Location", "/"))
 }
 
 func TestIssue(t *testing.T) {
