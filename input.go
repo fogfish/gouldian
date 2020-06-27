@@ -17,6 +17,7 @@
 package gouldian
 
 import (
+	"net/url"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -31,10 +32,19 @@ type Input struct {
 
 // Request creates new Input from API Gateway request
 func Request(req events.APIGatewayProxyRequest) *Input {
-	segments := strings.Split(req.Path, "/")[1:]
+	segments := []string{}
+	for _, x := range strings.Split(req.Path, "/")[1:] {
+		if val, err := url.PathUnescape(x); err != nil {
+			segments = append(segments, x)
+		} else {
+			segments = append(segments, val)
+		}
+	}
+
 	if len(segments) == 1 && segments[0] == "" {
 		segments = []string{}
 	}
+
 	return &Input{req, segments, ""}
 }
 
