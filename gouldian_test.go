@@ -120,3 +120,33 @@ func TestServeNoMatchLogger(t *testing.T) {
 		If(rsp.StatusCode).Should().Equal(501).
 		If(rsp.Headers).Should().Equal(head)
 }
+
+func TestServeUnescapedPath(t *testing.T) {
+	fun := µ.Serve(unescaped())
+	req := mock.Input(mock.URL("/"))
+	req.APIGatewayProxyRequest.Path = "/h%rt"
+	req.Path = []string{"h%rt"}
+	rsp, _ := fun(req.APIGatewayProxyRequest)
+
+	head := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+		"Access-Control-Max-Age":       "600",
+		"Content-Type":                 "text/plain",
+	}
+
+	it.Ok(t).
+		If(rsp.StatusCode).Should().Equal(200).
+		If(rsp.Headers).Should().Equal(head).
+		If(rsp.Body).Should().Equal("Hello World!")
+}
+
+func unescaped() µ.Endpoint {
+	return µ.GET(
+		µ.Path(path.Is("h%rt")),
+		µ.FMap(
+			func() error { return µ.Ok().Text("Hello World!") },
+		),
+	)
+}
