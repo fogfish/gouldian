@@ -18,7 +18,10 @@ import * as api from '@aws-cdk/aws-apigateway'
 import * as lambda from '@aws-cdk/aws-lambda'
 import * as logs from '@aws-cdk/aws-logs'
 import * as cdk from '@aws-cdk/core'
+import * as path from 'path'
 import * as pure from 'aws-cdk-pure'
+import * as hoc from 'aws-cdk-pure-hoc'
+
 
 const app = new cdk.App()
 const stack = new cdk.Stack(app, 'httpbin', { })
@@ -33,7 +36,7 @@ const HttpBin = (): api.RestApiProps => ({
 })
 
 const Lambda = (): lambda.FunctionProps => ({
-  code: new lambda.AssetCode('../bin'),
+  code: hoc.common.AssetCodeGo(path.join(__dirname, '..')),
   handler: 'main',
   logRetention: logs.RetentionDays.FIVE_DAYS,
   memorySize: 256,
