@@ -18,7 +18,7 @@ package gouldian
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"log"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -29,31 +29,33 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 	api := Or(seq...)
 
 	return func(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-		var output *Output
-		var issue *Issue
-
 		http := Request(req)
-		err := api(http)
-		if errors.As(err, &output) {
+		switch v := api(http).(type) {
+		case *Output:
 			return events.APIGatewayProxyResponse{
-				Body:       output.Body,
-				StatusCode: output.Status,
-				Headers:    joinHead(defaultCORS(http), output.Headers),
+				Body:       v.Body,
+				StatusCode: v.Status,
+				Headers:    joinHead(defaultCORS(http), v.Headers),
 			}, nil
-		} else if errors.As(err, &issue) {
-			text, _ := json.Marshal(issue)
-			return events.APIGatewayProxyResponse{
-				Body:       string(text),
-				StatusCode: issue.Status,
-				Headers:    joinHead(defaultCORS(http), map[string]string{"Content-Type": "application/json"}),
-			}, nil
-		} else if errors.Is(err, NoMatch{}) {
-			return events.APIGatewayProxyResponse{
-				StatusCode: 501,
-				Headers:    defaultCORS(http),
-			}, nil
+		case *Issue:
+			return recoverIssue(http, v), nil
+		case NoMatch:
+			iss := NotImplemented(fmt.Errorf("NoMatch %v", http.APIGatewayProxyRequest.Path))
+			return recoverIssue(http, iss), nil
+		default:
+			iss := InternalServerError(v)
+			return recoverIssue(http, iss), nil
 		}
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+	}
+}
+
+func recoverIssue(http *Input, issue *Issue) events.APIGatewayProxyResponse {
+	log.Printf("ERROR %v: %d %s, %v", issue.ID, issue.Status, issue.Title, issue.Failure)
+	text, _ := json.Marshal(issue)
+	return events.APIGatewayProxyResponse{
+		Body:       string(text),
+		StatusCode: issue.Status,
+		Headers:    joinHead(defaultCORS(http), map[string]string{"Content-Type": "application/json"}),
 	}
 }
 

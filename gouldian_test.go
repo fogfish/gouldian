@@ -17,6 +17,7 @@
 package gouldian_test
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -69,11 +70,16 @@ func TestServeFailure(t *testing.T) {
 		"Content-Type":                 "application/json",
 	}
 	rsp, _ := fun(req)
+	var issue µ.Issue
 
 	it.Ok(t).
 		If(rsp.StatusCode).Should().Equal(401).
 		If(rsp.Headers).Should().Equal(head).
-		If(rsp.Body).Should().Equal("{\"type\":\"https://httpstatuses.com/401\",\"status\":401,\"title\":\"Unauthorized\",\"details\":\"some reason\"}")
+		If(json.Unmarshal([]byte(rsp.Body), &issue)).Should().Equal(nil).
+		If(issue.Type).Should().Equal("https://httpstatuses.com/401").
+		If(issue.Status).Should().Equal(401).
+		If(issue.Title).Should().Equal("Unauthorized").
+		If(issue.ID).ShouldNot().Equal("")
 }
 
 func unauthorized() µ.Endpoint {
@@ -94,6 +100,7 @@ func TestServeNoMatch(t *testing.T) {
 		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
 		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
 		"Access-Control-Max-Age":       "600",
+		"Content-Type":                 "application/json",
 	}
 	rsp, _ := fun(req)
 
@@ -113,6 +120,7 @@ func TestServeNoMatchLogger(t *testing.T) {
 		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
 		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
 		"Access-Control-Max-Age":       "600",
+		"Content-Type":                 "application/json",
 	}
 	rsp, _ := fun(req)
 
