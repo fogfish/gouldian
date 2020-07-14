@@ -19,6 +19,7 @@ package gouldian_test
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -155,6 +156,35 @@ func unescaped() µ.Endpoint {
 		µ.Path(path.Is("h%rt")),
 		µ.FMap(
 			func() error { return µ.Ok().Text("Hello World!") },
+		),
+	)
+}
+
+func TestServeUnknownError(t *testing.T) {
+	fun := µ.Serve(unknown())
+	req := mock.Input(mock.URL("/"))
+	req.APIGatewayProxyRequest.Path = "/h%rt"
+	req.Path = []string{"h%rt"}
+	rsp, _ := fun(req.APIGatewayProxyRequest)
+
+	head := map[string]string{
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+		"Access-Control-Max-Age":       "600",
+		"Content-Type":                 "application/json",
+	}
+
+	it.Ok(t).
+		If(rsp.StatusCode).Should().Equal(500).
+		If(rsp.Headers).Should().Equal(head)
+}
+
+func unknown() µ.Endpoint {
+	return µ.GET(
+		µ.Path(path.Is("h%rt")),
+		µ.FMap(
+			func() error { return fmt.Errorf("Unknown error") },
 		),
 	)
 }
