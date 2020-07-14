@@ -22,7 +22,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
+	"strings"
+
+	"github.com/fogfish/guid"
 )
 
 // Output defines legitimate HTTP response. It allows to specify
@@ -118,62 +120,73 @@ func (out *Output) With(head string, value string) *Output {
 
 // Issue implements RFC 7807: Problem Details for HTTP APIs
 type Issue struct {
+	ID      string `json:"instance"`
 	Type    string `json:"type"`
 	Status  int    `json:"status"`
 	Title   string `json:"title"`
-	Details string `json:"details"`
+	Failure error  `json:"-"`
 }
 
 func (err Issue) Error() string {
-	return fmt.Sprintf(strconv.Itoa(err.Status) + ": " + err.Title)
+	return fmt.Sprintf("%d: %s", err.Status, err.Title)
 }
 
 // Reason defines details of the issue
 func (err *Issue) Reason(reason error) *Issue {
-	err.Details = reason.Error()
+	err.Failure = reason
 	return err
 }
 
 // Failure creates HTTP issue with given HTTP Status code
-func Failure(status int) *Issue {
-	return &Issue{typeOf(status), status, http.StatusText(status), ""}
+func Failure(status int, title string) *Issue {
+	t := title
+	if title == "" {
+		t = http.StatusText(status)
+	}
+
+	return &Issue{
+		ID:     guid.Seq.ID(),
+		Type:   typeOf(status),
+		Status: status,
+		Title:  t,
+	}
 }
 
 // BadRequest is an alias of "400 Bad Request" issue
-func BadRequest(reason error) *Issue {
-	return Failure(http.StatusBadRequest).Reason(reason)
+func BadRequest(reason error, title ...string) *Issue {
+	return Failure(http.StatusBadRequest, strings.Join(title, " ")).Reason(reason)
 }
 
 // Unauthorized is an alias of "401 Unauthorized" issue
-func Unauthorized(reason error) *Issue {
-	return Failure(http.StatusUnauthorized).Reason(reason)
+func Unauthorized(reason error, title ...string) *Issue {
+	return Failure(http.StatusUnauthorized, strings.Join(title, " ")).Reason(reason)
 }
 
 // Forbidden is an alias of "403 Forbidden" issue
-func Forbidden(reason error) *Issue {
-	return Failure(http.StatusForbidden).Reason(reason)
+func Forbidden(reason error, title ...string) *Issue {
+	return Failure(http.StatusForbidden, strings.Join(title, " ")).Reason(reason)
 }
 
 // NotFound is an alias of "404 Not Found" issue
-func NotFound(reason error) *Issue {
-	return Failure(http.StatusNotFound).Reason(reason)
+func NotFound(reason error, title ...string) *Issue {
+	return Failure(http.StatusNotFound, strings.Join(title, " ")).Reason(reason)
 }
 
 // InternalServerError is an alias of "500 Internal Server Error" issue
-func InternalServerError(reason error) *Issue {
-	return Failure(http.StatusInternalServerError).Reason(reason)
+func InternalServerError(reason error, title ...string) *Issue {
+	return Failure(http.StatusInternalServerError, strings.Join(title, " ")).Reason(reason)
 }
 
 // NotImplemented is an alias of "501 Not Implemented" issue
-func NotImplemented(reason error) *Issue {
-	return Failure(http.StatusNotImplemented).Reason(reason)
+func NotImplemented(reason error, title ...string) *Issue {
+	return Failure(http.StatusNotImplemented, strings.Join(title, " ")).Reason(reason)
 }
 
 // ServiceUnavailable is an alias of "503 Service Unavailable" issue
-func ServiceUnavailable(reason error) *Issue {
-	return Failure(http.StatusServiceUnavailable).Reason(reason)
+func ServiceUnavailable(reason error, title ...string) *Issue {
+	return Failure(http.StatusServiceUnavailable, strings.Join(title, " ")).Reason(reason)
 }
 
 func typeOf(status int) string {
-	return fmt.Sprintf("https://httpstatuses.com/%v", status)
+	return fmt.Sprintf("https://httpstatuses.com/%d", status)
 }

@@ -47,14 +47,14 @@ func TestSuccess(t *testing.T) {
 
 func TestIssue(t *testing.T) {
 	err := fmt.Errorf("issue")
-	issue(t, µ.Failure(500), µ.Failure(500))
-	issue(t, µ.BadRequest(err), µ.Failure(400).Reason(err))
-	issue(t, µ.Unauthorized(err), µ.Failure(401).Reason(err))
-	issue(t, µ.Forbidden(err), µ.Failure(403).Reason(err))
-	issue(t, µ.NotFound(err), µ.Failure(404).Reason(err))
-	issue(t, µ.InternalServerError(err), µ.Failure(500).Reason(err))
-	issue(t, µ.NotImplemented(err), µ.Failure(501).Reason(err))
-	issue(t, µ.ServiceUnavailable(err), µ.Failure(503).Reason(err))
+	issue(t, µ.Failure(500, ""), µ.Failure(500, ""))
+	issue(t, µ.BadRequest(err), µ.Failure(400, "").Reason(err))
+	issue(t, µ.Unauthorized(err), µ.Failure(401, "").Reason(err))
+	issue(t, µ.Forbidden(err), µ.Failure(403, "").Reason(err))
+	issue(t, µ.NotFound(err), µ.Failure(404, "").Reason(err))
+	issue(t, µ.InternalServerError(err), µ.Failure(500, "").Reason(err))
+	issue(t, µ.NotImplemented(err), µ.Failure(501, "").Reason(err))
+	issue(t, µ.ServiceUnavailable(err), µ.Failure(503, "").Reason(err))
 }
 
 type myT struct {
@@ -102,9 +102,10 @@ func issue(t *testing.T, a, b *µ.Issue) {
 		If(foo(req)).Should().
 		Assert(
 			func(be interface{}) bool {
-				var out *µ.Issue
-				if errors.As(be.(error), &out) {
-					return reflect.DeepEqual(b, out)
+				if v, ok := be.(error); ok {
+					if v.Error() == b.Error() {
+						return true
+					}
 				}
 				return false
 			},
