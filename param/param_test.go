@@ -107,6 +107,37 @@ func TestParamMaybeInt(t *testing.T) {
 		If(value).Should().Equal(0)
 }
 
+type MyT struct {
+	A string `json:"a"`
+	B int    `json:"b"`
+}
+
+func TestParamJSON(t *testing.T) {
+	var value MyT
+	foo := µ.GET(µ.Param(param.JSON("foo", &value)))
+	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
+	failure := mock.Input(mock.URL("/?foo=bar"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(value).Should().Equal(MyT{A: "abc", B: 10}).
+		//
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
+func TestParamMaybeJSON(t *testing.T) {
+	var value MyT
+	foo := µ.GET(µ.Param(param.MaybeJSON("foo", &value)))
+	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
+	failure := mock.Input(mock.URL("/?foo=bar"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(value).Should().Equal(MyT{A: "abc", B: 10}).
+		//
+		If(foo(failure)).Should().Equal(nil)
+}
+
 func TestParamOr(t *testing.T) {
 	foo := µ.GET(µ.Param(
 		param.Or(param.Any("foo"), param.Any("bar")),

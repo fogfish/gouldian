@@ -27,7 +27,9 @@ Package param defines primitives to match URL Query parameters of HTTP requests.
 package param
 
 import (
+	"encoding/json"
 	"errors"
+	"net/url"
 	"strconv"
 
 	µ "github.com/fogfish/gouldian"
@@ -122,13 +124,17 @@ func MaybeString(key string, val *string) µ.ArrowParam {
 func Int(key string, val *int) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
-		if exists {
-			if value, err := strconv.Atoi(opt); err == nil {
-				*val = value
-				return nil
-			}
+		if !exists {
+			return µ.NoMatch{}
 		}
-		return µ.NoMatch{}
+
+		value, err := strconv.Atoi(opt)
+		if err != nil {
+			return µ.NoMatch{}
+		}
+
+		*val = value
+		return nil
 	}
 }
 
@@ -141,12 +147,59 @@ func Int(key string, val *int) µ.ArrowParam {
 func MaybeInt(key string, val *int) µ.ArrowParam {
 	return func(params map[string]string) error {
 		opt, exists := params[key]
-		*val = 0
-		if exists {
-			if value, err := strconv.Atoi(opt); err == nil {
-				*val = value
-			}
+		if !exists {
+			return nil
 		}
+
+		value, err := strconv.Atoi(opt)
+		if err != nil {
+			*val = 0
+			return nil
+		}
+
+		*val = value
+		return nil
+	}
+}
+
+// JSON matches a param key to closed struct.
+// It assumes that key holds JSON value as url encoded string
+func JSON(key string, val interface{}) µ.ArrowParam {
+	return func(params map[string]string) error {
+		opt, exists := params[key]
+		if !exists {
+			return µ.NoMatch{}
+		}
+
+		str, err := url.PathUnescape(opt)
+		if err != nil {
+			return µ.NoMatch{}
+		}
+
+		if err := json.Unmarshal([]byte(str), val); err != nil {
+			// TODO: pass error to api client
+			return µ.NoMatch{}
+		}
+		return nil
+	}
+}
+
+// MaybeJSON matches a param key to closed struct.
+// It assumes that key holds JSON value as url encoded string.
+// It does not fail if key is not defined.
+func MaybeJSON(key string, val interface{}) µ.ArrowParam {
+	return func(params map[string]string) error {
+		opt, exists := params[key]
+		if !exists {
+			return nil
+		}
+
+		str, err := url.PathUnescape(opt)
+		if err != nil {
+			return nil
+		}
+
+		json.Unmarshal([]byte(str), val)
 		return nil
 	}
 }
