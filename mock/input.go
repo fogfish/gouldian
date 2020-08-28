@@ -70,6 +70,18 @@ func URL(httpURL string) Mock {
 	}
 }
 
+// Param add raw param string to mocked HTTP request
+func Param(key, val string) Mock {
+	return func(mock *µ.Input) *µ.Input {
+		if mock.APIGatewayProxyRequest.QueryStringParameters == nil {
+			mock.APIGatewayProxyRequest.Path = "/"
+			mock.APIGatewayProxyRequest.QueryStringParameters = map[string]string{}
+		}
+		mock.APIGatewayProxyRequest.QueryStringParameters[key] = val
+		return mock
+	}
+}
+
 // Header adds Header to mocked HTTP request
 func Header(header string, value string) Mock {
 	return func(mock *µ.Input) *µ.Input {
