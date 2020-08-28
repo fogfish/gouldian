@@ -123,7 +123,7 @@ func TestParamJSON(t *testing.T) {
 	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
 	failure1 := mock.Input(mock.URL("/?foo=bar"))
 	failure2 := mock.Input(mock.URL("/?bar=foo"))
-	failure3 := mock.Input(mock.URL("/?foo=%7"))
+	failure3 := mock.Input(mock.Param("foo", "%7"))
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
@@ -140,7 +140,7 @@ func TestParamMaybeJSON(t *testing.T) {
 	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
 	failure1 := mock.Input(mock.URL("/?foo=bar"))
 	failure2 := mock.Input(mock.URL("/?bar=foo"))
-	failure3 := mock.Input(mock.URL("/?foo=%7"))
+	failure3 := mock.Input(mock.Param("foo", "%7"))
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).

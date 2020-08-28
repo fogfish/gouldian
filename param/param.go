@@ -171,7 +171,7 @@ func JSON(key string, val interface{}) µ.ArrowParam {
 			return µ.NoMatch{}
 		}
 
-		str, err := url.PathUnescape(opt)
+		str, err := url.QueryUnescape(opt)
 		if err != nil {
 			return µ.NoMatch{}
 		}
@@ -194,7 +194,7 @@ func MaybeJSON(key string, val interface{}) µ.ArrowParam {
 			return nil
 		}
 
-		str, err := url.PathUnescape(opt)
+		str, err := url.QueryUnescape(opt)
 		if err != nil {
 			return nil
 		}
