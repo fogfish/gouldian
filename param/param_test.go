@@ -84,26 +84,31 @@ func TestParamInt(t *testing.T) {
 	var value int
 	foo := µ.GET(µ.Param(param.Int("foo", &value)))
 	success := mock.Input(mock.URL("/?foo=1"))
-	failure := mock.Input(mock.URL("/?foo=bar"))
+	failure1 := mock.Input(mock.URL("/?foo=bar"))
+	failure2 := mock.Input(mock.URL("/?bar=foo"))
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1).
 		//
-		If(foo(failure)).ShouldNot().Equal(nil)
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
 func TestParamMaybeInt(t *testing.T) {
 	var value int
 	foo := µ.GET(µ.Param(param.MaybeInt("foo", &value)))
 	success := mock.Input(mock.URL("/?foo=1"))
-	failure := mock.Input(mock.URL("/?foo=bar"))
+	failure1 := mock.Input(mock.URL("/?foo=bar"))
+	failure2 := mock.Input(mock.URL("/?bar=foo"))
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(1).
 		//
-		If(foo(failure)).Should().Equal(nil).
+		If(foo(failure1)).Should().Equal(nil).
+		If(value).Should().Equal(0).
+		If(foo(failure2)).Should().Equal(nil).
 		If(value).Should().Equal(0)
 }
 
@@ -116,26 +121,34 @@ func TestParamJSON(t *testing.T) {
 	var value MyT
 	foo := µ.GET(µ.Param(param.JSON("foo", &value)))
 	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
-	failure := mock.Input(mock.URL("/?foo=bar"))
+	failure1 := mock.Input(mock.URL("/?foo=bar"))
+	failure2 := mock.Input(mock.URL("/?bar=foo"))
+	failure3 := mock.Input(mock.URL("/?foo=%7"))
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(MyT{A: "abc", B: 10}).
 		//
-		If(foo(failure)).ShouldNot().Equal(nil)
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil).
+		If(foo(failure3)).ShouldNot().Equal(nil)
 }
 
 func TestParamMaybeJSON(t *testing.T) {
 	var value MyT
 	foo := µ.GET(µ.Param(param.MaybeJSON("foo", &value)))
 	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
-	failure := mock.Input(mock.URL("/?foo=bar"))
+	failure1 := mock.Input(mock.URL("/?foo=bar"))
+	failure2 := mock.Input(mock.URL("/?bar=foo"))
+	failure3 := mock.Input(mock.URL("/?foo=%7"))
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
 		If(value).Should().Equal(MyT{A: "abc", B: 10}).
 		//
-		If(foo(failure)).Should().Equal(nil)
+		If(foo(failure1)).Should().Equal(nil).
+		If(foo(failure2)).Should().Equal(nil).
+		If(foo(failure2)).Should().Equal(nil)
 }
 
 func TestParamOr(t *testing.T) {
