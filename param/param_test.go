@@ -148,7 +148,7 @@ func TestParamMaybeJSON(t *testing.T) {
 		//
 		If(foo(failure1)).Should().Equal(nil).
 		If(foo(failure2)).Should().Equal(nil).
-		If(foo(failure2)).Should().Equal(nil)
+		If(foo(failure3)).Should().Equal(nil)
 }
 
 func TestParamOr(t *testing.T) {
