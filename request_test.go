@@ -315,3 +315,46 @@ func TestFMapFailure(t *testing.T) {
 		},
 	)
 }
+
+func TestBodyLeak(t *testing.T) {
+	type Pair struct {
+		Key int    `json:"key,omitempty"`
+		Val string `json:"val,omitempty"`
+	}
+	type Item struct {
+		Seq []Pair `json:"seq,omitempty"`
+	}
+
+	endpoint := func() µ.Endpoint {
+		var item Item
+
+		return µ.GET(
+			µ.Body(&item),
+			µ.FMap(func() error {
+				seq := []Pair{}
+				for key, val := range item.Seq {
+					if val.Key == 0 {
+						seq = append(seq, Pair{Key: key + 1, Val: val.Val})
+					}
+				}
+				item = Item{Seq: seq}
+				return µ.Ok().JSON(item)
+			}),
+		)
+	}
+
+	foo := endpoint()
+	for val, expect := range map[string]string{
+		"{\"seq\":[{\"val\":\"a\"},{\"val\":\"b\"}]}":                 "{\"seq\":[{\"key\":1,\"val\":\"a\"},{\"key\":2,\"val\":\"b\"}]}",
+		"{\"seq\":[{\"val\":\"c\"}]}":                                 "{\"seq\":[{\"key\":1,\"val\":\"c\"}]}",
+		"{\"seq\":[{\"val\":\"d\"},{\"val\":\"e\"},{\"val\":\"f\"}]}": "{\"seq\":[{\"key\":1,\"val\":\"d\"},{\"key\":2,\"val\":\"e\"},{\"key\":3,\"val\":\"f\"}]}",
+	} {
+		req := mock.Input(
+			mock.Method("GET"),
+			mock.Header("Content-Type", "application/json"),
+			mock.Text(val),
+		)
+		out := foo(req)
+		it.Ok(t).If(out.Error()).Should().Equal(expect)
+	}
+}
