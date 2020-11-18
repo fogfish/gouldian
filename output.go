@@ -112,6 +112,13 @@ func (out *Output) Text(text string) *Output {
 	return out
 }
 
+// Bytes appends arbitrary octet/stream payload to HTTP response
+// content type shall be specified using With method
+func (out *Output) Bytes(content []byte) *Output {
+	out.Body = string(content)
+	return out
+}
+
 // With sets HTTP header to the response
 func (out *Output) With(head string, value string) *Output {
 	out.Headers[head] = value

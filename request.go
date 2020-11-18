@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"strings"
 
 	"github.com/ajg/form"
@@ -241,6 +242,9 @@ func JWT(val *AccessToken) Endpoint {
 // Body decodes HTTP request body to struct
 func Body(val interface{}) Endpoint {
 	return func(req *Input) error {
+		p := reflect.ValueOf(val).Elem()
+		p.Set(reflect.Zero(p.Type()))
+
 		content, _ := req.Header("Content-Type")
 		switch {
 		case strings.HasPrefix(content, "application/json"):
