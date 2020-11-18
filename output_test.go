@@ -68,6 +68,20 @@ func TestJSON(t *testing.T) {
 	)
 }
 
+func TestOutputText(t *testing.T) {
+	output(t,
+		µ.Ok().Text("Hello"),
+		µ.Ok().Text("Hello"),
+	)
+}
+
+func TestOutputBytes(t *testing.T) {
+	output(t,
+		µ.Ok().Bytes([]byte("Hello")),
+		µ.Ok().Bytes([]byte("Hello")),
+	)
+}
+
 func TestErrorOnJSON(t *testing.T) {
 	output := µ.Ok().JSON(make(chan int))
 
