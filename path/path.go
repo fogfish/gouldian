@@ -85,3 +85,14 @@ func Int(val *int) µ.ArrowPath {
 		return µ.NoMatch{}
 	}
 }
+
+// Seq matches path 1 or N segments to closed slice
+//   var seq []string
+//   e := µ.GET( µ.Path(path.Seq(seq)) )
+//   e(mock.Input(mock.URL("/a/b"))) == nil && seq == []string{"a", "b"}
+func Seq(val *[]string) µ.ArrowPath {
+	return func(segments []string) error {
+		*val = append([]string{}, segments...)
+		return µ.Match{N: len(segments)}
+	}
+}
