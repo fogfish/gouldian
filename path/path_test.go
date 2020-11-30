@@ -110,3 +110,20 @@ func TestPathVariableLen(t *testing.T) {
 		If(foo(success)).Should().Equal(nil).
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
+
+func TestPathSeq(t *testing.T) {
+	var value []string
+	foo := µ.GET(µ.Path(path.Is("foo"), path.Seq(&value)))
+	failure0 := mock.Input(mock.URL("/foo"))
+	success1 := mock.Input(mock.URL("/foo/a"))
+	successN := mock.Input(mock.URL("/foo/a/b/c"))
+
+	it.Ok(t).
+		If(foo(success1)).Should().Equal(nil).
+		If(value).Should().Equal([]string{"a"}).
+		//
+		If(foo(successN)).Should().Equal(nil).
+		If(value).Should().Equal([]string{"a", "b", "c"}).
+		//
+		If(foo(failure0)).ShouldNot().Equal(nil)
+}
