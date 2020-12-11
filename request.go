@@ -227,10 +227,7 @@ func JWT(val *AccessToken) Endpoint {
 		if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
 			switch tkn := jwt.(type) {
 			case map[string]interface{}:
-				*val = AccessToken{
-					Sub:   tkn["sub"].(string),
-					Scope: tkn["scope"].(string),
-				}
+				*val = mkAccessToken(tkn)
 				return nil
 			}
 		}

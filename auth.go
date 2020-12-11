@@ -18,6 +18,29 @@ package gouldian
 
 // AccessToken is a container for user identity
 type AccessToken struct {
-	Sub   string
-	Scope string
+	Jti    string
+	Iss    string
+	Exp    string
+	Sub    string
+	Scope  string
+	UserID string
+}
+
+//
+func mkAccessToken(raw map[string]interface{}) AccessToken {
+	asString := func(id string) string {
+		if val, ok := raw[id]; ok {
+			return val.(string)
+		}
+		return ""
+	}
+
+	return AccessToken{
+		Jti:    asString("jti"),
+		Iss:    asString("iss"),
+		Exp:    asString("exp"),
+		Sub:    asString("sub"),
+		Scope:  asString("scope"),
+		UserID: asString("username"),
+	}
 }
