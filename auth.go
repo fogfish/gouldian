@@ -18,12 +18,13 @@ package gouldian
 
 // AccessToken is a container for user identity
 type AccessToken struct {
-	Jti    string
-	Iss    string
-	Exp    string
-	Sub    string
-	Scope  string
-	UserID string
+	Jti      string
+	Iss      string
+	Exp      string
+	Sub      string
+	Scope    string
+	UserID   string
+	ClientID string
 }
 
 //
@@ -36,11 +37,12 @@ func mkAccessToken(raw map[string]interface{}) AccessToken {
 	}
 
 	return AccessToken{
-		Jti:    asString("jti"),
-		Iss:    asString("iss"),
-		Exp:    asString("exp"),
-		Sub:    asString("sub"),
-		Scope:  asString("scope"),
-		UserID: asString("username"),
+		Jti:      asString("jti"),
+		Iss:      asString("iss"),
+		Exp:      asString("exp"),
+		Sub:      asString("sub"),
+		Scope:    asString("scope"),
+		UserID:   asString("username"),
+		ClientID: asString("client_id"),
 	}
 }
