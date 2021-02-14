@@ -38,6 +38,7 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 				Headers:    joinHead(defaultCORS(http), v.Headers),
 			}, nil
 		case *Issue:
+			// TODO: debug.Stack() inside µ.InternalServerError(...)
 			return recoverIssue(http, v), nil
 		case NoMatch:
 			iss := NotImplemented(fmt.Errorf("NoMatch %v", http.APIGatewayProxyRequest.Path))

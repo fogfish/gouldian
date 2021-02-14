@@ -18,6 +18,7 @@ package mock
 
 import (
 	"encoding/json"
+	"net/textproto"
 	"net/url"
 	"strings"
 
@@ -85,7 +86,8 @@ func Param(key, val string) Mock {
 // Header adds Header to mocked HTTP request
 func Header(header string, value string) Mock {
 	return func(mock *µ.Input) *µ.Input {
-		mock.APIGatewayProxyRequest.Headers[header] = value
+		head := textproto.CanonicalMIMEHeaderKey(header)
+		mock.APIGatewayProxyRequest.Headers[head] = value
 		return mock
 	}
 }
