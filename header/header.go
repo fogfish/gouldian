@@ -35,6 +35,7 @@ package header
 import (
 	"errors"
 	"fmt"
+	"net/textproto"
 	"strconv"
 	"strings"
 
@@ -66,11 +67,8 @@ func Or(arrows ...µ.ArrowHeader) µ.ArrowHeader {
 
 // value return header with lower case support
 func value(headers map[string]string, key string) (string, bool) {
-	v, exists := headers[key]
-	if !exists {
-		v, exists = headers[strings.ToLower(key)]
-		return v, exists
-	}
+	k := textproto.CanonicalMIMEHeaderKey(key)
+	v, exists := headers[k]
 	return v, exists
 }
 
