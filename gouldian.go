@@ -42,9 +42,12 @@ func Serve(seq ...Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatew
 			return recoverIssue(http, v), nil
 		case NoMatch:
 			iss := NotImplemented(fmt.Errorf("NoMatch %v", http.APIGatewayProxyRequest.Path))
-			// TODO: output JSON only in debug mode
-			// b, _ := json.Marshal(req)
-			// log.Printf("ERROR %v, NoMatch: %v", iss.ID, string(b))
+			// if _, ok := req.Headers["X-Debug-NoMatch"]; ok {
+			// 	bin, err := json.Marshal(req)
+			// 	if err != nil {
+			// 		log.Printf("ERROR %v, NoMatch: %v", iss.ID, string(bin))
+			// 	}
+			// }
 			return recoverIssue(http, iss), nil
 		default:
 			iss := InternalServerError(v)
