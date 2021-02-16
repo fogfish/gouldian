@@ -69,6 +69,11 @@ func Or(arrows ...µ.ArrowHeader) µ.ArrowHeader {
 func value(headers map[string]string, key string) (string, bool) {
 	k := textproto.CanonicalMIMEHeaderKey(key)
 	v, exists := headers[k]
+	if !exists {
+		// Note: required due to browser behavior
+		v, exists = headers[strings.ToLower(k)]
+		return v, exists
+	}
 	return v, exists
 }
 
