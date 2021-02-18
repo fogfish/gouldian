@@ -18,13 +18,13 @@ package gouldian
 
 // AccessToken is a container for user identity
 type AccessToken struct {
-	Jti      string
-	Iss      string
-	Exp      string
-	Sub      string
-	Scope    string
-	UserID   string
-	ClientID string
+	Jti      string `json:"jti,omitempty"`
+	Iss      string `json:"iss,omitempty"`
+	Exp      string `json:"exp,omitempty"`
+	Sub      string `json:"sub,omitempty"`
+	Scope    string `json:"scope,omitempty"`
+	UserID   string `json:"username,omitempty"`
+	ClientID string `json:"client_id,omitempty"`
 }
 
 //
