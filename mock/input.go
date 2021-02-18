@@ -95,7 +95,10 @@ func Header(header string, value string) Mock {
 // JSON adds payload to mocked HTTP request
 func JSON(val interface{}) Mock {
 	return func(mock *µ.Input) *µ.Input {
-		body, _ := json.Marshal(val)
+		body, err := json.Marshal(val)
+		if err != nil {
+			panic(err)
+		}
 		mock.APIGatewayProxyRequest.Headers["Content-Type"] = "application/json"
 		mock.APIGatewayProxyRequest.Body = string(body)
 		return mock
@@ -111,8 +114,17 @@ func Text(val string) Mock {
 }
 
 // Auth adds Authorizer payload to mocked HTTP request
-func Auth(claims map[string]interface{}) Mock {
+func Auth(token µ.AccessToken) Mock {
 	return func(mock *µ.Input) *µ.Input {
+		bin, err := json.Marshal(token)
+		if err != nil {
+			panic(err)
+		}
+		var claims map[string]interface{}
+		if err := json.Unmarshal(bin, &claims); err != nil {
+			panic(err)
+		}
+
 		mock.RequestContext = events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"claims": claims,
