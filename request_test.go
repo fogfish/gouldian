@@ -184,9 +184,9 @@ func TestJWT(t *testing.T) {
 	foo := µ.GET(µ.JWT(&token))
 	req := mock.Input(
 		mock.Auth(
-			map[string]interface{}{
-				"sub":   "00000000-0000-0000-0000-000000000000",
-				"scope": "a b",
+			µ.AccessToken{
+				Sub:   "00000000-0000-0000-0000-000000000000",
+				Scope: "a b",
 			},
 		),
 	)
