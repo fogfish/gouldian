@@ -167,14 +167,17 @@ func TestParam(t *testing.T) {
 }
 
 func TestHeader(t *testing.T) {
-	foo := µ.GET(µ.Header(header.Is("foo", "bar")))
+	foo1 := µ.GET(µ.Header(header.Is("foo", "bar")))
+	foo2 := µ.GET(µ.Header(header.Is("foo", "ba")))
+
 	bar := µ.GET(µ.Header(header.Is("bar", "foo")))
 	foobar := µ.GET(µ.Header(header.Is("foo", "bar"), header.Is("bar", "foo")))
 
 	req := mock.Input(mock.Header("foo", "bar"))
 
 	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
+		If(foo1(req)).Should().Equal(nil).
+		If(foo2(req)).Should().Equal(nil).
 		If(bar(req)).ShouldNot().Equal(nil).
 		If(foobar(req)).ShouldNot().Equal(nil)
 }
