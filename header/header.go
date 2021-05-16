@@ -84,7 +84,7 @@ func value(headers map[string]string, key string) (string, bool) {
 func Is(key string, val string) µ.ArrowHeader {
 	return func(headers map[string]string) error {
 		opt, exists := value(headers, key)
-		if exists && opt == val {
+		if exists && strings.HasPrefix(opt, val) {
 			return nil
 		}
 		return µ.NoMatch{}
