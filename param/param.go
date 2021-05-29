@@ -141,7 +141,7 @@ func Int(key string, val *int) µ.ArrowParam {
 // MaybeInt matches a param key to closed variable of int type.
 // It does not fail if key is not defined.
 //   var value int
-//   e := µ.GET( µ.Param(param.Int("foo", &value)) )
+//   e := µ.GET( µ.Param(param.MaybeInt("foo", &value)) )
 //   e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
 //   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == 0
 func MaybeInt(key string, val *int) µ.ArrowParam {
@@ -152,6 +152,63 @@ func MaybeInt(key string, val *int) µ.ArrowParam {
 		}
 
 		value, err := strconv.Atoi(opt)
+		if err != nil {
+			*val = 0
+			return nil
+		}
+
+		*val = value
+		return nil
+	}
+}
+
+/*
+
+Float matches a param key to closed variable of float64 type.
+It fails if key is not defined.
+
+  var value float64
+  e := µ.GET( µ.Param(param.Float("foo", &value)) )
+  e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
+  e(mock.Input(mock.URL("/?foo=bar"))) != nil
+
+*/
+func Float(key string, val *float64) µ.ArrowParam {
+	return func(params map[string]string) error {
+		opt, exists := params[key]
+		if !exists {
+			return µ.NoMatch{}
+		}
+
+		value, err := strconv.ParseFloat(opt, 64)
+		if err != nil {
+			return µ.NoMatch{}
+		}
+
+		*val = value
+		return nil
+	}
+}
+
+/*
+
+MaybeFloat matches a param key to closed variable of float64 type.
+It does not fail if key is not defined.
+
+  var value float64
+  e := µ.GET( µ.Param(param.MaybeFloat("foo", &value)) )
+  e(mock.Input(mock.URL("/?foo=1"))) == nil && value == 1
+  e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == 0
+
+*/
+func MaybeFloat(key string, val *float64) µ.ArrowParam {
+	return func(params map[string]string) error {
+		opt, exists := params[key]
+		if !exists {
+			return nil
+		}
+
+		value, err := strconv.ParseFloat(opt, 64)
 		if err != nil {
 			*val = 0
 			return nil

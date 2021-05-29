@@ -112,6 +112,42 @@ func TestParamMaybeInt(t *testing.T) {
 		If(value).Should().Equal(0)
 }
 
+func TestParamFloat(t *testing.T) {
+	var value float64
+	foo := µ.GET(µ.Param(param.Float("foo", &value)))
+	success1 := mock.Input(mock.URL("/?foo=1"))
+	success2 := mock.Input(mock.URL("/?foo=1.1"))
+	failure1 := mock.Input(mock.URL("/?foo=bar"))
+	failure2 := mock.Input(mock.URL("/?bar=foo"))
+
+	it.Ok(t).
+		If(foo(success1)).Should().Equal(nil).
+		If(value).Should().Equal(1.0).
+		//
+		If(foo(success2)).Should().Equal(nil).
+		If(value).Should().Equal(1.1).
+		//
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
+}
+
+func TestParamMaybeFloat(t *testing.T) {
+	var value float64
+	foo := µ.GET(µ.Param(param.MaybeFloat("foo", &value)))
+	success := mock.Input(mock.URL("/?foo=1.1"))
+	failure1 := mock.Input(mock.URL("/?foo=bar"))
+	failure2 := mock.Input(mock.URL("/?bar=foo"))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(value).Should().Equal(1.1).
+		//
+		If(foo(failure1)).Should().Equal(nil).
+		If(value).Should().Equal(0.0).
+		If(foo(failure2)).Should().Equal(nil).
+		If(value).Should().Equal(0.0)
+}
+
 type MyT struct {
 	A string `json:"a"`
 	B int    `json:"b"`
