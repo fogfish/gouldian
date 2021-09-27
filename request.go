@@ -19,7 +19,6 @@ package gouldian
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strings"
 
@@ -27,95 +26,76 @@ import (
 )
 
 // ArrowHeader is a type-safe definition of Header matcher
-type ArrowHeader func(map[string]string) error
+type ArrowHeader func(Context, Headers) error
 
 // ArrowParam is a type-safe definition of URL Query matcher
-type ArrowParam func(map[string]string) error
+type ArrowParam func(Context, Params) error
 
 // ArrowPath is a type-safe definition of URL segment matcher
-type ArrowPath func([]string) error
+type ArrowPath func(Context, Segments) error
 
-// Then is a product of path match arrows. It helps to build a group of
-// composable patterns for sup path(es)
-func (arrow ArrowPath) Then(x ArrowPath) ArrowPath {
-	return func(segments []string) error {
-		sz := len(segments)
-		at := 0
+/*
 
-		for _, f := range []ArrowPath{arrow, x} {
-			if sz <= at {
-				return NoMatch{}
-			}
-			switch err := f(segments[at:]).(type) {
-			case nil:
-				at++
-			case Match:
-				at = at + err.N
-			default:
-				return err
-			}
-		}
-
-		return Match{N: at}
-	}
-}
-
-// Or is a co-product of path match arrows.
-func (arrow ArrowPath) Or(x ArrowPath) ArrowPath {
-	return func(segments []string) error {
-		for _, f := range []ArrowPath{arrow, x} {
-			if err := f(segments); !errors.Is(err, NoMatch{}) {
-				return err
-			}
-		}
-		return NoMatch{}
-	}
-}
-
-// DELETE composes product Endpoint match HTTP DELETE request.
-//   e := µ.DELETE()
-//   e(mock.Input(mock.Method("DELETE"))) == nil
-//   e(mock.Input(mock.Method("OTHER"))) != nil
+DELETE composes product Endpoint match HTTP DELETE request.
+  e := µ.DELETE()
+  e(mock.Input(mock.Method("DELETE"))) == nil
+  e(mock.Input(mock.Method("OTHER"))) != nil
+*/
 func DELETE(arrows ...Endpoint) Endpoint {
 	return Method("DELETE").Then(Join(arrows...))
 }
 
-// GET composes product Endpoint match HTTP GET request.
-//   e := µ.GET()
-//   e(mock.Input(mock.Method("GET"))) == nil
-//   e(mock.Input(mock.Method("OTHER"))) != nil
+/*
+
+GET composes product Endpoint match HTTP GET request.
+  e := µ.GET()
+  e(mock.Input(mock.Method("GET"))) == nil
+  e(mock.Input(mock.Method("OTHER"))) != nil
+*/
 func GET(arrows ...Endpoint) Endpoint {
 	return Method("GET").Then(Join(arrows...))
 }
 
-// PATCH composes product Endpoint match HTTP PATCH request.
-//   e := µ.PATCH()
-//   e(mock.Input(mock.Method("PATCH"))) == nil
-//   e(mock.Input(mock.Method("OTHER"))) != nil
+/*
+
+PATCH composes product Endpoint match HTTP PATCH request.
+  e := µ.PATCH()
+  e(mock.Input(mock.Method("PATCH"))) == nil
+  e(mock.Input(mock.Method("OTHER"))) != nil
+*/
 func PATCH(arrows ...Endpoint) Endpoint {
 	return Method("PATCH").Then(Join(arrows...))
 }
 
-// POST composes product Endpoint match HTTP POST request.
-//   e := µ.POST()
-//   e(mock.Input(mock.Method("POST"))) == nil
-//   e(mock.Input(mock.Method("OTHER"))) != nil
+/*
+
+POST composes product Endpoint match HTTP POST request.
+  e := µ.POST()
+  e(mock.Input(mock.Method("POST"))) == nil
+  e(mock.Input(mock.Method("OTHER"))) != nil
+*/
 func POST(arrows ...Endpoint) Endpoint {
 	return Method("POST").Then(Join(arrows...))
 }
 
-// PUT composes product Endpoint match HTTP PUT request.
-//   e := µ.PUT()
-//   e(mock.Input(mock.Method("PUT"))) == nil
-//   e(mock.Input(mock.Method("OTHER"))) != nil
+/*
+
+PUT composes product Endpoint match HTTP PUT request.
+  e := µ.PUT()
+  e(mock.Input(mock.Method("PUT"))) == nil
+  e(mock.Input(mock.Method("OTHER"))) != nil
+*/
 func PUT(arrows ...Endpoint) Endpoint {
 	return Method("PUT").Then(Join(arrows...))
 }
 
-// ANY composes product Endpoint match HTTP PUT request.
-//   e := µ.ANY()
-//   e(mock.Input(mock.Method("PUT"))) == nil
-//   e(mock.Input(mock.Method("OTHER"))) == nil
+/*
+
+ANY composes product Endpoint match HTTP PUT request.
+  e := µ.ANY()
+  e(mock.Input(mock.Method("PUT"))) == nil
+  e(mock.Input(mock.Method("OTHER"))) == nil
+*/
 func ANY(arrows ...Endpoint) Endpoint {
 	return Method("*").Then(Join(arrows...))
 }
@@ -123,35 +103,44 @@ func ANY(arrows ...Endpoint) Endpoint {
 // Method is an endpoint to match HTTP verb request
 func Method(verb string) Endpoint {
 	if verb == "*" {
-		return func(http *Input) error { return nil }
+		return func(req Input) error {
+			req.Context().Free()
+			return nil
+		}
 	}
 
-	return func(http *Input) error {
-		if http.HTTPMethod == verb {
+	return func(req Input) error {
+		if req.Method() == verb {
+			req.Context().Free()
 			return nil
 		}
 		return NoMatch{}
 	}
 }
 
-// Path is an endpoint to match URL of HTTP request. The function takes
-// url matching primitives, which are defined by the package `path`.
-//
-//   import "github.com/fogfish/gouldian/path"
-//
-//   e := µ.GET( µ.Path(path.Is("foo")) )
-//   e(mock.Input(mock.URL("/foo"))) == nil
-//   e(mock.Input(mock.URL("/bar"))) != nil
+/*
+
+Path is an endpoint to match URL of HTTP request. The function takes
+url matching primitives, which are defined by the package `path`.
+
+  import "github.com/fogfish/gouldian/path"
+
+  e := µ.GET( µ.Path(path.Is("foo")) )
+  e(mock.Input(mock.URL("/foo"))) == nil
+  e(mock.Input(mock.URL("/bar"))) != nil
+*/
 func Path(arrows ...ArrowPath) Endpoint {
-	return func(req *Input) error {
-		sz := len(req.Path)
+	return func(req Input) error {
+		seq := req.Resource()
+
+		sz := len(seq)
 		at := 0
 
 		for _, f := range arrows {
 			if sz <= at {
 				return NoMatch{}
 			}
-			switch err := f(req.Path[at:]).(type) {
+			switch err := f(req.Context(), seq[at:]).(type) {
 			case nil:
 				at++
 			case Match:
@@ -169,19 +158,22 @@ func Path(arrows ...ArrowPath) Endpoint {
 	}
 }
 
-// Param is an endpoint to match URL Query parameters of HTTP request.
-// The function takes url query matching primitives, which are defined
-// by the package `param`.
-//
-//   import "github.com/fogfish/gouldian/param"
-//
-//   e := µ.GET( µ.Param(param.Is("foo", "bar")) )
-//   e(mock.Input(mock.URL("/?foo=bar"))) == nil
-//   e(mock.Input(mock.URL("/?foo=baz"))) != nil
+/*
+
+Param is an endpoint to match URL Query parameters of HTTP request.
+The function takes url query matching primitives, which are defined
+by the package `param`.
+
+  import "github.com/fogfish/gouldian/param"
+
+  e := µ.GET( µ.Param(param.Is("foo", "bar")) )
+  e(mock.Input(mock.URL("/?foo=bar"))) == nil
+  e(mock.Input(mock.URL("/?foo=baz"))) != nil
+*/
 func Param(arrows ...ArrowParam) Endpoint {
-	return func(req *Input) error {
+	return func(req Input) error {
 		for _, f := range arrows {
-			if err := f(req.APIGatewayProxyRequest.QueryStringParameters); err != nil {
+			if err := f(req.Context(), req.Params()); err != nil {
 				return err
 			}
 		}
@@ -189,26 +181,29 @@ func Param(arrows ...ArrowParam) Endpoint {
 	}
 }
 
-// Header is an endpoint to match Header(s) of HTTP request.
-// The function takes header matching primitives, which are defined
-// by the package `header`.
-//
-//   import "github.com/fogfish/gouldian/header"
-//
-//   e := µ.GET(
-//     µ.Header(
-//       param.Header("Content-Type", "application/json"),
-//     ),
-//   )
-//   Json := mock.Header("Content-Type", "application/json")
-//   e(mock.Input(Json)) == nil
-//
-//   Text := mock.Header("Content-Type", "text/plain")
-//   e(mock.Input(Text)) != nil
+/*
+
+Header is an endpoint to match Header(s) of HTTP request.
+The function takes header matching primitives, which are defined
+by the package `header`.
+
+  import "github.com/fogfish/gouldian/header"
+
+  e := µ.GET(
+    µ.Header(
+      param.Header("Content-Type", "application/json"),
+    ),
+  )
+  Json := mock.Header("Content-Type", "application/json")
+  e(mock.Input(Json)) == nil
+
+  Text := mock.Header("Content-Type", "text/plain")
+  e(mock.Input(Text)) != nil
+*/
 func Header(arrows ...ArrowHeader) Endpoint {
-	return func(req *Input) error {
+	return func(req Input) error {
 		for _, f := range arrows {
-			if err := f(req.APIGatewayProxyRequest.Headers); err != nil {
+			if err := f(req.Context(), req.Headers()); err != nil {
 				return err
 			}
 		}
@@ -219,7 +214,7 @@ func Header(arrows ...ArrowHeader) Endpoint {
 // JWT decodes token associated with the request.
 // Endpoint fails if Authentication context is not found in the request.
 func JWT(val *AccessToken) Endpoint {
-	return func(req *Input) error {
+	return func(req Input) error {
 		if req.RequestContext.Authorizer == nil {
 			return NoMatch{}
 		}
@@ -238,7 +233,7 @@ func JWT(val *AccessToken) Endpoint {
 
 // Body decodes HTTP request body to struct
 func Body(val interface{}) Endpoint {
-	return func(req *Input) error {
+	return func(req Input) error {
 		p := reflect.ValueOf(val).Elem()
 		p.Set(reflect.Zero(p.Type()))
 
@@ -271,11 +266,11 @@ func decodeForm(body string, val interface{}) error {
 }
 
 // Text decodes HTTP payload to closed variable
-func Text(val *string) Endpoint {
-	return func(req *Input) error {
-		*val = ""
-		if req.APIGatewayProxyRequest.Body != "" {
-			*val = req.APIGatewayProxyRequest.Body
+func Text(symbol Symbol) Endpoint {
+	return func(req Input) error {
+		payload := req.Payload()
+		if *payload != "" {
+			req.Context().Put(symbol, payload)
 			return nil
 		}
 		return NoMatch{}
@@ -284,6 +279,6 @@ func Text(val *string) Endpoint {
 
 // FMap applies clojure to matched HTTP request.
 // A business logic in gouldian is an endpoint transformation.
-func FMap(f func() error) Endpoint {
-	return func(*Input) error { return f() }
+func FMap(f func(Context) error) Endpoint {
+	return func(req Input) error { return f(req.Context()) }
 }

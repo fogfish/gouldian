@@ -23,12 +23,46 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
+/*
+
+Segments ...
+*/
+type Segments []string
+
+/*
+
+Params ...
+*/
+type Params map[string]string
+
+/*
+
+Headers ...
+*/
+type Headers map[string]string
+
+/*
+
+Input ...
+*/
+type Input interface {
+	Context() Context
+
+	Method() string
+	Resource() Segments
+	Params() Params
+	Headers() Headers
+	Payload() *string
+}
+
 // Input wraps HTTP request
+/*
 type Input struct {
 	events.APIGatewayProxyRequest
 	Path []string
 	Body string
 }
+*/
 
 // Request creates new Input from API Gateway request
 func Request(req events.APIGatewayProxyRequest) *Input {
