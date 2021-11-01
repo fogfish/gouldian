@@ -152,7 +152,7 @@ func Failure(status int, title string) *Issue {
 	}
 
 	return &Issue{
-		ID:     guid.Seq.ID(),
+		ID:     guid.G.K(guid.Clock).String(),
 		Type:   typeOf(status),
 		Status: status,
 		Title:  t,
