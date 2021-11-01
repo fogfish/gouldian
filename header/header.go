@@ -35,11 +35,11 @@ package header
 import (
 	"errors"
 	"fmt"
-	"net/textproto"
 	"strconv"
 	"strings"
 
 	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/optics"
 )
 
 // Or is a co-product of header match arrows
@@ -55,9 +55,9 @@ import (
 //   e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
 //   e(mock.Input(mock.Header("Content-Type", "text/html"))) != nil
 func Or(arrows ...µ.ArrowHeader) µ.ArrowHeader {
-	return func(headers map[string]string) error {
+	return func(ctx µ.Context, headers µ.Headers) error {
 		for _, f := range arrows {
-			if err := f(headers); !errors.Is(err, µ.NoMatch{}) {
+			if err := f(ctx, headers); !errors.Is(err, µ.NoMatch{}) {
 				return err
 			}
 		}
@@ -65,25 +65,16 @@ func Or(arrows ...µ.ArrowHeader) µ.ArrowHeader {
 	}
 }
 
-// value return header with lower case support
-func value(headers map[string]string, key string) (string, bool) {
-	k := textproto.CanonicalMIMEHeaderKey(key)
-	v, exists := headers[k]
-	if !exists {
-		// Note: required due to browser behavior
-		v, exists = headers[strings.ToLower(k)]
-		return v, exists
-	}
-	return v, exists
-}
+/*
 
-// Is matches a header to defined literal value
-//   e := µ.GET( µ.Header(header.Is("Content-Type", "application/json")) )
-//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
-//   e(mock.Input(mock.Header("Content-Type", "text/plain"))) != nil
+Is matches a header to defined literal value
+  e := µ.GET( µ.Header(header.Is("Content-Type", "application/json")) )
+  e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
+  e(mock.Input(mock.Header("Content-Type", "text/plain"))) != nil
+*/
 func Is(key string, val string) µ.ArrowHeader {
-	return func(headers map[string]string) error {
-		opt, exists := value(headers, key)
+	return func(ctx µ.Context, headers µ.Headers) error {
+		opt, exists := headers.Get(key)
 		if exists && strings.HasPrefix(opt, val) {
 			return nil
 		}
@@ -101,14 +92,17 @@ func ContentForm() µ.ArrowHeader {
 	return Is("Content-Type", "application/x-www-form-urlencoded")
 }
 
-// Any is a wildcard matcher of header. It fails if header is not defined.
-//   e := µ.GET( µ.Header(header.Any("Content-Type")) )
-//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
-//   e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
-//   e(mock.Input()) != nil
+/*
+
+Any is a wildcard matcher of header. It fails if header is not defined.
+  e := µ.GET( µ.Header(header.Any("Content-Type")) )
+  e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil
+  e(mock.Input(mock.Header("Content-Type", "text/plain"))) == nil
+  e(mock.Input()) != nil
+*/
 func Any(key string) µ.ArrowHeader {
-	return func(headers map[string]string) error {
-		_, exists := value(headers, key)
+	return func(ctx µ.Context, headers µ.Headers) error {
+		_, exists := headers.Get(key)
 		if exists {
 			return nil
 		}
@@ -116,75 +110,98 @@ func Any(key string) µ.ArrowHeader {
 	}
 }
 
-// String matches a header value to closed variable of string type.
-// It fails if header is not defined.
-//   var value string
-//   e := µ.GET( µ.Header(header.String("Content-Type", &value)) )
-//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
-//   e(mock.Input()) != nil
-func String(key string, val *string) µ.ArrowHeader {
-	return func(headers map[string]string) error {
-		opt, exists := value(headers, key)
-		if exists {
-			*val = opt
+/*
+
+String matches a header value to closed variable of string type.
+It fails if header is not defined.
+  var value string
+  e := µ.GET( µ.Header(header.String("Content-Type", &value)) )
+  e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
+  e(mock.Input()) != nil
+*/
+func String(key string, lens optics.Lens) µ.ArrowHeader {
+	return func(ctx µ.Context, headers µ.Headers) error {
+		val, exists := headers.Get(key)
+		if !exists {
+			return µ.NoMatch{}
+		}
+
+		ctx.Put(lens, val)
+		return nil
+	}
+}
+
+/*
+
+MaybeString matches a header value to closed variable of string type.
+It does not fail if header is not defined.
+  var value string
+  e := µ.GET( µ.Header(header.String("foo", &value)) )
+  e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
+  e(mock.Input()) == nil
+*/
+func MaybeString(key string, lens optics.Lens) µ.ArrowHeader {
+	return func(ctx µ.Context, headers µ.Headers) error {
+		val, exists := headers.Get(key)
+		if !exists {
 			return nil
 		}
-		return µ.NoMatch{}
-	}
-}
 
-// MaybeString matches a header value to closed variable of string type.
-// It does not fail if header is not defined.
-//   var value string
-//   e := µ.GET( µ.Header(header.String("foo", &value)) )
-//   e(mock.Input(mock.Header("Content-Type", "application/json"))) == nil && value == "application/json"
-//   e(mock.Input()) == nil
-func MaybeString(key string, val *string) µ.ArrowHeader {
-	return func(headers map[string]string) error {
-		opt, exists := value(headers, key)
-		*val = ""
-		if exists {
-			*val = opt
-		}
+		ctx.Put(lens, val)
 		return nil
 	}
 }
 
-// Int matches a header value to closed variable of int type.
-// It fails if header is not defined.
-//   var value int
-//   e := µ.GET( µ.Header(header.Int("Content-Length", &value)) )
-//   e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
-//   e(mock.Input()) != nil
-func Int(key string, val *int) µ.ArrowHeader {
-	return func(headers map[string]string) error {
-		opt, exists := value(headers, key)
-		if exists {
-			if value, err := strconv.Atoi(opt); err == nil {
-				*val = value
-				return nil
-			}
+/*
+
+Int matches a header value to closed variable of int type.
+It fails if header is not defined.
+  var value int
+  e := µ.GET( µ.Header(header.Int("Content-Length", &value)) )
+  e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
+  e(mock.Input()) != nil
+*/
+func Int(key string, lens optics.Lens) µ.ArrowHeader {
+	return func(ctx µ.Context, headers µ.Headers) error {
+		val, exists := headers.Get(key)
+		if !exists {
+			return µ.NoMatch{}
 		}
-		return µ.NoMatch{}
+
+		ivl, err := strconv.Atoi(val)
+		if err != nil {
+			return µ.NoMatch{}
+		}
+
+		ctx.Put(lens, ivl)
+		return nil
 	}
 }
 
-// MaybeInt matches a header value to closed variable of int type.
-// It does not fail if header is not defined.
-//   var value int
-//   e := µ.GET( µ.Header(header.MaybeInt("Content-Length", &value)) )
-//   e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
-//   e(mock.Input()) == nil
-func MaybeInt(key string, val *int) µ.ArrowHeader {
-	return func(headers map[string]string) error {
-		opt, exists := value(headers, key)
-		*val = 0
-		if exists {
-			if value, err := strconv.Atoi(opt); err == nil {
-				*val = value
-			}
+/*
+
+MaybeInt matches a header value to closed variable of int type.
+It does not fail if header is not defined.
+  var value int
+  e := µ.GET( µ.Header(header.MaybeInt("Content-Length", &value)) )
+  e(mock.Input(mock.Header("Content-Length", "1024"))) == nil && value == 1024
+  e(mock.Input()) == nil
+*/
+func MaybeInt(key string, lens optics.Lens) µ.ArrowHeader {
+	return func(ctx µ.Context, headers µ.Headers) error {
+		val, exists := headers.Get(key)
+		if !exists {
+			return nil
 		}
+
+		ivl, err := strconv.Atoi(val)
+		if err != nil {
+			return nil
+		}
+
+		ctx.Put(lens, ivl)
 		return nil
+
 	}
 }
 

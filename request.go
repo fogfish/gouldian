@@ -19,10 +19,10 @@ package gouldian
 import (
 	"bytes"
 	"encoding/json"
-	"reflect"
 	"strings"
 
 	"github.com/ajg/form"
+	"github.com/fogfish/gouldian/optics"
 )
 
 // ArrowHeader is a type-safe definition of Header matcher
@@ -232,11 +232,8 @@ func JWT(val *AccessToken) Endpoint {
 }
 
 // Body decodes HTTP request body to struct
-func Body(val interface{}) Endpoint {
+func Body(lens optics.Lens) Endpoint {
 	return func(req Input) error {
-		p := reflect.ValueOf(val).Elem()
-		p.Set(reflect.Zero(p.Type()))
-
 		content, _ := req.Header("Content-Type")
 		switch {
 		case strings.HasPrefix(content, "application/json"):
@@ -266,11 +263,11 @@ func decodeForm(body string, val interface{}) error {
 }
 
 // Text decodes HTTP payload to closed variable
-func Text(symbol Symbol) Endpoint {
+func Text(lens optics.Lens) Endpoint {
 	return func(req Input) error {
 		payload := req.Payload()
 		if *payload != "" {
-			req.Context().Put(symbol, payload)
+			req.Context().Put(lens, payload)
 			return nil
 		}
 		return NoMatch{}

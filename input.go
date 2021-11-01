@@ -17,6 +17,7 @@
 package gouldian
 
 import (
+	"net/textproto"
 	"net/url"
 	"strings"
 
@@ -40,6 +41,18 @@ type Params map[string]string
 Headers ...
 */
 type Headers map[string]string
+
+// Get ...
+func (headers Headers) Get(key string) (string, bool) {
+	header := textproto.CanonicalMIMEHeaderKey(key)
+	v, exists := headers[header]
+	if !exists {
+		// Note: required due to browser behavior
+		v, exists = headers[strings.ToLower(header)]
+		return v, exists
+	}
+	return v, exists
+}
 
 /*
 

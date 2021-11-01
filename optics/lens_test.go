@@ -8,16 +8,35 @@ import (
 )
 
 func TestLensStructString(t *testing.T) {
-	type T struct{ A string }
-	a := optics.Lenses1(T{})
-	m := optics.Morphism{a: "a"}
+	type T struct {
+		A string
+		B *string
+	}
+	a, b := optics.Lenses2(T{})
+	x, y := "a", "b"
 
-	var x T
-	err := m.Apply(&x)
+	t.Run("ByVal", func(t *testing.T) {
+		var z T
+		m := optics.Morphism{a: x, b: y}
+		e := m.Apply(&z)
 
-	it.Ok(t).
-		IfNil(err).
-		If(x.A).Equal("a")
+		it.Ok(t).
+			IfNil(e).
+			If(z.A).Equal("a").
+			If(*z.B).Equal("b")
+	})
+
+	t.Run("ByPtr", func(t *testing.T) {
+		var z T
+		m := optics.Morphism{a: &x, b: &y}
+		e := m.Apply(&z)
+
+		it.Ok(t).
+			IfNil(e).
+			If(z.A).Equal("a").
+			If(*z.B).Equal("b").
+			If(z.B).Equal(&y)
+	})
 }
 
 func TestLensStructInt(t *testing.T) {

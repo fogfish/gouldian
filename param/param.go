@@ -27,7 +27,6 @@ Package param defines primitives to match URL Query parameters of HTTP requests.
 package param
 
 import (
-	"encoding/json"
 	"errors"
 	"net/url"
 	"strconv"
@@ -126,7 +125,6 @@ It does not fail if key is not defined.
 */
 func MaybeString(key string, lens optics.Lens) µ.ArrowParam {
 	return func(ctx µ.Context, params µ.Params) error {
-		ctx.Put(lens, "")
 		if opt, exists := params[key]; exists {
 			ctx.Put(lens, opt)
 		}
@@ -173,7 +171,6 @@ It does not fail if key is not defined.
 */
 func MaybeInt(key string, lens optics.Lens) µ.ArrowParam {
 	return func(ctx µ.Context, params µ.Params) error {
-		ctx.Put(lens, 0)
 		opt, exists := params[key]
 		if !exists {
 			return nil
@@ -230,7 +227,6 @@ It does not fail if key is not defined.
 */
 func MaybeFloat(key string, lens optics.Lens) µ.ArrowParam {
 	return func(ctx µ.Context, params µ.Params) error {
-		ctx.Put(lens, 0.0)
 		opt, exists := params[key]
 		if !exists {
 			return nil
@@ -246,9 +242,12 @@ func MaybeFloat(key string, lens optics.Lens) µ.ArrowParam {
 	}
 }
 
-// JSON matches a param key to closed struct.
-// It assumes that key holds JSON value as url encoded string
-func JSON(key string, val interface{}) µ.ArrowParam {
+/*
+
+JSON matches a param key to closed struct.
+It assumes that key holds JSON value as url encoded string
+*/
+func JSON(key string, lens optics.Lens) µ.ArrowParam {
 	return func(ctx µ.Context, params µ.Params) error {
 		opt, exists := params[key]
 		if !exists {
@@ -260,10 +259,7 @@ func JSON(key string, val interface{}) µ.ArrowParam {
 			return µ.NoMatch{}
 		}
 
-		if err := json.Unmarshal([]byte(str), val); err != nil {
-			// TODO: pass error to api client
-			return µ.NoMatch{}
-		}
+		ctx.Put(lens, str)
 		return nil
 	}
 }
@@ -271,8 +267,8 @@ func JSON(key string, val interface{}) µ.ArrowParam {
 // MaybeJSON matches a param key to closed struct.
 // It assumes that key holds JSON value as url encoded string.
 // It does not fail if key is not defined.
-func MaybeJSON(key string, val interface{}) µ.ArrowParam {
-	return func(params map[string]string) error {
+func MaybeJSON(key string, lens optics.Lens) µ.ArrowParam {
+	return func(ctx µ.Context, params µ.Params) error {
 		opt, exists := params[key]
 		if !exists {
 			return nil
@@ -283,7 +279,7 @@ func MaybeJSON(key string, val interface{}) µ.ArrowParam {
 			return nil
 		}
 
-		json.Unmarshal([]byte(str), val)
+		ctx.Put(lens, str)
 		return nil
 	}
 }

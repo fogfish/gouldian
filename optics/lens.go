@@ -60,7 +60,34 @@ lensStructString ...
 type lensStructString struct{ lensStruct }
 
 func (lens lensStructString) Put(a reflect.Value, s interface{}) error {
-	a.Elem().Field(int(lens.field)).SetString(s.(string))
+	f := a.Elem().Field(int(lens.field))
+
+	if f.Kind() == reflect.Ptr {
+		return lens.putToPtr(f, s)
+	}
+
+	return lens.putToVal(f, s)
+}
+
+func (lens lensStructString) putToVal(a reflect.Value, s interface{}) error {
+	switch v := s.(type) {
+	case string:
+		a.SetString(v)
+	case *string:
+		a.SetString(*v)
+	}
+	return nil
+}
+
+func (lens lensStructString) putToPtr(a reflect.Value, s interface{}) error {
+	switch v := s.(type) {
+	case string:
+		p := reflect.New(lens.typeof.Elem())
+		p.Elem().SetString(s.(string))
+		a.Set(p)
+	case *string:
+		a.Set(reflect.ValueOf(v))
+	}
 	return nil
 }
 
@@ -135,7 +162,12 @@ func (lens lensStructSeq) Put(a reflect.Value, s interface{}) error {
 newLensStruct ...
 */
 func newLensStruct(id int, field reflect.StructField) Lens {
-	switch field.Type.Kind() {
+	typeof := field.Type.Kind()
+	if typeof == reflect.Ptr {
+		typeof = field.Type.Elem().Kind()
+	}
+
+	switch typeof {
 	case reflect.String:
 		return &lensStructString{lensStruct{id, field.Type}}
 	case reflect.Int:
@@ -147,7 +179,7 @@ func newLensStruct(id int, field reflect.StructField) Lens {
 	case reflect.Slice:
 		return &lensStructSeq{lensStruct{id, field.Type}}
 	default:
-		panic(fmt.Errorf("Unknown lens type %s", field.Type.Name()))
+		panic(fmt.Errorf("Unknown lens type %v", field.Type))
 	}
 }
 
@@ -167,7 +199,7 @@ Lenses1 ...
 func Lenses1(t interface{}) Lens {
 	tc := typeOf(t)
 	if tc.NumField() != 1 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 1 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 1", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0))
@@ -180,7 +212,7 @@ Lenses2 ...
 func Lenses2(t interface{}) (Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 2 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 2 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 2", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -194,7 +226,7 @@ Lenses3 ...
 func Lenses3(t interface{}) (Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 3 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 3 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 3", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -209,7 +241,7 @@ Lenses4 ...
 func Lenses4(t interface{}) (Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 4 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 4 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 4", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -225,7 +257,7 @@ Lenses5 ...
 func Lenses5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 5 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 5 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 5", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -242,7 +274,7 @@ Lenses6 ...
 func Lenses6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 6 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 6 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 6", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -260,7 +292,7 @@ Lenses7 ...
 func Lenses7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 7 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 7 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 7", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -279,7 +311,7 @@ Lenses8 ...
 func Lenses8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 8 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 8 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 8", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
@@ -299,7 +331,7 @@ Lenses9 ...
 func Lenses9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 9 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 9 lens", tc.Name(), tc.NumField()))
+		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 9", tc.Name(), tc.NumField()))
 	}
 
 	return newLensStruct(0, tc.Field(0)),
