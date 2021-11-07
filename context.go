@@ -8,7 +8,8 @@ import (
 
 /*
 
-Context ...
+Context of HTTP request. The context accumulates matched terms of HTTP and
+passes it to destination function.
 */
 type Context interface {
 	context.Context
@@ -16,15 +17,14 @@ type Context interface {
 	// Free all resource allocated by the context
 	Free()
 
+	// Put and Get are optics function store and lifts HTTP terms
 	Put(optics.Lens, interface{})
 	Get(interface{}) error
 }
 
 /*
 
-HList
-
-µContext ...
+µContext is an internal implementation of the Context interface
 */
 type µContext struct {
 	context.Context
@@ -38,7 +38,7 @@ var (
 
 /*
 
-NewContext ...
+NewContext create a new context for HTTP request
 */
 func NewContext(ctx context.Context) Context {
 	return &µContext{
@@ -47,17 +47,26 @@ func NewContext(ctx context.Context) Context {
 	}
 }
 
-//
+/*
+
+Free ...
+*/
 func (ctx *µContext) Free() {
 	ctx.morphism = make(optics.Morphism)
 }
 
-//
+/*
+
+Put ...
+*/
 func (ctx *µContext) Put(lens optics.Lens, val interface{}) {
 	ctx.morphism[lens] = val
 }
 
-//
+/*
+
+Get ...
+*/
 func (ctx *µContext) Get(val interface{}) error {
 	return ctx.morphism.Apply(val)
 }

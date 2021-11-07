@@ -19,80 +19,294 @@ package gouldian
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/fogfish/guid"
 )
 
-// Output defines legitimate HTTP response. It allows to specify
-// HTTP Headers and Body. The structure allows to use any HTTP
-// status code.
-//   gouldian.Ok().With("X-Header", "value").Json(MyStruct{})
-type Output struct {
+/*
+
+Output HTTP response
+*/
+type Output interface {
+	error
+
+	With(head string, value string) Output
+	JSON(interface{}) Output
+	Bytes([]byte) Output
+}
+
+/*
+
+StatusCode is a warpper type over http.StatusCode so that ...
+*/
+type StatusCode int
+
+// Status is collection of constants for HTTP Status Code checks
+const Status = StatusCode(0)
+
+/*
+TODO:
+  Continue
+	SwitchingProtocols
+	Processing
+	EarlyHints
+*/
+
+// OK ⟼ http.StatusOK
+func (code StatusCode) OK() Output {
+	return Success(http.StatusOK)
+}
+
+// Created ⟼ http.StatusCreated
+func (code StatusCode) Created() Output {
+	return Success(http.StatusCreated)
+}
+
+// Accepted ⟼ http.StatusAccepted
+func (code StatusCode) Accepted() Output {
+	return Success(http.StatusAccepted)
+}
+
+// NonAuthoritativeInfo ⟼ http.StatusNonAuthoritativeInfo
+func (code StatusCode) NonAuthoritativeInfo() Output {
+	return Success(http.StatusNonAuthoritativeInfo)
+}
+
+// NoContent ⟼ http.StatusNoContent
+func (code StatusCode) NoContent() Output {
+	return Success(http.StatusNoContent)
+}
+
+// ResetContent ⟼ http.StatusResetContent
+func (code StatusCode) ResetContent() Output {
+	return Success(http.StatusResetContent)
+}
+
+/*
+TODO:
+	PartialContent
+	MultiStatus
+	AlreadyReported
+	IMUsed
+*/
+
+// MultipleChoices ⟼ http.StatusMultipleChoices
+func (code StatusCode) MultipleChoices() Output {
+	return Success(http.StatusMultipleChoices)
+}
+
+// MovedPermanently ⟼ http.StatusMovedPermanently
+func (code StatusCode) MovedPermanently(url string) Output {
+	return Success(http.StatusMovedPermanently).With("Location", url)
+}
+
+// Found ⟼ http.StatusFound
+func (code StatusCode) Found(url string) Output {
+	return Success(http.StatusFound).With("Location", url)
+}
+
+// SeeOther ⟼ http.StatusSeeOther
+func (code StatusCode) SeeOther(url string) Output {
+	return Success(http.StatusSeeOther).With("Location", url)
+}
+
+// NotModified ⟼ http.StatusNotModified
+func (code StatusCode) NotModified(url string) Output {
+	return Success(http.StatusNotModified).With("Location", url)
+}
+
+// UseProxy ⟼ http.StatusUseProxy
+func (code StatusCode) UseProxy(url string) Output {
+	return Success(http.StatusUseProxy).With("Location", url)
+}
+
+// TemporaryRedirect ⟼ http.StatusTemporaryRedirect
+func (code StatusCode) TemporaryRedirect(url string) Output {
+	return Success(http.StatusTemporaryRedirect).With("Location", url)
+}
+
+// PermanentRedirect ⟼ http.StatusPermanentRedirect
+func (code StatusCode) PermanentRedirect(url string) Output {
+	return Success(http.StatusPermanentRedirect).With("Location", url)
+}
+
+//
+//
+//
+
+// BadRequest ⟼ http.StatusBadRequest
+func (code StatusCode) BadRequest(err error, title ...string) Output {
+	return Failure(http.StatusBadRequest, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// Unauthorized ⟼ http.StatusUnauthorized
+func (code StatusCode) Unauthorized(err error, title ...string) Output {
+	return Failure(http.StatusUnauthorized, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// PaymentRequired ⟼ http.StatusPaymentRequired
+func (code StatusCode) PaymentRequired(err error, title ...string) Output {
+	return Failure(http.StatusPaymentRequired, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// Forbidden ⟼ http.StatusForbidden
+func (code StatusCode) Forbidden(err error, title ...string) Output {
+	return Failure(http.StatusForbidden, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// NotFound ⟼ http.StatusNotFound
+func (code StatusCode) NotFound(err error, title ...string) Output {
+	return Failure(http.StatusNotFound, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// MethodNotAllowed ⟼ http.StatusMethodNotAllowed
+func (code StatusCode) MethodNotAllowed(err error, title ...string) Output {
+	return Failure(http.StatusMethodNotAllowed, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// NotAcceptable ⟼ http.StatusNotAcceptable
+func (code StatusCode) NotAcceptable(err error, title ...string) Output {
+	return Failure(http.StatusNotAcceptable, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// ProxyAuthRequired ⟼ http.StatusProxyAuthRequired
+func (code StatusCode) ProxyAuthRequired(err error, title ...string) Output {
+	return Failure(http.StatusProxyAuthRequired, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// RequestTimeout ⟼ http.StatusRequestTimeout
+func (code StatusCode) RequestTimeout(err error, title ...string) Output {
+	return Failure(http.StatusRequestTimeout, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// Conflict ⟼ http.StatusConflict
+func (code StatusCode) Conflict(err error, title ...string) Output {
+	return Failure(http.StatusConflict, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// Gone ⟼ http.StatusGone
+func (code StatusCode) Gone(err error, title ...string) Output {
+	return Failure(http.StatusGone, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// LengthRequired ⟼ http.StatusLengthRequired
+func (code StatusCode) LengthRequired(err error, title ...string) Output {
+	return Failure(http.StatusLengthRequired, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// PreconditionFailed ⟼ http.StatusPreconditionFailed
+func (code StatusCode) PreconditionFailed(err error, title ...string) Output {
+	return Failure(http.StatusPreconditionFailed, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// RequestEntityTooLarge ⟼ http.StatusRequestEntityTooLarge
+func (code StatusCode) RequestEntityTooLarge(err error, title ...string) Output {
+	return Failure(http.StatusRequestEntityTooLarge, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// RequestURITooLong ⟼ http.StatusRequestURITooLong
+func (code StatusCode) RequestURITooLong(err error, title ...string) Output {
+	return Failure(http.StatusRequestURITooLong, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// UnsupportedMediaType ⟼ http.StatusUnsupportedMediaType
+func (code StatusCode) UnsupportedMediaType(err error, title ...string) Output {
+	return Failure(http.StatusUnsupportedMediaType, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+/*
+TODO:
+	RequestedRangeNotSatisfiable
+	ExpectationFailed
+	Teapot
+	MisdirectedRequest
+	UnprocessableEntity
+	Locked
+	FailedDependency
+	TooEarly
+	UpgradeRequired
+	PreconditionRequired
+	TooManyRequests
+	RequestHeaderFieldsTooLarge
+	UnavailableForLegalReasons
+*/
+
+// InternalServerError ⟼ http.StatusInternalServerError
+func (code StatusCode) InternalServerError(err error, title ...string) Output {
+	return Failure(http.StatusInternalServerError, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// NotImplemented ⟼ http.StatusNotImplemented
+func (code StatusCode) NotImplemented(err error, title ...string) Output {
+	return Failure(http.StatusNotImplemented, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// BadGateway ⟼ http.StatusBadGateway
+func (code StatusCode) BadGateway(err error, title ...string) Output {
+	return Failure(http.StatusBadGateway, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// ServiceUnavailable ⟼ http.StatusServiceUnavailable
+func (code StatusCode) ServiceUnavailable(err error, title ...string) Output {
+	return Failure(http.StatusServiceUnavailable, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// GatewayTimeout ⟼ http.StatusGatewayTimeout
+func (code StatusCode) GatewayTimeout(err error, title ...string) Output {
+	return Failure(http.StatusGatewayTimeout, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+// HTTPVersionNotSupported ⟼ http.StatusHTTPVersionNotSupported
+func (code StatusCode) HTTPVersionNotSupported(err error, title ...string) Output {
+	return Failure(http.StatusHTTPVersionNotSupported, err).Bytes([]byte(strings.Join(title, " ")))
+}
+
+/*
+TODO:
+	VariantAlsoNegotiates
+	InsufficientStorage
+	LoopDetected
+	NotExtended
+	NetworkAuthenticationRequired
+*/
+
+//
+//
+//
+
+// Success creates HTTP response with given HTTP Status code
+func Success(status int) Output {
+	return &µOutput{
+		Status:  status,
+		Headers: map[string]string{},
+		Body:    "",
+	}
+}
+
+/*
+
+µOutput defines legitimate HTTP response. It allows to specify
+HTTP Headers and Body. The structure allows to use any HTTP
+status code.
+  gouldian.Ok().With("X-Header", "value").Json(MyStruct{})
+*/
+type µOutput struct {
 	Status  int
 	Headers map[string]string
 	Body    string
 }
 
-func (out Output) Error() string {
+//
+func (out µOutput) Error() string {
 	return out.Body
 }
 
-// Success creates HTTP response with given HTTP Status code
-func Success(status int) *Output {
-	return &Output{status, map[string]string{}, ""}
-}
-
-// Ok is an alias of "200 Ok" output
-func Ok() *Output { return Success(http.StatusOK) }
-
-// Created is an alias of "201 Created" output
-func Created() *Output { return Success(http.StatusCreated) }
-
-// Accepted is an alias of "202 Accepted" output
-func Accepted() *Output { return Success(http.StatusAccepted) }
-
-// NoContent is an alias of "204 No Content" output
-func NoContent() *Output { return Success(http.StatusNoContent) }
-
-// MovedPermanently is an alias of "301 Moved Permanently" output
-func MovedPermanently(uri url.URL) *Output {
-	return Success(http.StatusMovedPermanently).With("Location", uri.String())
-}
-
-// Found is an alias of "302 Found" output
-func Found(uri url.URL) *Output {
-	return Success(http.StatusFound).With("Location", uri.String())
-}
-
-// SeeOther is an alias of "303 See Other" output
-func SeeOther(uri url.URL) *Output {
-	return Success(http.StatusSeeOther).With("Location", uri.String())
-}
-
-// NotModified is an alias of "304 Not Modified" output
-func NotModified(uri url.URL) *Output {
-	return Success(http.StatusNotModified).With("Location", uri.String())
-}
-
-// TemporaryRedirect is an alias of "307 Temporary Redirect" output
-func TemporaryRedirect(uri url.URL) *Output {
-	return Success(http.StatusTemporaryRedirect).With("Location", uri.String())
-}
-
-// PermanentRedirect is an alias of "308 Permanent Redirect" output
-func PermanentRedirect(uri url.URL) *Output {
-	return Success(http.StatusPermanentRedirect).With("Location", uri.String())
-}
-
 // JSON appends application/json payload to HTTP response
-func (out *Output) JSON(val interface{}) *Output {
+func (out *µOutput) JSON(val interface{}) Output {
 	body, err := json.Marshal(val)
 	if err != nil {
-		log.Println(err)
 		out.Status = http.StatusInternalServerError
 		out.Headers["Content-Type"] = "text/plain"
 		out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
@@ -105,28 +319,36 @@ func (out *Output) JSON(val interface{}) *Output {
 	return out
 }
 
-// Text appends text/plain payload to HTTP response
-func (out *Output) Text(text string) *Output {
-	out.Body = text
-	out.Headers["Content-Type"] = "text/plain"
-	return out
-}
-
 // Bytes appends arbitrary octet/stream payload to HTTP response
 // content type shall be specified using With method
-func (out *Output) Bytes(content []byte) *Output {
+func (out *µOutput) Bytes(content []byte) Output {
 	out.Body = string(content)
 	return out
 }
 
 // With sets HTTP header to the response
-func (out *Output) With(head string, value string) *Output {
+func (out *µOutput) With(head string, value string) Output {
 	out.Headers[head] = value
 	return out
 }
 
+//
+//
+//
+
+// Failure creates HTTP issue with given HTTP Status code
+func Failure(status int, err error) Output {
+	return &µIssue{
+		ID:      guid.Seq.ID(),
+		Type:    fmt.Sprintf("https://httpstatuses.com/%d", status),
+		Status:  status,
+		Title:   http.StatusText(status),
+		Failure: err,
+	}
+}
+
 // Issue implements RFC 7807: Problem Details for HTTP APIs
-type Issue struct {
+type µIssue struct {
 	ID      string `json:"instance"`
 	Type    string `json:"type"`
 	Status  int    `json:"status"`
@@ -134,66 +356,25 @@ type Issue struct {
 	Failure error  `json:"-"`
 }
 
-func (err Issue) Error() string {
-	return fmt.Sprintf("%d: %s", err.Status, err.Title)
+func (issue µIssue) Error() string {
+	return fmt.Sprintf("%d: %s", issue.Status, issue.Title)
 }
 
-// Reason defines details of the issue
-func (err *Issue) Reason(reason error) *Issue {
-	err.Failure = reason
-	return err
+// JSON appends application/json payload to HTTP response
+func (issue *µIssue) JSON(val interface{}) Output {
+	// Do Nothing
+	return issue
 }
 
-// Failure creates HTTP issue with given HTTP Status code
-func Failure(status int, title string) *Issue {
-	t := title
-	if title == "" {
-		t = http.StatusText(status)
-	}
-
-	return &Issue{
-		ID:     guid.Seq.ID(),
-		Type:   typeOf(status),
-		Status: status,
-		Title:  t,
-	}
+// Bytes appends arbitrary octet/stream payload to HTTP response
+// content type shall be specified using With method
+func (issue *µIssue) Bytes(content []byte) Output {
+	issue.Title = string(content)
+	return issue
 }
 
-// BadRequest is an alias of "400 Bad Request" issue
-func BadRequest(reason error, title ...string) *Issue {
-	return Failure(http.StatusBadRequest, strings.Join(title, " ")).Reason(reason)
-}
-
-// Unauthorized is an alias of "401 Unauthorized" issue
-func Unauthorized(reason error, title ...string) *Issue {
-	return Failure(http.StatusUnauthorized, strings.Join(title, " ")).Reason(reason)
-}
-
-// Forbidden is an alias of "403 Forbidden" issue
-func Forbidden(reason error, title ...string) *Issue {
-	return Failure(http.StatusForbidden, strings.Join(title, " ")).Reason(reason)
-}
-
-// NotFound is an alias of "404 Not Found" issue
-func NotFound(reason error, title ...string) *Issue {
-	return Failure(http.StatusNotFound, strings.Join(title, " ")).Reason(reason)
-}
-
-// InternalServerError is an alias of "500 Internal Server Error" issue
-func InternalServerError(reason error, title ...string) *Issue {
-	return Failure(http.StatusInternalServerError, strings.Join(title, " ")).Reason(reason)
-}
-
-// NotImplemented is an alias of "501 Not Implemented" issue
-func NotImplemented(reason error, title ...string) *Issue {
-	return Failure(http.StatusNotImplemented, strings.Join(title, " ")).Reason(reason)
-}
-
-// ServiceUnavailable is an alias of "503 Service Unavailable" issue
-func ServiceUnavailable(reason error, title ...string) *Issue {
-	return Failure(http.StatusServiceUnavailable, strings.Join(title, " ")).Reason(reason)
-}
-
-func typeOf(status int) string {
-	return fmt.Sprintf("https://httpstatuses.com/%d", status)
+// With sets HTTP header to the response
+func (issue *µIssue) With(head string, value string) Output {
+	// Do Nothing
+	return issue
 }
