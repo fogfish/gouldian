@@ -65,7 +65,7 @@ type Input interface {
 	Resource() Segments
 	Params() Params
 	Headers() Headers
-	Payload() *string
+	Payload() []byte
 }
 
 // Input wraps HTTP request
