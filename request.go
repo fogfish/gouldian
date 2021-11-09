@@ -16,15 +16,6 @@
 
 package gouldian
 
-import (
-	"bytes"
-	"encoding/json"
-	"strings"
-
-	"github.com/ajg/form"
-	"github.com/fogfish/gouldian/optics"
-)
-
 // ArrowHeader is a type-safe definition of Header matcher
 type ArrowHeader func(Context, Headers) error
 
@@ -213,6 +204,7 @@ func Header(arrows ...ArrowHeader) Endpoint {
 
 // JWT decodes token associated with the request.
 // Endpoint fails if Authentication context is not found in the request.
+/*
 func JWT(val *AccessToken) Endpoint {
 	return func(req Input) error {
 		if req.RequestContext.Authorizer == nil {
@@ -230,8 +222,10 @@ func JWT(val *AccessToken) Endpoint {
 		return NoMatch{}
 	}
 }
+*/
 
 // Body decodes HTTP request body to struct
+/*
 func Body(lens optics.Lens) Endpoint {
 	return func(req Input) error {
 		content, _ := req.Header("Content-Type")
@@ -261,8 +255,10 @@ func decodeForm(body string, val interface{}) error {
 	}
 	return nil
 }
+*/
 
 // Text decodes HTTP payload to closed variable
+/*
 func Text(lens optics.Lens) Endpoint {
 	return func(req Input) error {
 		payload := req.Payload()
@@ -273,6 +269,7 @@ func Text(lens optics.Lens) Endpoint {
 		return NoMatch{}
 	}
 }
+*/
 
 // FMap applies clojure to matched HTTP request.
 // A business logic in gouldian is an endpoint transformation.

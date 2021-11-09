@@ -23,6 +23,7 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/gouldian/path"
 	"github.com/fogfish/it"
 )
@@ -51,57 +52,84 @@ func TestPathAny(t *testing.T) {
 }
 
 func TestPathString(t *testing.T) {
-	var value string
-	foo := µ.GET(µ.Path(path.Is("foo"), path.String(&value)))
-	success1 := mock.Input(mock.URL("/foo/bar"))
-	success2 := mock.Input(mock.URL("/foo/1"))
+	type myT struct{ Val string }
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(value).Should().Equal("bar").
-		//
-		If(foo(success2)).Should().Equal(nil).
-		If(value).Should().Equal("1")
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Path(path.Is("foo"), path.String(val)))
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/foo/bar"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal("bar")
+	})
+
+	t.Run("number", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/foo/1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal("1")
+	})
 }
 
 func TestPathInt(t *testing.T) {
-	var value int
-	foo := µ.GET(µ.Path(path.Is("foo"), path.Int(&value)))
-	success := mock.Input(mock.URL("/foo/1"))
-	failure := mock.Input(mock.URL("/foo/bar"))
+	type myT struct{ Val int }
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(1).
-		//
-		If(foo(failure)).ShouldNot().Equal(nil)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Path(path.Is("foo"), path.Int(val)))
+
+	t.Run("string", func(t *testing.T) {
+		req := mock.Input(mock.URL("/foo/bar"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("number", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/foo/1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1)
+	})
 }
 
-func TestPathOr(t *testing.T) {
-	pat := path.Is("foo").Or(path.Is("bar"))
-	foo := µ.GET(µ.Path(pat))
-	success1 := mock.Input(mock.URL("/foo"))
-	success2 := mock.Input(mock.URL("/bar"))
-	failure := mock.Input(mock.URL("/baz"))
+//
+// TODO: recover
+//
+// func TestPathOr(t *testing.T) {
+// 	pat := path.Is("foo").Or(path.Is("bar"))
+// 	foo := µ.GET(µ.Path(pat))
+// 	success1 := mock.Input(mock.URL("/foo"))
+// 	success2 := mock.Input(mock.URL("/bar"))
+// 	failure := mock.Input(mock.URL("/baz"))
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
-}
+// 	it.Ok(t).
+// 		If(foo(success1)).Should().Equal(nil).
+// 		If(foo(success2)).Should().Equal(nil).
+// 		If(foo(failure)).ShouldNot().Equal(nil)
+// }
 
-func TestPathThen(t *testing.T) {
-	pat := path.Is("foo").Then(path.Is("bar"))
-	foo := µ.GET(µ.Path(pat))
-	success := mock.Input(mock.URL("/foo/bar"))
-	failure1 := mock.Input(mock.URL("/foo"))
-	failure2 := mock.Input(mock.URL("/foo/bar/baz"))
+// func TestPathThen(t *testing.T) {
+// 	pat := path.Is("foo").Then(path.Is("bar"))
+// 	foo := µ.GET(µ.Path(pat))
+// 	success := mock.Input(mock.URL("/foo/bar"))
+// 	failure1 := mock.Input(mock.URL("/foo"))
+// 	failure2 := mock.Input(mock.URL("/foo/bar/baz"))
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
-}
+// 	it.Ok(t).
+// 		If(foo(success)).Should().Equal(nil).
+// 		If(foo(failure1)).ShouldNot().Equal(nil).
+// 		If(foo(failure2)).ShouldNot().Equal(nil)
+// }
 
 func TestPathVariableLen(t *testing.T) {
 	foo := µ.GET(µ.Path(path.Is("foo")))
@@ -114,18 +142,35 @@ func TestPathVariableLen(t *testing.T) {
 }
 
 func TestPathSeq(t *testing.T) {
-	var value []string
-	foo := µ.GET(µ.Path(path.Is("foo"), path.Seq(&value)))
-	failure0 := mock.Input(mock.URL("/foo"))
-	success1 := mock.Input(mock.URL("/foo/a"))
-	successN := mock.Input(mock.URL("/foo/a/b/c"))
+	type myT struct{ Val []string }
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(value).Should().Equal([]string{"a"}).
-		//
-		If(foo(successN)).Should().Equal(nil).
-		If(value).Should().Equal([]string{"a", "b", "c"}).
-		//
-		If(foo(failure0)).ShouldNot().Equal(nil)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Path(path.Is("foo"), path.Seq(val)))
+
+	t.Run("seq0", func(t *testing.T) {
+		req := mock.Input(mock.URL("/foo"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("seq1", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/foo/a"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal([]string{"a"})
+	})
+
+	t.Run("seqN", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/foo/a/b/c"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal([]string{"a", "b", "c"})
+	})
 }

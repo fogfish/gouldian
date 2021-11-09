@@ -18,10 +18,7 @@ package gouldian
 
 import (
 	"net/textproto"
-	"net/url"
 	"strings"
-
-	"github.com/aws/aws-lambda-go/events"
 )
 
 /*
@@ -78,6 +75,7 @@ type Input struct {
 */
 
 // Request creates new Input from API Gateway request
+/*
 func Request(req events.APIGatewayProxyRequest) *Input {
 	segments := []string{}
 	for _, x := range strings.Split(req.Path, "/")[1:] {
@@ -94,8 +92,10 @@ func Request(req events.APIGatewayProxyRequest) *Input {
 
 	return &Input{req, segments, ""}
 }
+*/
 
 // Header returns header value
+/*
 func (req *Input) Header(key string) (string, bool) {
 	v, exists := req.APIGatewayProxyRequest.Headers[key]
 	if !exists {
@@ -104,3 +104,4 @@ func (req *Input) Header(key string) (string, bool) {
 	}
 	return v, exists
 }
+*/

@@ -21,6 +21,7 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/gouldian/param"
 	"github.com/fogfish/it"
 )
@@ -50,102 +51,210 @@ func TestParamAny(t *testing.T) {
 }
 
 func TestParamString(t *testing.T) {
-	var value string
-	foo := µ.GET(µ.Param(param.String("foo", &value)))
-	success1 := mock.Input(mock.URL("/?foo=bar"))
-	success2 := mock.Input(mock.URL("/?foo=1"))
-	failure := mock.Input(mock.URL("/?bar=foo"))
+	type myT struct{ Val string }
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(value).Should().Equal("bar").
-		//
-		If(foo(success2)).Should().Equal(nil).
-		If(value).Should().Equal("1").
-		//
-		If(foo(failure)).ShouldNot().Equal(nil)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.String("foo", val)))
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal("bar")
+	})
+
+	t.Run("number", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal("1")
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
 }
 
 func TestParamMaybeString(t *testing.T) {
-	var value string
-	foo := µ.GET(µ.Param(param.MaybeString("foo", &value)))
-	success1 := mock.Input(mock.URL("/?foo=bar"))
-	success2 := mock.Input(mock.URL("/?bar=foo"))
+	type myT struct{ Val string }
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(value).Should().Equal("bar").
-		//
-		If(foo(success2)).Should().Equal(nil).
-		If(value).Should().Equal("")
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.MaybeString("foo", val)))
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal("bar")
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal("")
+	})
 }
 
 func TestParamInt(t *testing.T) {
-	var value int
-	foo := µ.GET(µ.Param(param.Int("foo", &value)))
-	success := mock.Input(mock.URL("/?foo=1"))
-	failure1 := mock.Input(mock.URL("/?foo=bar"))
-	failure2 := mock.Input(mock.URL("/?bar=foo"))
+	type myT struct{ Val int }
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(1).
-		//
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.Int("foo", val)))
+
+	t.Run("string", func(t *testing.T) {
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("number", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1)
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
 }
 
 func TestParamMaybeInt(t *testing.T) {
-	var value int
-	foo := µ.GET(µ.Param(param.MaybeInt("foo", &value)))
-	success := mock.Input(mock.URL("/?foo=1"))
-	failure1 := mock.Input(mock.URL("/?foo=bar"))
-	failure2 := mock.Input(mock.URL("/?bar=foo"))
+	type myT struct{ Val int }
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(1).
-		//
-		If(foo(failure1)).Should().Equal(nil).
-		If(value).Should().Equal(0).
-		If(foo(failure2)).Should().Equal(nil).
-		If(value).Should().Equal(0)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.MaybeInt("foo", val)))
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(0)
+	})
+
+	t.Run("number", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1)
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(0)
+	})
 }
 
 func TestParamFloat(t *testing.T) {
-	var value float64
-	foo := µ.GET(µ.Param(param.Float("foo", &value)))
-	success1 := mock.Input(mock.URL("/?foo=1"))
-	success2 := mock.Input(mock.URL("/?foo=1.1"))
-	failure1 := mock.Input(mock.URL("/?foo=bar"))
-	failure2 := mock.Input(mock.URL("/?bar=foo"))
+	type myT struct{ Val float64 }
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(value).Should().Equal(1.0).
-		//
-		If(foo(success2)).Should().Equal(nil).
-		If(value).Should().Equal(1.1).
-		//
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.Float("foo", val)))
+
+	t.Run("integer", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1.0)
+	})
+
+	t.Run("double", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=1.1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1.1)
+	})
+
+	t.Run("string", func(t *testing.T) {
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
 }
 
 func TestParamMaybeFloat(t *testing.T) {
-	var value float64
-	foo := µ.GET(µ.Param(param.MaybeFloat("foo", &value)))
-	success := mock.Input(mock.URL("/?foo=1.1"))
-	failure1 := mock.Input(mock.URL("/?foo=bar"))
-	failure2 := mock.Input(mock.URL("/?bar=foo"))
+	type myT struct{ Val float64 }
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(1.1).
-		//
-		If(foo(failure1)).Should().Equal(nil).
-		If(value).Should().Equal(0.0).
-		If(foo(failure2)).Should().Equal(nil).
-		If(value).Should().Equal(0.0)
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.MaybeFloat("foo", val)))
+
+	t.Run("double", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=1.1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1.1)
+	})
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(0.0)
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(0.0)
+	})
 }
 
 type MyT struct {
@@ -154,49 +263,103 @@ type MyT struct {
 }
 
 func TestParamJSON(t *testing.T) {
-	var value MyT
-	foo := µ.GET(µ.Param(param.JSON("foo", &value)))
-	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
-	failure1 := mock.Input(mock.URL("/?foo=bar"))
-	failure2 := mock.Input(mock.URL("/?bar=foo"))
-	failure3 := mock.Input(mock.Param("foo", "%7"))
+	type MyS struct {
+		A string `json:"a"`
+		B int    `json:"b"`
+	}
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(MyT{A: "abc", B: 10}).
-		//
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil).
-		If(foo(failure3)).ShouldNot().Equal(nil)
+	type myT struct{ Val MyS }
+
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.JSON("foo", val)))
+
+	t.Run("json", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
+	})
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=bar"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("badformat", func(t *testing.T) {
+		req := mock.Input(mock.Param("foo", "%7"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
 }
 
 func TestParamMaybeJSON(t *testing.T) {
-	var value MyT
-	foo := µ.GET(µ.Param(param.MaybeJSON("foo", &value)))
-	success := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
-	failure1 := mock.Input(mock.URL("/?foo=bar"))
-	failure2 := mock.Input(mock.URL("/?bar=foo"))
-	failure3 := mock.Input(mock.Param("foo", "%7"))
+	type MyS struct {
+		A string `json:"a"`
+		B int    `json:"b"`
+	}
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(value).Should().Equal(MyT{A: "abc", B: 10}).
-		//
-		If(foo(failure1)).Should().Equal(nil).
-		If(foo(failure2)).Should().Equal(nil).
-		If(foo(failure3)).Should().Equal(nil)
+	type myT struct{ Val MyS }
+
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Param(param.MaybeJSON("foo", val)))
+
+	t.Run("json", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/?bar=foo"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(MyS{})
+
+	})
+
+	t.Run("badformat", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.Param("foo", "%7"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(MyS{})
+	})
 }
 
-func TestParamOr(t *testing.T) {
-	foo := µ.GET(µ.Param(
-		param.Or(param.Any("foo"), param.Any("bar")),
-	))
-	success1 := mock.Input(mock.URL("/?foo"))
-	success2 := mock.Input(mock.URL("/?bar"))
-	failure := mock.Input(mock.URL("/?baz"))
+// func TestParamOr(t *testing.T) {
+// 	foo := µ.GET(µ.Param(
+// 		param.Or(param.Any("foo"), param.Any("bar")),
+// 	))
+// 	success1 := mock.Input(mock.URL("/?foo"))
+// 	success2 := mock.Input(mock.URL("/?bar"))
+// 	failure := mock.Input(mock.URL("/?baz"))
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
-}
+// 	it.Ok(t).
+// 		If(foo(success1)).Should().Equal(nil).
+// 		If(foo(success2)).Should().Equal(nil).
+// 		If(foo(failure)).ShouldNot().Equal(nil)
+// }
