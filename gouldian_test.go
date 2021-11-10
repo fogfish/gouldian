@@ -16,19 +16,7 @@
 
 package gouldian_test
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"testing"
-
-	"github.com/aws/aws-lambda-go/events"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/path"
-	"github.com/fogfish/it"
-)
-
+/*
 func TestServeSuccess(t *testing.T) {
 	fun := µ.Serve(hello())
 	req := mock.Input(mock.URL("/hello"))
@@ -188,3 +176,4 @@ func unknown() µ.Endpoint {
 		),
 	)
 }
+*/

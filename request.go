@@ -161,6 +161,7 @@ by the package `param`.
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
   e(mock.Input(mock.URL("/?foo=baz"))) != nil
 */
+/*
 func Param(arrows ...ArrowParam) Endpoint {
 	return func(req Input) error {
 		for _, f := range arrows {
@@ -171,6 +172,7 @@ func Param(arrows ...ArrowParam) Endpoint {
 		return nil
 	}
 }
+*/
 
 /*
 
@@ -191,16 +193,16 @@ by the package `header`.
   Text := mock.Header("Content-Type", "text/plain")
   e(mock.Input(Text)) != nil
 */
-func Header(arrows ...ArrowHeader) Endpoint {
-	return func(req Input) error {
-		for _, f := range arrows {
-			if err := f(req.Context(), req.Headers()); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-}
+// func Header(arrows ...ArrowHeader) Endpoint {
+// 	return func(req Input) error {
+// 		for _, f := range arrows {
+// 			if err := f(req.Context(), req.Headers()); err != nil {
+// 				return err
+// 			}
+// 		}
+// 		return nil
+// 	}
+// }
 
 // JWT decodes token associated with the request.
 // Endpoint fails if Authentication context is not found in the request.

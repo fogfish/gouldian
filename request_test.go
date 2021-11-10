@@ -16,18 +16,7 @@
 
 package gouldian_test
 
-import (
-	"fmt"
-	"testing"
-
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/header"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/param"
-	"github.com/fogfish/gouldian/path"
-	"github.com/fogfish/it"
-)
-
+/*
 func TestVerbAny(t *testing.T) {
 	endpoint := µ.ANY()
 
@@ -361,3 +350,4 @@ func TestBodyLeak(t *testing.T) {
 		it.Ok(t).If(out.Error()).Should().Equal(expect)
 	}
 }
+*/

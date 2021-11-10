@@ -33,6 +33,12 @@ Params ...
 */
 type Params map[string]string
 
+// Get ...
+func (params Params) Get(key string) (string, bool) {
+	v, exists := params[key]
+	return v, exists
+}
+
 /*
 
 Headers ...

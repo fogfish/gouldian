@@ -1,20 +1,22 @@
-//
-//   Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-//
+/*
 
-package param_test
+  Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+*/
+
+package gouldian_test
 
 import (
 	"testing"
@@ -22,12 +24,11 @@ import (
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
-	"github.com/fogfish/gouldian/param"
 	"github.com/fogfish/it"
 )
 
 func TestParamIs(t *testing.T) {
-	foo := µ.GET(µ.Param(param.Is("foo", "bar")))
+	foo := µ.GET(µ.Param("foo").Is("bar"))
 	success := mock.Input(mock.URL("/?foo=bar"))
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
@@ -37,7 +38,7 @@ func TestParamIs(t *testing.T) {
 }
 
 func TestParamAny(t *testing.T) {
-	foo := µ.GET(µ.Param(param.Any("foo")))
+	foo := µ.GET(µ.Param("foo").Any())
 	success1 := mock.Input(mock.URL("/?foo"))
 	success2 := mock.Input(mock.URL("/?foo=bar"))
 	success3 := mock.Input(mock.URL("/?foo=baz"))
@@ -54,7 +55,7 @@ func TestParamString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.String("foo", val)))
+	foo := µ.GET(µ.Param("foo").String(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -88,7 +89,7 @@ func TestParamMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.MaybeString("foo", val)))
+	foo := µ.GET(µ.Param("foo").MaybeString(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -115,7 +116,7 @@ func TestParamInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.Int("foo", val)))
+	foo := µ.GET(µ.Param("foo").Int(val))
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=bar"))
@@ -146,7 +147,7 @@ func TestParamMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.MaybeInt("foo", val)))
+	foo := µ.GET(µ.Param("foo").MaybeInt(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -183,7 +184,7 @@ func TestParamFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.Float("foo", val)))
+	foo := µ.GET(µ.Param("foo").Float(val))
 
 	t.Run("integer", func(t *testing.T) {
 		var val myT
@@ -224,7 +225,7 @@ func TestParamMaybeFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.MaybeFloat("foo", val)))
+	foo := µ.GET(µ.Param("foo").MaybeFloat(val))
 
 	t.Run("double", func(t *testing.T) {
 		var val myT
@@ -271,7 +272,7 @@ func TestParamJSON(t *testing.T) {
 	type myT struct{ Val MyS }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.JSON("foo", val)))
+	foo := µ.GET(µ.Param("foo").JSON(val))
 
 	t.Run("json", func(t *testing.T) {
 		var val myT
@@ -316,7 +317,7 @@ func TestParamMaybeJSON(t *testing.T) {
 	type myT struct{ Val MyS }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param(param.MaybeJSON("foo", val)))
+	foo := µ.GET(µ.Param("foo").MaybeJSON(val))
 
 	t.Run("json", func(t *testing.T) {
 		var val myT

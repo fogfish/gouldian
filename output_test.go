@@ -16,19 +16,7 @@
 
 package gouldian_test
 
-import (
-	"errors"
-	"fmt"
-	"net/http"
-	"net/url"
-	"reflect"
-	"testing"
-
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/it"
-)
-
+/*
 func TestSuccess(t *testing.T) {
 	uri, _ := url.Parse("/")
 
@@ -125,3 +113,4 @@ func issue(t *testing.T, a, b *µ.Issue) {
 			},
 		)
 }
+*/

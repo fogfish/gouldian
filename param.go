@@ -1,18 +1,20 @@
-//
-//   Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-//
+/*
+
+  Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+*/
 
 /*
 
@@ -24,36 +26,22 @@ Package param defines primitives to match URL Query parameters of HTTP requests.
 	endpoint(mock.Input(mock.URL("/?foo=bar"))) == nil
 
 */
-package param
+package gouldian
 
 import (
-	"errors"
 	"net/url"
 	"strconv"
 
-	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/optics"
 )
 
 /*
 
-Or is a co-product of query param match arrows
+Param matches presence of query param in the request or match its entire content.
 
-  e := µ.Param(param.Or(param.Is("foo", "bar"), param.Is("bar", "foo")))
-  e(mock.Input(mock.URL("/?foo=bar"))) == nil
-  e(mock.Input(mock.URL("/?bar=foo"))) == nil
-  e(mock.Input(mock.URL("/?foo=baz"))) != nil
+	µ.Param("foo").Is("bar")
 */
-func Or(arrows ...µ.ArrowParam) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		for _, f := range arrows {
-			if err := f(ctx, params); !errors.Is(err, µ.NoMatch{}) {
-				return err
-			}
-		}
-		return µ.NoMatch{}
-	}
-}
+type Param string
 
 /*
 
@@ -63,13 +51,17 @@ Is matches a param key to defined literal value
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
-func Is(key string, val string) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) Is(val string) Endpoint {
+	if val == "*" {
+		return key.Any()
+	}
+
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if exists && opt == val {
 			return nil
 		}
-		return µ.NoMatch{}
+		return NoMatch{}
 	}
 }
 
@@ -83,13 +75,13 @@ Any is a wildcard matcher of param key. It fails if key is not defined.
   e(mock.Input(mock.URL("/?foo=baz"))) == nil
   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
-func Any(key string) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		_, exists := params[key]
+func (key Param) Any() Endpoint {
+	return func(req Input) error {
+		_, exists := req.Params().Get(string(key))
 		if exists {
 			return nil
 		}
-		return µ.NoMatch{}
+		return NoMatch{}
 	}
 }
 
@@ -98,18 +90,17 @@ func Any(key string) µ.ArrowParam {
 String matches a param key to closed variable of string type.
 It fails if key is not defined.
 
-  const FOO µ.Symbol = iota
   e := µ.Param(param.String("foo", FOO))
   e(mock.Input(mock.URL("/?foo=bar"))) == nil && *ctx.String(FOO) == "bar"
   e(mock.Input(mock.URL("/?foo=1"))) == nil && *ctx.String(FOO) == "1"
 */
-func String(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		if opt, exists := params[key]; exists {
-			ctx.Put(lens, opt)
+func (key Param) String(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		if opt, exists := req.Params().Get(string(key)); exists {
+			req.Context().Put(lens, opt)
 			return nil
 		}
-		return µ.NoMatch{}
+		return NoMatch{}
 	}
 }
 
@@ -123,10 +114,10 @@ It does not fail if key is not defined.
   e(mock.Input(mock.URL("/?foo=bar"))) == nil && *ctx.String(FOO) == "bar"
   e(mock.Input(mock.URL("/?bar=1"))) == nil && *ctx.String(FOO) == ""
 */
-func MaybeString(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		if opt, exists := params[key]; exists {
-			ctx.Put(lens, opt)
+func (key Param) MaybeString(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		if opt, exists := req.Params().Get(string(key)); exists {
+			req.Context().Put(lens, opt)
 		}
 		return nil
 	}
@@ -142,19 +133,19 @@ It fails if key is not defined.
   e(mock.Input(mock.URL("/?foo=1"))) == nil && *ctx.Int(FOO) == 1
   e(mock.Input(mock.URL("/?foo=bar"))) != nil
 */
-func Int(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) Int(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if !exists {
-			return µ.NoMatch{}
+			return NoMatch{}
 		}
 
 		value, err := strconv.Atoi(opt)
 		if err != nil {
-			return µ.NoMatch{}
+			return NoMatch{}
 		}
 
-		ctx.Put(lens, value)
+		req.Context().Put(lens, value)
 		return nil
 	}
 }
@@ -169,9 +160,9 @@ It does not fail if key is not defined.
   e(mock.Input(mock.URL("/?foo=1"))) == nil && *ctx.Int(FOO) == 1
   e(mock.Input(mock.URL("/?foo=bar"))) == nil && *ctx.Int(FOO) == 0
 */
-func MaybeInt(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) MaybeInt(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if !exists {
 			return nil
 		}
@@ -181,7 +172,7 @@ func MaybeInt(key string, lens optics.Lens) µ.ArrowParam {
 			return nil
 		}
 
-		ctx.Put(lens, value)
+		req.Context().Put(lens, value)
 		return nil
 	}
 }
@@ -197,19 +188,19 @@ It fails if key is not defined.
   e(mock.Input(mock.URL("/?foo=bar"))) != nil
 
 */
-func Float(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) Float(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if !exists {
-			return µ.NoMatch{}
+			return NoMatch{}
 		}
 
 		value, err := strconv.ParseFloat(opt, 64)
 		if err != nil {
-			return µ.NoMatch{}
+			return NoMatch{}
 		}
 
-		ctx.Put(lens, value)
+		req.Context().Put(lens, value)
 		return nil
 	}
 }
@@ -225,9 +216,9 @@ It does not fail if key is not defined.
   e(mock.Input(mock.URL("/?foo=bar"))) == nil && value == 0
 
 */
-func MaybeFloat(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) MaybeFloat(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if !exists {
 			return nil
 		}
@@ -237,7 +228,7 @@ func MaybeFloat(key string, lens optics.Lens) µ.ArrowParam {
 			return nil
 		}
 
-		ctx.Put(lens, value)
+		req.Context().Put(lens, value)
 		return nil
 	}
 }
@@ -247,19 +238,19 @@ func MaybeFloat(key string, lens optics.Lens) µ.ArrowParam {
 JSON matches a param key to closed struct.
 It assumes that key holds JSON value as url encoded string
 */
-func JSON(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) JSON(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if !exists {
-			return µ.NoMatch{}
+			return NoMatch{}
 		}
 
 		str, err := url.QueryUnescape(opt)
 		if err != nil {
-			return µ.NoMatch{}
+			return NoMatch{}
 		}
 
-		ctx.Put(lens, str)
+		req.Context().Put(lens, str)
 		return nil
 	}
 }
@@ -267,9 +258,9 @@ func JSON(key string, lens optics.Lens) µ.ArrowParam {
 // MaybeJSON matches a param key to closed struct.
 // It assumes that key holds JSON value as url encoded string.
 // It does not fail if key is not defined.
-func MaybeJSON(key string, lens optics.Lens) µ.ArrowParam {
-	return func(ctx µ.Context, params µ.Params) error {
-		opt, exists := params[key]
+func (key Param) MaybeJSON(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		opt, exists := req.Params().Get(string(key))
 		if !exists {
 			return nil
 		}
@@ -279,7 +270,27 @@ func MaybeJSON(key string, lens optics.Lens) µ.ArrowParam {
 			return nil
 		}
 
-		ctx.Put(lens, str)
+		req.Context().Put(lens, str)
 		return nil
 	}
 }
+
+/*
+
+Or is a co-product of query param match arrows
+
+  e := µ.Param(param.Or(param.Is("foo", "bar"), param.Is("bar", "foo")))
+  e(mock.Input(mock.URL("/?foo=bar"))) == nil
+  e(mock.Input(mock.URL("/?bar=foo"))) == nil
+  e(mock.Input(mock.URL("/?foo=baz"))) != nil
+*/
+// func Or(arrows ...µ.ArrowParam) µ.ArrowParam {
+// 	return func(ctx µ.Context, params µ.Params) error {
+// 		for _, f := range arrows {
+// 			if err := f(ctx, params); !errors.Is(err, µ.NoMatch{}) {
+// 				return err
+// 			}
+// 		}
+// 		return µ.NoMatch{}
+// 	}
+// }
