@@ -23,17 +23,17 @@ import (
 
 /*
 
-Segments ...
+Segments of path in HTTP request
 */
 type Segments []string
 
 /*
 
-Params ...
+Params of path query in HTTP request
 */
 type Params map[string]string
 
-// Get ...
+// Get parameter by key
 func (params Params) Get(key string) (string, bool) {
 	v, exists := params[key]
 	return v, exists
@@ -41,11 +41,11 @@ func (params Params) Get(key string) (string, bool) {
 
 /*
 
-Headers ...
+Headers of HTTP request
 */
 type Headers map[string]string
 
-// Get ...
+// Get header by its value
 func (headers Headers) Get(key string) (string, bool) {
 	header := textproto.CanonicalMIMEHeaderKey(key)
 	v, exists := headers[header]
@@ -59,7 +59,7 @@ func (headers Headers) Get(key string) (string, bool) {
 
 /*
 
-Input ...
+Input is the HTTP request
 */
 type Input interface {
 	Context() Context
@@ -71,6 +71,7 @@ type Input interface {
 	Payload() []byte
 }
 
+// TODO: Gone
 // Input wraps HTTP request
 /*
 type Input struct {

@@ -113,6 +113,7 @@ func Method(verb string) Endpoint {
 }
 
 /*
+TODO: Gone
 
 Param is an endpoint to match URL Query parameters of HTTP request.
 The function takes url query matching primitives, which are defined
@@ -138,6 +139,7 @@ func Param(arrows ...ArrowParam) Endpoint {
 */
 
 /*
+TODO: Gone
 
 Header is an endpoint to match Header(s) of HTTP request.
 The function takes header matching primitives, which are defined

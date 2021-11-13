@@ -36,23 +36,24 @@ Header type defines primitives to match Headers of HTTP requests.
 
   endpoint(
     mock.Input(
-      mock.Header("Content-Type", "application/json")
-      mock.Header("Host", "example.com")
+      mock.Header("X-Foo", "Bar")
     )
   ) == nil
+
 */
 type Header string
 
 /*
 
-Is matches a header to defined literal value
+Is matches a header to defined literal value.
+
   e := µ.GET( µ.Header("X-Foo").Is("Bar") )
   e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
   e(mock.Input(mock.Header("X-Foo", "Baz"))) != nil
 */
 func (header Header) Is(val string) Endpoint {
 	if val == Any {
-		return header.Any()
+		return header.Any
 	}
 
 	return func(req Input) error {
@@ -67,19 +68,18 @@ func (header Header) Is(val string) Endpoint {
 /*
 
 Any is a wildcard matcher of header. It fails if header is not defined.
-  e := µ.GET( µ.Header("X-Foo").Any() )
+
+  e := µ.GET( µ.Header("X-Foo").Any )
   e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
   e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
   e(mock.Input()) != nil
 */
-func (header Header) Any() Endpoint {
-	return func(req Input) error {
-		_, exists := req.Headers().Get(string(header))
-		if exists {
-			return nil
-		}
-		return NoMatch{}
+func (header Header) Any(req Input) error {
+	_, exists := req.Headers().Get(string(header))
+	if exists {
+		return nil
 	}
+	return NoMatch{}
 }
 
 /*
