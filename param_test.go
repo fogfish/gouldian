@@ -116,7 +116,7 @@ func TestParamInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param("foo").Int(val))
+	foo := µ.GET(µ.Param("foo").To(val))
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=bar"))

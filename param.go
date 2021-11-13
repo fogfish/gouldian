@@ -30,7 +30,6 @@ package gouldian
 
 import (
 	"net/url"
-	"strconv"
 
 	"github.com/fogfish/gouldian/optics"
 )
@@ -52,7 +51,7 @@ Is matches a param key to defined literal value
   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
 func (key Param) Is(val string) Endpoint {
-	if val == "*" {
+	if val == Any {
 		return key.Any()
 	}
 
@@ -85,6 +84,24 @@ func (key Param) Any() Endpoint {
 	}
 }
 
+func (key Param) To(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		if opt, exists := req.Params().Get(string(key)); exists {
+			return req.Context().Put(lens, opt)
+		}
+		return NoMatch{}
+	}
+}
+
+func (key Param) Maybe(lens optics.Lens) Endpoint {
+	return func(req Input) error {
+		if opt, exists := req.Params().Get(string(key)); exists {
+			req.Context().Put(lens, opt)
+		}
+		return nil
+	}
+}
+
 /*
 
 String matches a param key to closed variable of string type.
@@ -97,8 +114,7 @@ It fails if key is not defined.
 func (key Param) String(lens optics.Lens) Endpoint {
 	return func(req Input) error {
 		if opt, exists := req.Params().Get(string(key)); exists {
-			req.Context().Put(lens, opt)
-			return nil
+			return req.Context().Put(lens, opt)
 		}
 		return NoMatch{}
 	}
@@ -140,13 +156,7 @@ func (key Param) Int(lens optics.Lens) Endpoint {
 			return NoMatch{}
 		}
 
-		value, err := strconv.Atoi(opt)
-		if err != nil {
-			return NoMatch{}
-		}
-
-		req.Context().Put(lens, value)
-		return nil
+		return req.Context().Put(lens, opt)
 	}
 }
 
@@ -167,12 +177,7 @@ func (key Param) MaybeInt(lens optics.Lens) Endpoint {
 			return nil
 		}
 
-		value, err := strconv.Atoi(opt)
-		if err != nil {
-			return nil
-		}
-
-		req.Context().Put(lens, value)
+		req.Context().Put(lens, opt)
 		return nil
 	}
 }
@@ -195,13 +200,7 @@ func (key Param) Float(lens optics.Lens) Endpoint {
 			return NoMatch{}
 		}
 
-		value, err := strconv.ParseFloat(opt, 64)
-		if err != nil {
-			return NoMatch{}
-		}
-
-		req.Context().Put(lens, value)
-		return nil
+		return req.Context().Put(lens, opt)
 	}
 }
 
@@ -223,12 +222,7 @@ func (key Param) MaybeFloat(lens optics.Lens) Endpoint {
 			return nil
 		}
 
-		value, err := strconv.ParseFloat(opt, 64)
-		if err != nil {
-			return nil
-		}
-
-		req.Context().Put(lens, value)
+		req.Context().Put(lens, opt)
 		return nil
 	}
 }

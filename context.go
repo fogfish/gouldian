@@ -18,7 +18,7 @@ type Context interface {
 	Free()
 
 	// Put and Get are optics function store and lifts HTTP terms
-	Put(optics.Lens, interface{})
+	Put(optics.Lens, ...string) error
 	Get(interface{}) error
 }
 
@@ -59,8 +59,14 @@ func (ctx *µContext) Free() {
 
 Put ...
 */
-func (ctx *µContext) Put(lens optics.Lens, val interface{}) {
+func (ctx *µContext) Put(lens optics.Lens, raw ...string) error {
+	val, err := lens.FromSeq(raw)
+	if err != nil {
+		return NoMatch{}
+	}
+
 	ctx.morphism[lens] = val
+	return nil
 }
 
 /*

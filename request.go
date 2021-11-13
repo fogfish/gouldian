@@ -16,14 +16,17 @@
 
 package gouldian
 
+// TODO: Gone
 // ArrowHeader is a type-safe definition of Header matcher
-type ArrowHeader func(Context, Headers) error
+// type ArrowHeader func(Context, Headers) error
 
+// TODO: Gone
 // ArrowParam is a type-safe definition of URL Query matcher
-type ArrowParam func(Context, Params) error
+// type ArrowParam func(Context, Params) error
 
+// TODO: Gone
 // ArrowPath is a type-safe definition of URL segment matcher
-type ArrowPath func(Context, Segments) error
+// type ArrowPath func(Context, Segments) error
 
 /*
 
@@ -106,46 +109,6 @@ func Method(verb string) Endpoint {
 			return nil
 		}
 		return NoMatch{}
-	}
-}
-
-/*
-
-Path is an endpoint to match URL of HTTP request. The function takes
-url matching primitives, which are defined by the package `path`.
-
-  import "github.com/fogfish/gouldian/path"
-
-  e := µ.GET( µ.Path(path.Is("foo")) )
-  e(mock.Input(mock.URL("/foo"))) == nil
-  e(mock.Input(mock.URL("/bar"))) != nil
-*/
-func Path(arrows ...ArrowPath) Endpoint {
-	return func(req Input) error {
-		seq := req.Resource()
-
-		sz := len(seq)
-		at := 0
-
-		for _, f := range arrows {
-			if sz <= at {
-				return NoMatch{}
-			}
-			switch err := f(req.Context(), seq[at:]).(type) {
-			case nil:
-				at++
-			case Match:
-				at = at + err.N
-			default:
-				return err
-			}
-		}
-
-		if sz > at {
-			return NoMatch{}
-		}
-
-		return nil
 	}
 }
 
@@ -273,8 +236,11 @@ func Text(lens optics.Lens) Endpoint {
 }
 */
 
-// FMap applies clojure to matched HTTP request.
-// A business logic in gouldian is an endpoint transformation.
+/*
+
+FMap applies clojure to matched HTTP request,
+taking the execution context as the input to closure
+*/
 func FMap(f func(Context) error) Endpoint {
 	return func(req Input) error { return f(req.Context()) }
 }

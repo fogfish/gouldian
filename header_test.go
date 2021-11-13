@@ -19,9 +19,11 @@
 package gouldian_test
 
 import (
+	"errors"
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/it"
@@ -37,6 +39,96 @@ func TestHeaderIs(t *testing.T) {
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
+func TestHeaderProduct(t *testing.T) {
+	foo := µ.GET(
+		µ.Join(
+			µ.Header("X-Foo").Is("Bar"),
+			µ.Header("X-Bar").Is("Foo"),
+		),
+	)
+
+	t.Run("success", func(t *testing.T) {
+		req := mock.Input(
+			mock.Header("X-Foo", "Bar"),
+			mock.Header("X-Bar", "Foo"),
+		)
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil)
+	})
+
+	t.Run("incorrect", func(t *testing.T) {
+		req := mock.Input(
+			mock.Header("X-Foo", "Baz"),
+			mock.Header("X-Bar", "Foo"),
+		)
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("some", func(t *testing.T) {
+		req := mock.Input(
+			mock.Header("X-Foo", "Bar"),
+		)
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("none", func(t *testing.T) {
+		req := mock.Input()
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+}
+
+func TestHeaderCoProduct(t *testing.T) {
+	foo := µ.GET(
+		µ.Or(
+			µ.Header("X-Foo").Is("Bar"),
+			µ.Header("X-Bar").Is("Foo"),
+		),
+	)
+
+	t.Run("success", func(t *testing.T) {
+		req := mock.Input(
+			mock.Header("X-Foo", "Bar"),
+			mock.Header("X-Bar", "Foo"),
+		)
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil)
+	})
+
+	t.Run("incorrect", func(t *testing.T) {
+		req := mock.Input(
+			mock.Header("X-Foo", "Baz"),
+			mock.Header("X-Bar", "Foo"),
+		)
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil)
+	})
+
+	t.Run("some", func(t *testing.T) {
+		req := mock.Input(
+			mock.Header("X-Foo", "Bar"),
+		)
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil)
+	})
+
+	t.Run("none", func(t *testing.T) {
+		req := mock.Input()
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+}
+
 func TestHeaderIsLowerCase(t *testing.T) {
 	foo := µ.GET(µ.Header("X-Value").Is("bar"))
 	success := mock.Input(mock.Header("x-value", "bar"))
@@ -49,7 +141,7 @@ func TestHeaderIsLowerCase(t *testing.T) {
 
 func TestHeaderAny(t *testing.T) {
 	foo := µ.GET(µ.Header("X-Value").Any())
-	bar := µ.GET(µ.Header("X-Value").Is("*"))
+	bar := µ.GET(µ.Header("X-Value").Is("_"))
 
 	success1 := mock.Input(mock.Header("X-Value", "bar"))
 	success2 := mock.Input(mock.Header("X-Value", "baz"))
@@ -68,7 +160,7 @@ func TestHeaderString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Header("X-Value").String(val))
+	foo := µ.GET(µ.Header("X-Value").To(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -102,7 +194,7 @@ func TestHeaderMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Header("X-Value").MaybeString(val))
+	foo := µ.GET(µ.Header("X-Value").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -129,7 +221,7 @@ func TestHeaderInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Header("X-Value").Int(val))
+	foo := µ.GET(µ.Header("X-Value").To(val))
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.Header("X-Value", "bar"))
@@ -160,7 +252,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Header("X-Value").MaybeInt(val))
+	foo := µ.GET(µ.Header("X-Value").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -193,65 +285,50 @@ func TestHeaderMaybeInt(t *testing.T) {
 	})
 }
 
-/*
-func TestParamOr(t *testing.T) {
-	foo := µ.GET(µ.Header(
-		header.Or(
-			header.Is("Content-Type", "application/json"),
-			header.Is("Content-Type", "text/html"),
-		),
-	))
-
-	success1 := mock.Input(mock.Header("Content-Type", "application/json"))
-	success2 := mock.Input(mock.Header("Content-Type", "text/html"))
-	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
-
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
-}
-*/
-
-/*
 func TestAuthorize(t *testing.T) {
-	auth := func(token string) error {
+	auth := func(scheme, token string) error {
 		if token == "foo" {
 			return nil
 		}
 		return errors.New("unauthorized")
 	}
-	foo := µ.GET(header.Authorize("Bearer", auth))
+	foo := µ.GET(headers.Authorization.With(auth))
 
-	success1 := mock.Input(mock.Header("Authorization", "Bearer foo"))
-	success2 := mock.Input(mock.Header("authorization", "bearer foo"))
-	failure := mock.Input(mock.Header("Authorization", "Bearer bar"))
+	t.Run("bearer", func(t *testing.T) {
+		req := mock.Input(mock.Header("Authorization", "Bearer foo"))
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil)
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		req := mock.Input(mock.Header("Authorization", "Digest_foo"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
+	t.Run("nomatch", func(t *testing.T) {
+		req := mock.Input(mock.Header("Authorization", "Bearer bar"))
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
 }
-*/
 
-/*
 func TestContentJSON(t *testing.T) {
-	foo := µ.GET(µ.Header(header.ContentJSON()))
-	success := mock.Input(mock.Header("Content-Type", "application/json"))
-	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
+	for header, endpoint := range map[string]µ.Endpoint{
+		"application/json":                  headers.ContentType.JSON,
+		"application/x-www-form-urlencoded": headers.ContentType.Form,
+		"text/plain":                        headers.ContentType.Text,
+		"text/html":                         headers.ContentType.HTML,
+	} {
+		foo := µ.GET(endpoint)
+		success := mock.Input(mock.Header("Content-Type", header))
+		failure := mock.Input(mock.Header("Content-Type", "some/value"))
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
+		it.Ok(t).
+			If(foo(success)).Should().Equal(nil).
+			If(foo(failure)).ShouldNot().Equal(nil)
+	}
 }
-
-func TestContentForm(t *testing.T) {
-	foo := µ.GET(µ.Header(header.ContentForm()))
-	success := mock.Input(mock.Header("Content-Type", "application/x-www-form-urlencoded"))
-	failure := mock.Input(mock.Header("Content-Type", "text/plain"))
-
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
-}
-*/

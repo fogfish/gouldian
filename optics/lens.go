@@ -9,13 +9,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 )
+
+/*
+
+Codec ...
+*/
+type Codec interface {
+	FromString(string) (interface{}, error)
+	FromSeq([]string) (interface{}, error)
+}
 
 /*
 
 Lens ...
 */
 type Lens interface {
+	Codec
 	Put(a reflect.Value, s interface{}) error
 }
 
@@ -59,6 +70,18 @@ lensStructString ...
 */
 type lensStructString struct{ lensStruct }
 
+func (lensStructString) FromString(s string) (interface{}, error) {
+	return s, nil
+}
+
+func (lens lensStructString) FromSeq(s []string) (interface{}, error) {
+	if len(s) == 0 {
+		return "", nil
+	}
+
+	return lens.FromString(s[0])
+}
+
 func (lens lensStructString) Put(a reflect.Value, s interface{}) error {
 	f := a.Elem().Field(int(lens.field))
 
@@ -97,6 +120,18 @@ lensStructInt ...
 */
 type lensStructInt struct{ lensStruct }
 
+func (lensStructInt) FromString(s string) (interface{}, error) {
+	return strconv.Atoi(s)
+}
+
+func (lens lensStructInt) FromSeq(s []string) (interface{}, error) {
+	if len(s) == 0 {
+		return 0, nil
+	}
+
+	return lens.FromString(s[0])
+}
+
 func (lens lensStructInt) Put(a reflect.Value, s interface{}) error {
 	a.Elem().Field(int(lens.field)).SetInt(int64(s.(int)))
 	return nil
@@ -108,6 +143,18 @@ lensStructFloat ...
 */
 type lensStructFloat struct{ lensStruct }
 
+func (lensStructFloat) FromString(s string) (interface{}, error) {
+	return strconv.ParseFloat(s, 64)
+}
+
+func (lens lensStructFloat) FromSeq(s []string) (interface{}, error) {
+	if len(s) == 0 {
+		return 0.0, nil
+	}
+
+	return lens.FromString(s[0])
+}
+
 func (lens lensStructFloat) Put(a reflect.Value, s interface{}) error {
 	a.Elem().Field(int(lens.field)).SetFloat(s.(float64))
 	return nil
@@ -118,6 +165,18 @@ func (lens lensStructFloat) Put(a reflect.Value, s interface{}) error {
 lensStructJSON ...
 */
 type lensStructJSON struct{ lensStruct }
+
+func (lensStructJSON) FromString(s string) (interface{}, error) {
+	return s, nil
+}
+
+func (lens lensStructJSON) FromSeq(s []string) (interface{}, error) {
+	if len(s) == 0 {
+		return "", nil
+	}
+
+	return lens.FromString(s[0])
+}
 
 func (lens lensStructJSON) Put(a reflect.Value, s interface{}) error {
 	c := reflect.New(lens.typeof)
@@ -144,6 +203,14 @@ func (lens lensStructJSON) Put(a reflect.Value, s interface{}) error {
 lensStructSeq ...
 */
 type lensStructSeq struct{ lensStruct }
+
+func (lensStructSeq) FromString(s string) (interface{}, error) {
+	return s, nil
+}
+
+func (lensStructSeq) FromSeq(s []string) (interface{}, error) {
+	return s, nil
+}
 
 func (lens lensStructSeq) Put(a reflect.Value, s interface{}) error {
 	v := reflect.ValueOf(s)

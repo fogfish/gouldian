@@ -16,6 +16,32 @@
 
 package gouldian_test
 
+import (
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/it"
+	"testing"
+)
+
+func TestZ(t *testing.T) {
+	type myT struct{ Val int }
+
+	val := optics.Lenses1(myT{})
+	foo := µ.GET(µ.Path("foo", val))
+
+	t.Run("string", func(t *testing.T) {
+		var val myT
+		req := mock.Input(mock.URL("/foo/1"))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(val.Val).Should().Equal(1)
+	})
+
+}
+
 /*
 func TestVerbAny(t *testing.T) {
 	endpoint := µ.ANY()
