@@ -12,13 +12,20 @@ import (
 	"strconv"
 )
 
+// TODO
+type Val struct {
+	S string
+	I int
+	F float64
+}
+
 /*
 
 Codec ...
 */
 type Codec interface {
-	FromString(string) (interface{}, error)
-	FromSeq([]string) (interface{}, error)
+	FromString(string) (Val /*interface{}*/, error)
+	FromSeq([]string) (Val /*interface{}*/, error)
 }
 
 /*
@@ -27,14 +34,38 @@ Lens ...
 */
 type Lens interface {
 	Codec
-	Put(a reflect.Value, s interface{}) error
+	Put(a reflect.Value, s Val /*interface{}*/) error
 }
 
-/*
+// /*
 
-Morphism ... stack of lenses and values to apply
-*/
-type Morphism map[Lens]interface{}
+// Morphism ... stack of lenses and values to apply
+// */
+// type Morphism map[Lens]Val /*interface{}*/
+
+// /*
+
+// Apply ...
+// */
+// func (m Morphism) Apply(a interface{}) error {
+// 	g := reflect.ValueOf(a)
+// 	if g.Kind() != reflect.Ptr {
+// 		return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
+// 	}
+
+// 	for lens, s := range m {
+// 		if err := lens.Put(g, s); err != nil {
+// 			return err
+// 		}
+// 	}
+
+// 	return nil
+// }
+
+type Morphism []struct {
+	L Lens
+	S Val /*interface{}*/
+}
 
 /*
 
@@ -46,8 +77,8 @@ func (m Morphism) Apply(a interface{}) error {
 		return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
 	}
 
-	for lens, s := range m {
-		if err := lens.Put(g, s); err != nil {
+	for _, lens := range m {
+		if err := lens.L.Put(g, lens.S); err != nil {
 			return err
 		}
 	}
@@ -70,19 +101,19 @@ lensStructString ...
 */
 type lensStructString struct{ lensStruct }
 
-func (lensStructString) FromString(s string) (interface{}, error) {
-	return s, nil
+func (lensStructString) FromString(s string) (Val /*interface{}*/, error) {
+	return Val{S: s} /*s*/, nil
 }
 
-func (lens lensStructString) FromSeq(s []string) (interface{}, error) {
+func (lens lensStructString) FromSeq(s []string) (Val /*interface{}*/, error) {
 	if len(s) == 0 {
-		return "", nil
+		return Val{} /*""*/, nil
 	}
 
 	return lens.FromString(s[0])
 }
 
-func (lens lensStructString) Put(a reflect.Value, s interface{}) error {
+func (lens lensStructString) Put(a reflect.Value, s Val /*interface{}*/) error {
 	f := a.Elem().Field(int(lens.field))
 
 	if f.Kind() == reflect.Ptr {
@@ -92,25 +123,26 @@ func (lens lensStructString) Put(a reflect.Value, s interface{}) error {
 	return lens.putToVal(f, s)
 }
 
-func (lens lensStructString) putToVal(a reflect.Value, s interface{}) error {
-	switch v := s.(type) {
-	case string:
-		a.SetString(v)
-	case *string:
-		a.SetString(*v)
-	}
+func (lens lensStructString) putToVal(a reflect.Value, s Val /*interface{}*/) error {
+	// switch v := s.(type) {
+	// case string:
+	// 	a.SetString(v)
+	// case *string:
+	// 	a.SetString(*v)
+	// }
+	a.SetString(s.S)
 	return nil
 }
 
-func (lens lensStructString) putToPtr(a reflect.Value, s interface{}) error {
-	switch v := s.(type) {
-	case string:
-		p := reflect.New(lens.typeof.Elem())
-		p.Elem().SetString(s.(string))
-		a.Set(p)
-	case *string:
-		a.Set(reflect.ValueOf(v))
-	}
+func (lens lensStructString) putToPtr(a reflect.Value, s Val /*interface{}*/) error {
+	// switch v := s.(type) {
+	// case string:
+	// 	p := reflect.New(lens.typeof.Elem())
+	// 	p.Elem().SetString(s.(string))
+	// 	a.Set(p)
+	// case *string:
+	// 	a.Set(reflect.ValueOf(v))
+	// }
 	return nil
 }
 
@@ -237,14 +269,14 @@ func newLensStruct(id int, field reflect.StructField) Lens {
 	switch typeof {
 	case reflect.String:
 		return &lensStructString{lensStruct{id, field.Type}}
-	case reflect.Int:
-		return &lensStructInt{lensStruct{id, field.Type}}
-	case reflect.Float64:
-		return &lensStructFloat{lensStruct{id, field.Type}}
-	case reflect.Struct:
-		return &lensStructJSON{lensStruct{id, field.Type}}
-	case reflect.Slice:
-		return &lensStructSeq{lensStruct{id, field.Type}}
+	// case reflect.Int:
+	// 	return &lensStructInt{lensStruct{id, field.Type}}
+	// case reflect.Float64:
+	// 	return &lensStructFloat{lensStruct{id, field.Type}}
+	// case reflect.Struct:
+	// 	return &lensStructJSON{lensStruct{id, field.Type}}
+	// case reflect.Slice:
+	// 	return &lensStructSeq{lensStruct{id, field.Type}}
 	default:
 		panic(fmt.Errorf("Unknown lens type %v", field.Type))
 	}

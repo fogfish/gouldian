@@ -27,8 +27,8 @@ type AccessToken struct {
 	ClientID string `json:"client_id,omitempty"`
 }
 
-//
-func mkAccessToken(raw map[string]interface{}) AccessToken {
+// NewAccessToken creates access token object
+func NewAccessToken(raw map[string]interface{}) AccessToken {
 	asString := func(id string) string {
 		if val, ok := raw[id]; ok {
 			return val.(string)

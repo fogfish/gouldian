@@ -43,7 +43,7 @@ NewContext create a new context for HTTP request
 func NewContext(ctx context.Context) Context {
 	return &µContext{
 		Context:  ctx,
-		morphism: make(optics.Morphism),
+		morphism: make(optics.Morphism, 0, 30),
 	}
 }
 
@@ -52,7 +52,7 @@ func NewContext(ctx context.Context) Context {
 Free ...
 */
 func (ctx *µContext) Free() {
-	ctx.morphism = make(optics.Morphism)
+	ctx.morphism = ctx.morphism[:0]
 }
 
 /*
@@ -65,7 +65,13 @@ func (ctx *µContext) Put(lens optics.Lens, raw ...string) error {
 		return NoMatch{}
 	}
 
-	ctx.morphism[lens] = val
+	ctx.morphism = append(ctx.morphism, struct {
+		L optics.Lens
+		S optics.Val
+	}{
+		L: lens,
+		S: val,
+	})
 	return nil
 }
 

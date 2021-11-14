@@ -1,32 +1,28 @@
-//
-//   Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-//
+/*
+
+  Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+*/
 
 package gouldian
 
-// TODO: Gone
-// ArrowHeader is a type-safe definition of Header matcher
-// type ArrowHeader func(Context, Headers) error
+import (
+	"strings"
 
-// TODO: Gone
-// ArrowParam is a type-safe definition of URL Query matcher
-// type ArrowParam func(Context, Params) error
-
-// TODO: Gone
-// ArrowPath is a type-safe definition of URL segment matcher
-// type ArrowPath func(Context, Segments) error
+	"github.com/fogfish/gouldian/optics"
+)
 
 /*
 
@@ -112,131 +108,50 @@ func Method(verb string) Endpoint {
 	}
 }
 
-/*
-TODO: Gone
-
-Param is an endpoint to match URL Query parameters of HTTP request.
-The function takes url query matching primitives, which are defined
-by the package `param`.
-
-  import "github.com/fogfish/gouldian/param"
-
-  e := µ.GET( µ.Param(param.Is("foo", "bar")) )
-  e(mock.Input(mock.URL("/?foo=bar"))) == nil
-  e(mock.Input(mock.URL("/?foo=baz"))) != nil
-*/
-/*
-func Param(arrows ...ArrowParam) Endpoint {
-	return func(req Input) error {
-		for _, f := range arrows {
-			if err := f(req.Context(), req.Params()); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-}
-*/
-
-/*
-TODO: Gone
-
-Header is an endpoint to match Header(s) of HTTP request.
-The function takes header matching primitives, which are defined
-by the package `header`.
-
-  import "github.com/fogfish/gouldian/header"
-
-  e := µ.GET(
-    µ.Header(
-      param.Header("Content-Type", "application/json"),
-    ),
-  )
-  Json := mock.Header("Content-Type", "application/json")
-  e(mock.Input(Json)) == nil
-
-  Text := mock.Header("Content-Type", "text/plain")
-  e(mock.Input(Text)) != nil
-*/
-// func Header(arrows ...ArrowHeader) Endpoint {
-// 	return func(req Input) error {
-// 		for _, f := range arrows {
-// 			if err := f(req.Context(), req.Headers()); err != nil {
-// 				return err
-// 			}
-// 		}
-// 		return nil
-// 	}
-// }
-
-// JWT decodes token associated with the request.
-// Endpoint fails if Authentication context is not found in the request.
-/*
-func JWT(val *AccessToken) Endpoint {
-	return func(req Input) error {
-		if req.RequestContext.Authorizer == nil {
-			return NoMatch{}
-		}
-
-		if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
-			switch tkn := jwt.(type) {
-			case map[string]interface{}:
-				*val = mkAccessToken(tkn)
-				return nil
-			}
-		}
-
-		return NoMatch{}
-	}
-}
-*/
-
 // Body decodes HTTP request body to struct
-/*
 func Body(lens optics.Lens) Endpoint {
 	return func(req Input) error {
-		content, _ := req.Header("Content-Type")
+		content, _ := req.Headers().Get("Content-Type")
 		switch {
 		case strings.HasPrefix(content, "application/json"):
-			return decodeJSON(req.APIGatewayProxyRequest.Body, &val)
+			return req.Context().Put(lens, "application/json", string(req.Payload()))
 		case strings.HasPrefix(content, "application/x-www-form-urlencoded"):
-			return decodeForm(req.APIGatewayProxyRequest.Body, &val)
+			return req.Context().Put(lens, "application/x-www-form-urlencoded", string(req.Payload()))
 		}
 		return NoMatch{}
 	}
 }
 
-func decodeJSON(body string, val interface{}) error {
-	if err := json.Unmarshal([]byte(body), val); err != nil {
-		// TODO: pass error to api client
-		return NoMatch{}
-	}
-	return nil
-}
+// TODO: move to lenses
+// func decodeJSON(body string, val interface{}) error {
+// 	if err := json.Unmarshal([]byte(body), val); err != nil {
+// 		// TODO: pass error to api client
+// 		return NoMatch{}
+// 	}
+// 	return nil
+// }
 
-func decodeForm(body string, val interface{}) error {
-	buf := bytes.NewBuffer([]byte(body))
-	if err := form.NewDecoder(buf).Decode(val); err != nil {
-		// TODO: pass error to api client
-		return NoMatch{}
-	}
-	return nil
-}
-*/
+// TODO: move to lenses
+// func decodeForm(body string, val interface{}) error {
+// 	buf := bytes.NewBuffer([]byte(body))
+// 	if err := form.NewDecoder(buf).Decode(val); err != nil {
+// 		// TODO: pass error to api client
+// 		return NoMatch{}
+// 	}
+// 	return nil
+// }
 
 // Text decodes HTTP payload to closed variable
-/*
 func Text(lens optics.Lens) Endpoint {
 	return func(req Input) error {
 		payload := req.Payload()
-		if *payload != "" {
-			req.Context().Put(lens, payload)
+		if len(payload) > 0 {
+			req.Context().Put(lens, "text/plain", string(payload))
 			return nil
 		}
 		return NoMatch{}
 	}
 }
-*/
 
 /*
 

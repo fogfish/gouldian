@@ -1,6 +1,8 @@
 package gouldian
 
-import "github.com/fogfish/gouldian/optics"
+import (
+	"github.com/fogfish/gouldian/optics"
+)
 
 const (
 	//
@@ -22,16 +24,19 @@ url matching primitives, which are defined by the package `path`.
   e(mock.Input(mock.URL("/bar"))) != nil
 */
 func Path(arrows ...interface{}) Endpoint {
-	farrows := mkPathMatcher(arrows)
+	return mkPathEndpoint(mkPathMatcher(arrows))
+}
 
+func mkPathEndpoint(farrows []pathArrow) Endpoint {
 	return func(req Input) error {
 		seq := req.Resource()
 		if len(seq) != len(farrows) {
 			return NoMatch{}
 		}
 
+		ctx := req.Context()
 		for i, f := range farrows {
-			if err := f(req.Context(), seq[i:]); err != nil {
+			if err := f(ctx, seq[i:]); err != nil {
 				return err
 			}
 		}
@@ -42,7 +47,7 @@ func Path(arrows ...interface{}) Endpoint {
 
 /*
 
-Path is an endpoint to match URL of HTTP request. The function takes
+Prefix is an endpoint to match URL of HTTP request. The function takes
 url matching primitives, which are defined by the package `path`.
 
   import "github.com/fogfish/gouldian/path"
@@ -83,9 +88,7 @@ func mkPathMatcher(arrows []interface{}) []pathArrow {
 				seq[i] = pathIs(v)
 			}
 		case optics.Lens:
-			seq[i] = func(ctx Context, segments Segments) error {
-				return ctx.Put(v, segments...)
-			}
+			seq[i] = pathTo(v)
 		default:
 			seq[i] = pathNone()
 		}
@@ -138,14 +141,10 @@ func pathAny() pathArrow {
 
 /*
 
-Seq matches path 1 or N segments to closed slice
-  var seq []string
-  e := µ.GET( µ.Path(path.Seq(seq)) )
-  e(mock.Input(mock.URL("/a/b"))) == nil && seq == []string{"a", "b"}
+Lifts the path segment to lens
 */
-// func seq(lens optics.Lens) pathArrow {
-// 	return func(ctx Context, segments Segments) error {
-// 		ctx.Put(lens, append([]string{}, segments...))
-// 		return Match{N: len(segments)}
-// 	}
-// }
+func pathTo(l optics.Lens) pathArrow {
+	return func(ctx Context, segments Segments) error {
+		return ctx.Put(l, segments...)
+	}
+}

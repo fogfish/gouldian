@@ -16,6 +16,13 @@
 
 package gouldian_test
 
+import (
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/optics"
+	"testing"
+)
+
 /*
 func TestServeSuccess(t *testing.T) {
 	fun := µ.Serve(hello())
@@ -177,3 +184,80 @@ func unknown() µ.Endpoint {
 	)
 }
 */
+
+//
+// Microbenchmark
+//
+
+type MyT1 struct{ Name string }
+
+var (
+	uid = optics.Lenses1(MyT1{})
+
+	foo1 = µ.GET(
+		µ.Param("user").To(uid),
+		// µ.Path("user", uid),
+		// µ.FMap(func(c µ.Context) error {
+		// 	var myt MyX
+		// 	c.Get(&myt)
+		// 	return nil
+		// }),
+	)
+
+	// req1 = mock.Input(mock.URL("/user/gordon"))
+	req1 = mock.Input(mock.URL("/?user=gordon"))
+)
+
+//
+// Route with Param (no write)
+/* *
+func BenchmarkPathParam1(mb *testing.B) {
+	mb.ReportAllocs()
+	mb.ResetTimer()
+
+	for i := 0; i < mb.N; i++ {
+		foo1(req1)
+	}
+}
+* */
+
+type MyT5 struct{ A, B, C, D, E string }
+
+var (
+	a, b, c, d, e = optics.Lenses5(MyT5{})
+
+	foo5 = µ.GET(
+		// µ.Param("a").To(a),
+		// µ.Param("b").To(b),
+		// µ.Param("c").To(c),
+		// µ.Param("d").To(d),
+		// µ.Param("e").To(e),
+		µ.Path(a, b, c, d, e),
+		// µ.FMap(func(c µ.Context) error {
+		// 	var myt MyT5
+		// 	c.Get(&myt)
+		// 	fmt.Println(myt)
+		// 	return nil
+		// }),
+	)
+
+	req5 = mock.Input(mock.URL("/a/b/c/d/e"))
+	// req5 = mock.Input(mock.URL("/?a=a&b=b&c=c&d=d&e=e"))
+)
+
+//
+// Route with 5 Params (no write)
+/* */
+func BenchmarkPathParam5(mb *testing.B) {
+	mb.ReportAllocs()
+	mb.ResetTimer()
+
+	for i := 0; i < mb.N; i++ {
+		foo5(req5)
+	}
+}
+
+/* */
+
+//
+// Route with 20 Params (no write)

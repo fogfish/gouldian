@@ -97,7 +97,8 @@ value cannot be decoded to the target type. See optics.Lens type for details.
 */
 func (key Param) To(lens optics.Lens) Endpoint {
 	return func(req Input) error {
-		if opt, exists := req.Params().Get(string(key)); exists {
+		opt, exists := req.Params().Get(string(key))
+		if exists {
 			return req.Context().Put(lens, opt)
 		}
 		return NoMatch{}

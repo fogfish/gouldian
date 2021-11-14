@@ -99,7 +99,7 @@ func URL(httpURL string) Mock {
 
 		params := µ.Params{}
 		for key, val := range uri.Query() {
-			params[key] = strings.Join(val, "")
+			params[key] = []string{strings.Join(val, "")}
 		}
 		mock.params = params
 
@@ -110,7 +110,7 @@ func URL(httpURL string) Mock {
 // Param add raw param string to mocked HTTP request
 func Param(key, val string) Mock {
 	return func(mock *µMock) *µMock {
-		mock.params[key] = val
+		mock.params[key] = []string{val}
 		return mock
 	}
 }

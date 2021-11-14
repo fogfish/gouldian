@@ -31,12 +31,12 @@ type Segments []string
 
 Params of path query in HTTP request
 */
-type Params map[string]string
+type Params map[string][]string
 
 // Get parameter by key
 func (params Params) Get(key string) (string, bool) {
 	v, exists := params[key]
-	return v, exists
+	return v[0], exists
 }
 
 /*
