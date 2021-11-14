@@ -44,7 +44,7 @@ func (params Params) Get(key string) (string, bool) {
 
 Headers of HTTP request
 */
-type Headers map[string]string
+type Headers map[string][]string
 
 // Get header by its value
 func (headers Headers) Get(key string) (string, bool) {
@@ -53,9 +53,9 @@ func (headers Headers) Get(key string) (string, bool) {
 	if !exists {
 		// Note: required due to browser behavior
 		v, exists = headers[strings.ToLower(header)]
-		return v, exists
+		return v[0], exists
 	}
-	return v, exists
+	return v[0], exists
 }
 
 /*
