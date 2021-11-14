@@ -63,7 +63,7 @@ func TestParamString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -73,7 +73,7 @@ func TestParamString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 
@@ -97,7 +97,7 @@ func TestParamMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -107,7 +107,7 @@ func TestParamMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("")
 	})
 }
@@ -131,7 +131,7 @@ func TestParamInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 
@@ -155,7 +155,7 @@ func TestParamMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 
@@ -165,7 +165,7 @@ func TestParamMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 
@@ -175,7 +175,7 @@ func TestParamMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 }
@@ -192,7 +192,7 @@ func TestParamFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1.0)
 	})
 
@@ -202,7 +202,7 @@ func TestParamFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1.1)
 	})
 
@@ -233,7 +233,7 @@ func TestParamMaybeFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1.1)
 	})
 
@@ -243,7 +243,7 @@ func TestParamMaybeFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0.0)
 	})
 
@@ -253,7 +253,7 @@ func TestParamMaybeFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0.0)
 	})
 }
@@ -280,7 +280,7 @@ func TestParamJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
 	})
 
@@ -290,7 +290,7 @@ func TestParamJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).ShouldNot().Equal(nil)
+			If(req.Context.Get(&val)).ShouldNot().Equal(nil)
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
@@ -325,7 +325,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
 	})
 
@@ -335,7 +335,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{})
 
 	})
@@ -346,7 +346,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{})
 	})
 }

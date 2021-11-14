@@ -53,11 +53,11 @@ gouldian library delivers set of built-in endpoints to deal with HTTP
 request processing.
 
 */
-type Endpoint func(Input) error
+type Endpoint func(*Input) error
 
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
-	return func(http Input) (err error) {
+	return func(http *Input) (err error) {
 		if err = a(http); err == nil {
 			return b(http)
 		}
@@ -67,7 +67,7 @@ func (a Endpoint) Then(b Endpoint) Endpoint {
 
 // Or builds co-product Endpoint
 func (a Endpoint) Or(b Endpoint) Endpoint {
-	return func(http Input) (err error) {
+	return func(http *Input) (err error) {
 		if err = a(http); !errors.Is(err, NoMatch{}) {
 			return err
 		}
@@ -81,7 +81,7 @@ func Join(seq ...Endpoint) Endpoint {
 		return seq[0]
 	}
 
-	return func(http Input) (err error) {
+	return func(http *Input) (err error) {
 		for _, f := range seq {
 			if err = f(http); err != nil {
 				return err
@@ -97,7 +97,7 @@ func Or(seq ...Endpoint) Endpoint {
 		return seq[0]
 	}
 
-	return func(http Input) (err error) {
+	return func(http *Input) (err error) {
 		for _, f := range seq {
 			if err = f(http); !errors.Is(err, NoMatch{}) {
 				return err

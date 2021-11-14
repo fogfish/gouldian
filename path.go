@@ -10,7 +10,7 @@ const (
 )
 
 //
-type pathArrow func(Context, Segments) error
+type pathArrow func(Context, string) error
 
 /*
 
@@ -28,15 +28,14 @@ func Path(arrows ...interface{}) Endpoint {
 }
 
 func mkPathEndpoint(farrows []pathArrow) Endpoint {
-	return func(req Input) error {
-		seq := req.Resource()
-		if len(seq) != len(farrows) {
+	return func(req *Input) error {
+		if len(req.Resource) != len(farrows) {
 			return NoMatch{}
 		}
 
-		ctx := req.Context()
+		ctx := req.Context
 		for i, f := range farrows {
-			if err := f(ctx, seq[i:]); err != nil {
+			if err := f(ctx, req.Resource[i]); err != nil {
 				return err
 			}
 		}
@@ -56,24 +55,24 @@ url matching primitives, which are defined by the package `path`.
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) != nil
 */
-func Prefix(arrows ...interface{}) Endpoint {
-	farrows := mkPathMatcher(arrows)
+// func Prefix(arrows ...interface{}) Endpoint {
+// 	farrows := mkPathMatcher(arrows)
 
-	return func(req Input) error {
-		seq := req.Resource()
-		if len(seq) < len(farrows) {
-			return NoMatch{}
-		}
+// 	return func(req *Input) error {
+// 		if len(req.Resource) < len(farrows) {
+// 			return NoMatch{}
+// 		}
 
-		for i, f := range farrows {
-			if err := f(req.Context(), seq[i:]); err != nil {
-				return err
-			}
-		}
+// 		ctx := req.Context
+// 		for i, f := range farrows {
+// 			if err := f(ctx, req.Resource[i]); err != nil {
+// 				return err
+// 			}
+// 		}
 
-		return nil
-	}
-}
+// 		return nil
+// 	}
+// }
 
 func mkPathMatcher(arrows []interface{}) []pathArrow {
 	seq := make([]pathArrow, len(arrows))
@@ -105,8 +104,8 @@ Is matches a path segment to defined literal
   e(mock.Input(mock.URL("/bar"))) != nil
 */
 func pathIs(val string) pathArrow {
-	return func(ctx Context, segments Segments) error {
-		if segments[0] == val {
+	return func(ctx Context, segment string) error {
+		if segment == val {
 			return nil
 		}
 		return NoMatch{}
@@ -121,7 +120,7 @@ Any is a wildcard matcher of path segment
   e(mock.Input(mock.URL("/bar"))) == nil
 */
 func pathNone() pathArrow {
-	return func(Context, Segments) error {
+	return func(Context, string) error {
 		return NoMatch{}
 	}
 }
@@ -134,7 +133,7 @@ Any is a wildcard matcher of path segment
   e(mock.Input(mock.URL("/bar"))) == nil
 */
 func pathAny() pathArrow {
-	return func(Context, Segments) error {
+	return func(Context, string) error {
 		return nil
 	}
 }
@@ -144,7 +143,7 @@ func pathAny() pathArrow {
 Lifts the path segment to lens
 */
 func pathTo(l optics.Lens) pathArrow {
-	return func(ctx Context, segments Segments) error {
-		return ctx.Put(l, segments...)
+	return func(ctx Context, segment string) error {
+		return ctx.Put(l, segment)
 	}
 }

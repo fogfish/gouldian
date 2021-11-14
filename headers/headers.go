@@ -51,8 +51,8 @@ content negotiation use-cases.
 */
 type Content µ.Header
 
-func (h Content) eval(req µ.Input, val string) error {
-	opt, exists := req.Headers().Get(string(h))
+func (h Content) eval(req *µ.Input, val string) error {
+	opt, exists := req.Headers.Get(string(h))
 	if exists && strings.HasPrefix(opt, val) {
 		return nil
 	}
@@ -60,22 +60,22 @@ func (h Content) eval(req µ.Input, val string) error {
 }
 
 // JSON is a syntax sugar to Header(???).Is("application/json")
-func (h Content) JSON(req µ.Input) error {
+func (h Content) JSON(req *µ.Input) error {
 	return h.eval(req, "application/json")
 }
 
 // Form is a syntax sugar to Header(???).Is("application/x-www-form-urlencoded")
-func (h Content) Form(req µ.Input) error {
+func (h Content) Form(req *µ.Input) error {
 	return h.eval(req, "application/x-www-form-urlencoded")
 }
 
 // Text is a syntax sugar to Header(???).Is("text/plain")
-func (h Content) Text(req µ.Input) error {
+func (h Content) Text(req *µ.Input) error {
 	return h.eval(req, "text/plain")
 }
 
 // HTML is a syntax sugar to Header(???).Is("text/html")
-func (h Content) HTML(req µ.Input) error {
+func (h Content) HTML(req *µ.Input) error {
 	return h.eval(req, "text/html")
 }
 
@@ -85,7 +85,7 @@ func (h Content) Is(value string) µ.Endpoint {
 }
 
 // Any implements matcher for Content type (see Header.Any)
-func (h Content) Any(req µ.Input) error {
+func (h Content) Any(req *µ.Input) error {
 	return µ.Header(h).Any(req)
 }
 
@@ -123,18 +123,18 @@ func (h Authorize) Maybe(lens optics.Lens) µ.Endpoint {
 
 // With validates content of HTTP Authorization header
 func (h Authorize) With(f func(string, string) error) µ.Endpoint {
-	return func(req µ.Input) error {
-		auth, exists := req.Headers().Get("Authorization")
+	return func(req *µ.Input) error {
+		auth, exists := req.Headers.Get("Authorization")
 		if !exists {
 			return µ.Status.Unauthorized(
-				fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource()...)),
+				fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
 			)
 		}
 
 		cred := strings.Split(auth, " ")
 		if len(cred) != 2 {
 			return µ.Status.Unauthorized(
-				fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource()...)),
+				fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
 			)
 		}
 

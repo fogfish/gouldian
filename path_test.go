@@ -59,7 +59,7 @@ func TestPathString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -69,7 +69,7 @@ func TestPathString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 }
@@ -93,7 +93,7 @@ func TestPathInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 }
@@ -143,7 +143,7 @@ func TestPathSeq(t *testing.T) {
 	type myT struct{ Val []string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Prefix("foo", val))
+	foo := µ.GET(µ.Path("foo", val))
 
 	t.Run("seq0", func(t *testing.T) {
 		req := mock.Input(mock.URL("/foo"))
@@ -158,7 +158,7 @@ func TestPathSeq(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal([]string{"a"})
 	})
 
@@ -168,7 +168,7 @@ func TestPathSeq(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal([]string{"a", "b", "c"})
 	})
 }

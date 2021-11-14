@@ -12,11 +12,14 @@ import (
 	"strconv"
 )
 
-// TODO
-type Val struct {
-	S string
-	I int
-	F float64
+/*
+
+Value is co-product of supported types
+*/
+type Value struct {
+	String string
+	Number int
+	Double float64
 }
 
 /*
@@ -24,8 +27,7 @@ type Val struct {
 Codec ...
 */
 type Codec interface {
-	FromString(string) (Val /*interface{}*/, error)
-	FromSeq([]string) (Val /*interface{}*/, error)
+	FromString(string) (Value, error)
 }
 
 /*
@@ -34,38 +36,23 @@ Lens ...
 */
 type Lens interface {
 	Codec
-	Put(a reflect.Value, s Val /*interface{}*/) error
+	Put(a reflect.Value, s Value) error
 }
 
-// /*
+/*
 
-// Morphism ... stack of lenses and values to apply
-// */
-// type Morphism map[Lens]Val /*interface{}*/
-
-// /*
-
-// Apply ...
-// */
-// func (m Morphism) Apply(a interface{}) error {
-// 	g := reflect.ValueOf(a)
-// 	if g.Kind() != reflect.Ptr {
-// 		return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
-// 	}
-
-// 	for lens, s := range m {
-// 		if err := lens.Put(g, s); err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-type Morphism []struct {
-	L Lens
-	S Val /*interface{}*/
+Arrow ...
+*/
+type Arrow struct {
+	Lens
+	Value
 }
+
+/*
+
+Morphism is collection of lenses and values to be applied for object
+*/
+type Morphism []Arrow
 
 /*
 
@@ -77,8 +64,8 @@ func (m Morphism) Apply(a interface{}) error {
 		return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
 	}
 
-	for _, lens := range m {
-		if err := lens.L.Put(g, lens.S); err != nil {
+	for _, arrow := range m {
+		if err := arrow.Lens.Put(g, arrow.Value); err != nil {
 			return err
 		}
 	}
@@ -101,19 +88,11 @@ lensStructString ...
 */
 type lensStructString struct{ lensStruct }
 
-func (lensStructString) FromString(s string) (Val /*interface{}*/, error) {
-	return Val{S: s} /*s*/, nil
+func (lens lensStructString) FromString(s string) (Value, error) {
+	return Value{String: s}, nil
 }
 
-func (lens lensStructString) FromSeq(s []string) (Val /*interface{}*/, error) {
-	if len(s) == 0 {
-		return Val{} /*""*/, nil
-	}
-
-	return lens.FromString(s[0])
-}
-
-func (lens lensStructString) Put(a reflect.Value, s Val /*interface{}*/) error {
+func (lens lensStructString) Put(a reflect.Value, s Value) error {
 	f := a.Elem().Field(int(lens.field))
 
 	if f.Kind() == reflect.Ptr {
@@ -123,26 +102,15 @@ func (lens lensStructString) Put(a reflect.Value, s Val /*interface{}*/) error {
 	return lens.putToVal(f, s)
 }
 
-func (lens lensStructString) putToVal(a reflect.Value, s Val /*interface{}*/) error {
-	// switch v := s.(type) {
-	// case string:
-	// 	a.SetString(v)
-	// case *string:
-	// 	a.SetString(*v)
-	// }
-	a.SetString(s.S)
+func (lens lensStructString) putToVal(a reflect.Value, s Value) error {
+	a.SetString(s.String)
 	return nil
 }
 
-func (lens lensStructString) putToPtr(a reflect.Value, s Val /*interface{}*/) error {
-	// switch v := s.(type) {
-	// case string:
-	// 	p := reflect.New(lens.typeof.Elem())
-	// 	p.Elem().SetString(s.(string))
-	// 	a.Set(p)
-	// case *string:
-	// 	a.Set(reflect.ValueOf(v))
-	// }
+func (lens lensStructString) putToPtr(a reflect.Value, s Value) error {
+	p := reflect.New(lens.typeof.Elem())
+	p.Elem().SetString(s.String)
+	a.Set(p)
 	return nil
 }
 
@@ -152,20 +120,17 @@ lensStructInt ...
 */
 type lensStructInt struct{ lensStruct }
 
-func (lensStructInt) FromString(s string) (interface{}, error) {
-	return strconv.Atoi(s)
-}
-
-func (lens lensStructInt) FromSeq(s []string) (interface{}, error) {
-	if len(s) == 0 {
-		return 0, nil
+func (lens lensStructInt) FromString(s string) (Value, error) {
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		return Value{}, err
 	}
 
-	return lens.FromString(s[0])
+	return Value{Number: val}, nil
 }
 
-func (lens lensStructInt) Put(a reflect.Value, s interface{}) error {
-	a.Elem().Field(int(lens.field)).SetInt(int64(s.(int)))
+func (lens lensStructInt) Put(a reflect.Value, s Value) error {
+	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
 	return nil
 }
 
@@ -175,20 +140,17 @@ lensStructFloat ...
 */
 type lensStructFloat struct{ lensStruct }
 
-func (lensStructFloat) FromString(s string) (interface{}, error) {
-	return strconv.ParseFloat(s, 64)
-}
-
-func (lens lensStructFloat) FromSeq(s []string) (interface{}, error) {
-	if len(s) == 0 {
-		return 0.0, nil
+func (lens lensStructFloat) FromString(s string) (Value, error) {
+	val, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return Value{}, err
 	}
 
-	return lens.FromString(s[0])
+	return Value{Double: val}, nil
 }
 
-func (lens lensStructFloat) Put(a reflect.Value, s interface{}) error {
-	a.Elem().Field(int(lens.field)).SetFloat(s.(float64))
+func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
+	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
 	return nil
 }
 
@@ -198,32 +160,17 @@ lensStructJSON ...
 */
 type lensStructJSON struct{ lensStruct }
 
-func (lensStructJSON) FromString(s string) (interface{}, error) {
-	return s, nil
+func (lens lensStructJSON) FromString(s string) (Value, error) {
+	return Value{String: s}, nil
 }
 
-func (lens lensStructJSON) FromSeq(s []string) (interface{}, error) {
-	if len(s) == 0 {
-		return "", nil
-	}
-
-	return lens.FromString(s[0])
-}
-
-func (lens lensStructJSON) Put(a reflect.Value, s interface{}) error {
+func (lens lensStructJSON) Put(a reflect.Value, s Value) error {
 	c := reflect.New(lens.typeof)
 	o := c.Interface()
-	switch v := s.(type) {
-	case []byte:
-		if err := json.Unmarshal(v, &o); err != nil {
-			return err
-		}
-	case string:
-		if err := json.Unmarshal([]byte(v), &o); err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("Cannot cast %T to JSON", s)
+
+	// TODO: decode based on MIME
+	if err := json.Unmarshal([]byte(s.String), &o); err != nil {
+		return err
 	}
 
 	a.Elem().Field(int(lens.field)).Set(c.Elem())
@@ -234,18 +181,15 @@ func (lens lensStructJSON) Put(a reflect.Value, s interface{}) error {
 
 lensStructSeq ...
 */
+/*
 type lensStructSeq struct{ lensStruct }
 
-func (lensStructSeq) FromString(s string) (interface{}, error) {
-	return s, nil
+func (lensStructSeq) FromString(s []string) (Value, error) {
+	return Value{String: s[0]}, nil
 }
 
-func (lensStructSeq) FromSeq(s []string) (interface{}, error) {
-	return s, nil
-}
-
-func (lens lensStructSeq) Put(a reflect.Value, s interface{}) error {
-	v := reflect.ValueOf(s)
+func (lens lensStructSeq) Put(a reflect.Value, s Value) error {
+	v := reflect.ValueOf(s.String)
 	switch v.Type().Kind() {
 	case reflect.Slice:
 		a.Elem().Field(int(lens.field)).Set(v)
@@ -255,6 +199,7 @@ func (lens lensStructSeq) Put(a reflect.Value, s interface{}) error {
 
 	return nil
 }
+*/
 
 /*
 
@@ -269,12 +214,12 @@ func newLensStruct(id int, field reflect.StructField) Lens {
 	switch typeof {
 	case reflect.String:
 		return &lensStructString{lensStruct{id, field.Type}}
-	// case reflect.Int:
-	// 	return &lensStructInt{lensStruct{id, field.Type}}
-	// case reflect.Float64:
-	// 	return &lensStructFloat{lensStruct{id, field.Type}}
-	// case reflect.Struct:
-	// 	return &lensStructJSON{lensStruct{id, field.Type}}
+	case reflect.Int:
+		return &lensStructInt{lensStruct{id, field.Type}}
+	case reflect.Float64:
+		return &lensStructFloat{lensStruct{id, field.Type}}
+	case reflect.Struct:
+		return &lensStructJSON{lensStruct{id, field.Type}}
 	// case reflect.Slice:
 	// 	return &lensStructSeq{lensStruct{id, field.Type}}
 	default:

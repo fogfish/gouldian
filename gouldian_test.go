@@ -195,22 +195,22 @@ var (
 	uid = optics.Lenses1(MyT1{})
 
 	foo1 = µ.GET(
-		µ.Param("user").To(uid),
-		// µ.Path("user", uid),
+		// µ.Param("user").To(uid),
+		µ.Path("user", uid),
 		// µ.FMap(func(c µ.Context) error {
-		// 	var myt MyX
+		// 	var myt MyT1
 		// 	c.Get(&myt)
 		// 	return nil
 		// }),
 	)
 
-	// req1 = mock.Input(mock.URL("/user/gordon"))
-	req1 = mock.Input(mock.URL("/?user=gordon"))
+	req1 = mock.Input(mock.URL("/user/123456"))
+	// req1 = mock.Input(mock.URL("/?user=gordon"))
 )
 
 //
 // Route with Param (no write)
-/* *
+/* */
 func BenchmarkPathParam1(mb *testing.B) {
 	mb.ReportAllocs()
 	mb.ResetTimer()
@@ -219,7 +219,8 @@ func BenchmarkPathParam1(mb *testing.B) {
 		foo1(req1)
 	}
 }
-* */
+
+/* */
 
 type MyT5 struct{ A, B, C, D, E string }
 
@@ -236,7 +237,6 @@ var (
 		// µ.FMap(func(c µ.Context) error {
 		// 	var myt MyT5
 		// 	c.Get(&myt)
-		// 	fmt.Println(myt)
 		// 	return nil
 		// }),
 	)

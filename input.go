@@ -17,6 +17,7 @@
 package gouldian
 
 import (
+	"io"
 	"net/textproto"
 	"strings"
 )
@@ -61,14 +62,14 @@ func (headers Headers) Get(key string) (string, bool) {
 
 Input is the HTTP request
 */
-type Input interface {
-	Context() Context
+type Input struct {
+	Context Context
 
-	Method() string
-	Resource() Segments
-	Params() Params
-	Headers() Headers
-	Payload() []byte
+	Method   string
+	Resource Segments
+	Params   Params
+	Headers  Headers
+	Payload  io.Reader
 }
 
 // TODO: Gone

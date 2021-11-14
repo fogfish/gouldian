@@ -36,7 +36,7 @@ func TestZ(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context().Get(&val)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 

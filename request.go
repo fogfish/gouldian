@@ -18,12 +18,6 @@
 
 package gouldian
 
-import (
-	"strings"
-
-	"github.com/fogfish/gouldian/optics"
-)
-
 /*
 
 DELETE composes product Endpoint match HTTP DELETE request.
@@ -93,15 +87,15 @@ func ANY(arrows ...Endpoint) Endpoint {
 // Method is an endpoint to match HTTP verb request
 func Method(verb string) Endpoint {
 	if verb == "*" {
-		return func(req Input) error {
-			req.Context().Free()
+		return func(req *Input) error {
+			req.Context.Free()
 			return nil
 		}
 	}
 
-	return func(req Input) error {
-		if req.Method() == verb {
-			req.Context().Free()
+	return func(req *Input) error {
+		if req.Method == verb {
+			req.Context.Free()
 			return nil
 		}
 		return NoMatch{}
@@ -109,18 +103,18 @@ func Method(verb string) Endpoint {
 }
 
 // Body decodes HTTP request body to struct
-func Body(lens optics.Lens) Endpoint {
-	return func(req Input) error {
-		content, _ := req.Headers().Get("Content-Type")
-		switch {
-		case strings.HasPrefix(content, "application/json"):
-			return req.Context().Put(lens, "application/json", string(req.Payload()))
-		case strings.HasPrefix(content, "application/x-www-form-urlencoded"):
-			return req.Context().Put(lens, "application/x-www-form-urlencoded", string(req.Payload()))
-		}
-		return NoMatch{}
-	}
-}
+// func Body(lens optics.Lens) Endpoint {
+// 	return func(req Input) error {
+// 		content, _ := req.Headers.Get("Content-Type")
+// 		switch {
+// 		case strings.HasPrefix(content, "application/json"):
+// 			return req.Context().Put(lens, "application/json", string(req.Payload()))
+// 		case strings.HasPrefix(content, "application/x-www-form-urlencoded"):
+// 			return req.Context().Put(lens, "application/x-www-form-urlencoded", string(req.Payload()))
+// 		}
+// 		return NoMatch{}
+// 	}
+// }
 
 // TODO: move to lenses
 // func decodeJSON(body string, val interface{}) error {
@@ -142,16 +136,16 @@ func Body(lens optics.Lens) Endpoint {
 // }
 
 // Text decodes HTTP payload to closed variable
-func Text(lens optics.Lens) Endpoint {
-	return func(req Input) error {
-		payload := req.Payload()
-		if len(payload) > 0 {
-			req.Context().Put(lens, "text/plain", string(payload))
-			return nil
-		}
-		return NoMatch{}
-	}
-}
+// func Text(lens optics.Lens) Endpoint {
+// 	return func(req Input) error {
+// 		payload := req.Payload()
+// 		if len(payload) > 0 {
+// 			req.Context().Put(lens, "text/plain", string(payload))
+// 			return nil
+// 		}
+// 		return NoMatch{}
+// 	}
+// }
 
 /*
 
@@ -159,5 +153,5 @@ FMap applies clojure to matched HTTP request,
 taking the execution context as the input to closure
 */
 func FMap(f func(Context) error) Endpoint {
-	return func(req Input) error { return f(req.Context()) }
+	return func(req *Input) error { return f(req.Context) }
 }

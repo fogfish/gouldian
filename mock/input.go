@@ -20,7 +20,6 @@ package mock
 
 import (
 	"context"
-	"encoding/json"
 	"net/textproto"
 	"net/url"
 	"strings"
@@ -32,41 +31,41 @@ import (
 
 µMock is abstract container of HTTP terms for testing purposes
 */
-type µMock struct {
-	ctx      µ.Context
-	method   string
-	resource µ.Segments
-	params   µ.Params
-	headers  µ.Headers
-	payload  []byte
-}
+// type µMock struct {
+// 	ctx      µ.Context
+// 	method   string
+// 	resource µ.Segments
+// 	params   µ.Params
+// 	headers  µ.Headers
+// 	payload  []byte
+// }
 
-var _ µ.Input = (*µMock)(nil)
+// var _ µ.Input = (*µMock)(nil)
 
-func (mock *µMock) Context() µ.Context { return mock.ctx }
+// func (mock *µMock) Context() µ.Context { return mock.ctx }
 
-func (mock *µMock) Method() string { return mock.method }
+// func (mock *µMock) Method() string { return mock.method }
 
-func (mock *µMock) Resource() µ.Segments { return mock.resource }
+// func (mock *µMock) Resource() µ.Segments { return mock.resource }
 
-func (mock *µMock) Params() µ.Params { return mock.params }
+// func (mock *µMock) Params() µ.Params { return mock.params }
 
-func (mock *µMock) Headers() µ.Headers { return mock.headers }
+// func (mock *µMock) Headers() µ.Headers { return mock.headers }
 
-func (mock *µMock) Payload() []byte { return mock.payload }
+// func (mock *µMock) Payload() []byte { return mock.payload }
 
 // Mock is an option type to customize mock event
-type Mock func(*µMock) *µMock
+type Mock func(*µ.Input) *µ.Input
 
 // Input mocks HTTP request, takes mock options to customize event
-func Input(spec ...Mock) µ.Input {
-	input := &µMock{
-		ctx:      µ.NewContext(context.Background()),
-		method:   "GET",
-		resource: µ.Segments{},
-		params:   µ.Params{},
-		headers:  µ.Headers{},
-		payload:  nil,
+func Input(spec ...Mock) *µ.Input {
+	input := &µ.Input{
+		Context:  µ.NewContext(context.Background()),
+		Method:   "GET",
+		Resource: µ.Segments{},
+		Params:   µ.Params{},
+		Headers:  µ.Headers{},
+		Payload:  nil,
 	}
 
 	for _, f := range spec {
@@ -77,15 +76,15 @@ func Input(spec ...Mock) µ.Input {
 
 // Method changes the verb of mocked HTTP request
 func Method(verb string) Mock {
-	return func(mock *µMock) *µMock {
-		mock.method = verb
+	return func(mock *µ.Input) *µ.Input {
+		mock.Method = verb
 		return mock
 	}
 }
 
 // URL changes URL of mocked HTTP request
 func URL(httpURL string) Mock {
-	return func(mock *µMock) *µMock {
+	return func(mock *µ.Input) *µ.Input {
 		uri, err := url.Parse(httpURL)
 		if err != nil {
 			panic(err)
@@ -95,13 +94,13 @@ func URL(httpURL string) Mock {
 		if len(segments) == 1 && segments[0] == "" {
 			segments = []string{}
 		}
-		mock.resource = segments
+		mock.Resource = segments
 
 		params := µ.Params{}
 		for key, val := range uri.Query() {
 			params[key] = []string{strings.Join(val, "")}
 		}
-		mock.params = params
+		mock.Params = params
 
 		return mock
 	}
@@ -109,41 +108,41 @@ func URL(httpURL string) Mock {
 
 // Param add raw param string to mocked HTTP request
 func Param(key, val string) Mock {
-	return func(mock *µMock) *µMock {
-		mock.params[key] = []string{val}
+	return func(mock *µ.Input) *µ.Input {
+		mock.Params[key] = []string{val}
 		return mock
 	}
 }
 
 // Header adds Header to mocked HTTP request
 func Header(header string, value string) Mock {
-	return func(mock *µMock) *µMock {
+	return func(mock *µ.Input) *µ.Input {
 		head := textproto.CanonicalMIMEHeaderKey(header)
-		mock.headers[head] = value
+		mock.Headers[head] = value
 		return mock
 	}
 }
 
 // JSON adds payload to mocked HTTP request
-func JSON(val interface{}) Mock {
-	return func(mock *µMock) *µMock {
-		body, err := json.Marshal(val)
-		if err != nil {
-			panic(err)
-		}
-		mock.headers["Content-Type"] = "application/json"
-		mock.payload = body
-		return mock
-	}
-}
+// func JSON(val interface{}) Mock {
+// 	return func(mock *µ.Input) *µ.Input {
+// 		body, err := json.Marshal(val)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		mock.Headers["Content-Type"] = "application/json"
+// 		mock.payload = body
+// 		return mock
+// 	}
+// }
 
 // Text adds payload to mocked HTTP request
-func Text(val string) Mock {
-	return func(mock *µMock) *µMock {
-		mock.payload = []byte(val)
-		return mock
-	}
-}
+// func Text(val string) Mock {
+// 	return func(mock *µ.Input) *µ.Input {
+// 		mock.Payload = []byte(val)
+// 		return mock
+// 	}
+// }
 
 // Auth adds Authorizer payload to mocked HTTP request
 /*

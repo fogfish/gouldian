@@ -56,8 +56,8 @@ func (header Header) Is(val string) Endpoint {
 		return header.Any
 	}
 
-	return func(req Input) error {
-		opt, exists := req.Headers().Get(string(header))
+	return func(req *Input) error {
+		opt, exists := req.Headers.Get(string(header))
 		if exists && strings.HasPrefix(opt, val) {
 			return nil
 		}
@@ -74,8 +74,8 @@ Any is a wildcard matcher of header. It fails if header is not defined.
   e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
   e(mock.Input()) != nil
 */
-func (header Header) Any(req Input) error {
-	_, exists := req.Headers().Get(string(header))
+func (header Header) Any(req *Input) error {
+	_, exists := req.Headers.Get(string(header))
 	if exists {
 		return nil
 	}
@@ -95,9 +95,9 @@ value cannot be decoded to the target type. See optics.Lens type for details.
   e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
 */
 func (header Header) To(lens optics.Lens) Endpoint {
-	return func(req Input) error {
-		if opt, exists := req.Headers().Get(string(header)); exists {
-			return req.Context().Put(lens, opt)
+	return func(req *Input) error {
+		if opt, exists := req.Headers.Get(string(header)); exists {
+			return req.Context.Put(lens, opt)
 		}
 		return NoMatch{}
 	}
@@ -117,9 +117,9 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 
 */
 func (header Header) Maybe(lens optics.Lens) Endpoint {
-	return func(req Input) error {
-		if opt, exists := req.Headers().Get(string(header)); exists {
-			req.Context().Put(lens, opt)
+	return func(req *Input) error {
+		if opt, exists := req.Headers.Get(string(header)); exists {
+			req.Context.Put(lens, opt)
 		}
 		return nil
 	}
