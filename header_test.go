@@ -140,7 +140,7 @@ func TestHeaderIsLowerCase(t *testing.T) {
 }
 
 func TestHeaderAny(t *testing.T) {
-	foo := µ.GET(µ.Header("X-Value").Any())
+	foo := µ.GET(µ.Header("X-Value").Any)
 	bar := µ.GET(µ.Header("X-Value").Is("_"))
 
 	success1 := mock.Input(mock.Header("X-Value", "bar"))

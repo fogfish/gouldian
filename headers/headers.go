@@ -85,8 +85,8 @@ func (h Content) Is(value string) µ.Endpoint {
 }
 
 // Any implements matcher for Content type (see Header.Any)
-func (h Content) Any() µ.Endpoint {
-	return µ.Header(h).Any()
+func (h Content) Any(req µ.Input) error {
+	return µ.Header(h).Any(req)
 }
 
 // To implements matcher for Content type (see Header.To)

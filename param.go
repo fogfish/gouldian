@@ -143,14 +143,16 @@ func (key Param) JSON(lens optics.Lens) Endpoint {
 			return NoMatch{}
 		}
 
-		req.Context().Put(lens, str)
-		return nil
+		return req.Context().Put(lens, str)
 	}
 }
 
-// MaybeJSON matches a param key to closed struct.
-// It assumes that key holds JSON value as url encoded string.
-// It does not fail if key is not defined.
+/*
+
+MaybeJSON matches a param key to closed struct.
+It assumes that key holds JSON value as url encoded string.
+It does not fail if key is not defined.
+*/
 func (key Param) MaybeJSON(lens optics.Lens) Endpoint {
 	return func(req Input) error {
 		opt, exists := req.Params().Get(string(key))

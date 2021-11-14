@@ -38,7 +38,7 @@ func TestParamIs(t *testing.T) {
 }
 
 func TestParamAny(t *testing.T) {
-	foo := µ.GET(µ.Param("foo").Any())
+	foo := µ.GET(µ.Param("foo").Any)
 	success1 := mock.Input(mock.URL("/?foo"))
 	success2 := mock.Input(mock.URL("/?foo=bar"))
 	success3 := mock.Input(mock.URL("/?foo=baz"))
@@ -55,7 +55,7 @@ func TestParamString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param("foo").String(val))
+	foo := µ.GET(µ.Param("foo").To(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -89,7 +89,7 @@ func TestParamMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param("foo").MaybeString(val))
+	foo := µ.GET(µ.Param("foo").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -147,7 +147,7 @@ func TestParamMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param("foo").MaybeInt(val))
+	foo := µ.GET(µ.Param("foo").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -184,7 +184,7 @@ func TestParamFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param("foo").Float(val))
+	foo := µ.GET(µ.Param("foo").To(val))
 
 	t.Run("integer", func(t *testing.T) {
 		var val myT
@@ -225,7 +225,7 @@ func TestParamMaybeFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Param("foo").MaybeFloat(val))
+	foo := µ.GET(µ.Param("foo").Maybe(val))
 
 	t.Run("double", func(t *testing.T) {
 		var val myT
