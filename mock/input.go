@@ -118,7 +118,7 @@ func Param(key, val string) Mock {
 func Header(header string, value string) Mock {
 	return func(mock *µ.Input) *µ.Input {
 		head := textproto.CanonicalMIMEHeaderKey(header)
-		mock.Headers[head] = value
+		mock.Headers[head] = []string{value}
 		return mock
 	}
 }

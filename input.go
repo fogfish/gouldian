@@ -101,15 +101,3 @@ func Request(req events.APIGatewayProxyRequest) *Input {
 	return &Input{req, segments, ""}
 }
 */
-
-// Header returns header value
-/*
-func (req *Input) Header(key string) (string, bool) {
-	v, exists := req.APIGatewayProxyRequest.Headers[key]
-	if !exists {
-		v, exists = req.APIGatewayProxyRequest.Headers[strings.ToLower(key)]
-		return v, exists
-	}
-	return v, exists
-}
-*/

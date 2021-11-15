@@ -20,6 +20,8 @@ type Value struct {
 	String string
 	Number int
 	Double float64
+	// Note: drop of performance when value is added
+	// Stream io.Reader
 }
 
 /*

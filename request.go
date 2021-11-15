@@ -18,6 +18,8 @@
 
 package gouldian
 
+import "github.com/fogfish/gouldian/optics"
+
 /*
 
 DELETE composes product Endpoint match HTTP DELETE request.
@@ -136,16 +138,20 @@ func Method(verb string) Endpoint {
 // }
 
 // Text decodes HTTP payload to closed variable
-// func Text(lens optics.Lens) Endpoint {
-// 	return func(req Input) error {
-// 		payload := req.Payload()
-// 		if len(payload) > 0 {
-// 			req.Context().Put(lens, "text/plain", string(payload))
-// 			return nil
-// 		}
-// 		return NoMatch{}
-// 	}
-// }
+func Text(lens optics.Lens) Endpoint {
+	return func(req *Input) error {
+		if req.Payload != nil {
+			return req.Context.PutStream(lens, req.Payload)
+		}
+
+		// payload := req.Payload()
+		// if len(payload) > 0 {
+		// 	req.Context().Put(lens, "text/plain", string(payload))
+		// 	return nil
+		// }
+		return NoMatch{}
+	}
+}
 
 /*
 
