@@ -65,7 +65,6 @@ func Input(spec ...Mock) *µ.Input {
 		Resource: µ.Segments{},
 		Params:   µ.Params{},
 		Headers:  µ.Headers{},
-		Payload:  nil,
 	}
 
 	for _, f := range spec {
@@ -137,12 +136,12 @@ func Header(header string, value string) Mock {
 // }
 
 // Text adds payload to mocked HTTP request
-// func Text(val string) Mock {
-// 	return func(mock *µ.Input) *µ.Input {
-// 		mock.Payload = []byte(val)
-// 		return mock
-// 	}
-// }
+func Text(val string) Mock {
+	return func(mock *µ.Input) *µ.Input {
+		mock.Stream = strings.NewReader(val)
+		return mock
+	}
+}
 
 // Auth adds Authorizer payload to mocked HTTP request
 /*

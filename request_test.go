@@ -17,6 +17,7 @@
 package gouldian_test
 
 import (
+	"fmt"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
@@ -25,19 +26,26 @@ import (
 )
 
 func TestZ(t *testing.T) {
-	type myT struct{ Val int }
+	type myT struct{ Val string }
 
 	val := optics.Lenses1(myT{})
-	foo := µ.GET(µ.Path("foo", val))
+	foo := µ.Or(
+		µ.GET(µ.Text(val), µ.Path("a")),
+		µ.GET(µ.Text(val), µ.Path("b")),
+	)
+
+	µ.GET(µ.Text(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
-		req := mock.Input(mock.URL("/foo/1"))
+		req := mock.Input(mock.Text("hello"), mock.URL("/b"))
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
 			If(req.Context.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
+
+		fmt.Printf("|%s|\n", val.Val)
 	})
 
 }

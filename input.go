@@ -18,8 +18,10 @@ package gouldian
 
 import (
 	"io"
+	"io/ioutil"
 	"net/textproto"
 	"strings"
+	"unsafe"
 )
 
 /*
@@ -69,7 +71,25 @@ type Input struct {
 	Resource Segments
 	Params   Params
 	Headers  Headers
-	Payload  io.Reader
+	Payload  string
+	Stream   io.Reader
+}
+
+// ReadAll ...
+func (in *Input) ReadAll() error {
+	if in.Stream != nil {
+		buf, err := ioutil.ReadAll(in.Stream)
+		if err != nil {
+			return err
+		}
+		// This is copied from runtime. It relies on the string
+		// header being a prefix of the slice header!
+		in.Payload = *(*string)(unsafe.Pointer(&buf))
+		in.Stream = nil
+		return nil
+	}
+
+	return nil
 }
 
 // TODO: Gone

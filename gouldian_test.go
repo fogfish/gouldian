@@ -260,4 +260,41 @@ func BenchmarkPathParam5(mb *testing.B) {
 /* */
 
 //
-// Route with 20 Params (no write)
+// Route with 128 bytes of payload
+
+/* */
+
+type MyT128 struct{ Text string }
+
+var (
+	body = optics.Lenses1(MyT128{})
+
+	foo128 = µ.GET(
+		// µ.Param("a").To(a),
+		// µ.Param("b").To(b),
+		// µ.Param("c").To(c),
+		// µ.Param("d").To(d),
+		// µ.Param("e").To(e),
+		µ.Body(body),
+		// µ.FMap(func(c µ.Context) error {
+		// 	var myt MyT5
+		// 	c.Get(&myt)
+		// 	return nil
+		// }),
+	)
+
+	req128 = mock.Input(mock.Text("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"))
+	// req5 = mock.Input(mock.URL("/?a=a&b=b&c=c&d=d&e=e"))
+)
+
+//
+// Route with 5 Params (no write)
+/* */
+func BenchmarkBody128(mb *testing.B) {
+	mb.ReportAllocs()
+	mb.ResetTimer()
+
+	for i := 0; i < mb.N; i++ {
+		foo128(req128)
+	}
+}

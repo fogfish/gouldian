@@ -105,18 +105,28 @@ func Method(verb string) Endpoint {
 }
 
 // Body decodes HTTP request body to struct
-// func Body(lens optics.Lens) Endpoint {
-// 	return func(req Input) error {
-// 		content, _ := req.Headers.Get("Content-Type")
-// 		switch {
-// 		case strings.HasPrefix(content, "application/json"):
-// 			return req.Context().Put(lens, "application/json", string(req.Payload()))
-// 		case strings.HasPrefix(content, "application/x-www-form-urlencoded"):
-// 			return req.Context().Put(lens, "application/x-www-form-urlencoded", string(req.Payload()))
-// 		}
-// 		return NoMatch{}
-// 	}
-// }
+func Body(lens optics.Lens) Endpoint {
+	return func(req *Input) error {
+		if len(req.Payload) != 0 || req.Stream != nil {
+			if err := req.ReadAll(); err != nil {
+				return err
+			}
+
+			return req.Context.Put(lens, req.Payload)
+		}
+
+		return NoMatch{}
+
+		// content, _ := req.Headers.Get("Content-Type")
+		// switch {
+		// case strings.HasPrefix(content, "application/json"):
+		// 	return req.Context().Put(lens, "application/json", string(req.Payload()))
+		// case strings.HasPrefix(content, "application/x-www-form-urlencoded"):
+		// 	return req.Context().Put(lens, "application/x-www-form-urlencoded", string(req.Payload()))
+		// }
+		// return NoMatch{}
+	}
+}
 
 // TODO: move to lenses
 // func decodeJSON(body string, val interface{}) error {
@@ -140,8 +150,12 @@ func Method(verb string) Endpoint {
 // Text decodes HTTP payload to closed variable
 func Text(lens optics.Lens) Endpoint {
 	return func(req *Input) error {
-		if req.Payload != nil {
-			return req.Context.PutStream(lens, req.Payload)
+		if len(req.Payload) != 0 || req.Stream != nil {
+			if err := req.ReadAll(); err != nil {
+				return err
+			}
+
+			return req.Context.Put(lens, req.Payload)
 		}
 
 		// payload := req.Payload()

@@ -9,19 +9,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 )
 
 /*
 
-Value is co-product of supported types
+Value is co-product types matchable by patterns
+Note: do not extend the structure, optimal size for performance
+See https://goinbigdata.com/golang-pass-by-pointer-vs-pass-by-value/
 */
 type Value struct {
 	String string
 	Number int
 	Double float64
-	// Note: drop of performance when value is added
-	// Stream io.Reader
 }
 
 /*
@@ -122,19 +121,19 @@ lensStructInt ...
 */
 type lensStructInt struct{ lensStruct }
 
-func (lens lensStructInt) FromString(s string) (Value, error) {
-	val, err := strconv.Atoi(s)
-	if err != nil {
-		return Value{}, err
-	}
+// func (lens lensStructInt) FromString(s string) (Value, error) {
+// 	val, err := strconv.Atoi(s)
+// 	if err != nil {
+// 		return Value{}, err
+// 	}
 
-	return Value{Number: val}, nil
-}
+// 	return Value{Number: val}, nil
+// }
 
-func (lens lensStructInt) Put(a reflect.Value, s Value) error {
-	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
-	return nil
-}
+// func (lens lensStructInt) Put(a reflect.Value, s Value) error {
+// 	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
+// 	return nil
+// }
 
 /*
 
@@ -142,19 +141,19 @@ lensStructFloat ...
 */
 type lensStructFloat struct{ lensStruct }
 
-func (lens lensStructFloat) FromString(s string) (Value, error) {
-	val, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return Value{}, err
-	}
+// func (lens lensStructFloat) FromString(s string) (Value, error) {
+// 	val, err := strconv.ParseFloat(s, 64)
+// 	if err != nil {
+// 		return Value{}, err
+// 	}
 
-	return Value{Double: val}, nil
-}
+// 	return Value{Double: val}, nil
+// }
 
-func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
-	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
-	return nil
-}
+// func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
+// 	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
+// 	return nil
+// }
 
 /*
 
@@ -216,12 +215,12 @@ func newLensStruct(id int, field reflect.StructField) Lens {
 	switch typeof {
 	case reflect.String:
 		return &lensStructString{lensStruct{id, field.Type}}
-	case reflect.Int:
-		return &lensStructInt{lensStruct{id, field.Type}}
-	case reflect.Float64:
-		return &lensStructFloat{lensStruct{id, field.Type}}
-	case reflect.Struct:
-		return &lensStructJSON{lensStruct{id, field.Type}}
+	// case reflect.Int:
+	// 	return &lensStructInt{lensStruct{id, field.Type}}
+	// case reflect.Float64:
+	// 	return &lensStructFloat{lensStruct{id, field.Type}}
+	// case reflect.Struct:
+	// 	return &lensStructJSON{lensStruct{id, field.Type}}
 	// case reflect.Slice:
 	// 	return &lensStructSeq{lensStruct{id, field.Type}}
 	default:
