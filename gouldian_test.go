@@ -189,7 +189,9 @@ func unknown() µ.Endpoint {
 // Microbenchmark
 //
 
-type MyT1 struct{ Name string }
+type MyT1 struct {
+	Name string `lens:"application/json"`
+}
 
 var (
 	uid = optics.Lenses1(MyT1{})

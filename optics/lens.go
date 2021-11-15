@@ -212,6 +212,8 @@ func newLensStruct(id int, field reflect.StructField) Lens {
 		typeof = field.Type.Elem().Kind()
 	}
 
+	fmt.Println(field.Tag.Get("lens"))
+
 	switch typeof {
 	case reflect.String:
 		return &lensStructString{lensStruct{id, field.Type}}

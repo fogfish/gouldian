@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"net/textproto"
 	"strings"
-	"unsafe"
 )
 
 /*
@@ -84,7 +83,8 @@ func (in *Input) ReadAll() error {
 		}
 		// This is copied from runtime. It relies on the string
 		// header being a prefix of the slice header!
-		in.Payload = *(*string)(unsafe.Pointer(&buf))
+		// in.Payload = *(*string)(unsafe.Pointer(&buf))
+		in.Payload = string(buf)
 		in.Stream = nil
 		return nil
 	}
