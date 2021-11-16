@@ -4,11 +4,6 @@ import (
 	"github.com/fogfish/gouldian/optics"
 )
 
-const (
-	//
-	Any = "_"
-)
-
 //
 type pathArrow func(Context, string) error
 
@@ -19,7 +14,7 @@ url matching primitives, which are defined by the package `path`.
 
   import "github.com/fogfish/gouldian/path"
 
-  e := µ.GET( µ.Path(path.Is("foo")) )
+  e := µ.GET( µ.Path("foo") )
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) != nil
 */
@@ -29,7 +24,7 @@ func Path(arrows ...interface{}) Endpoint {
 
 func mkPathEndpoint(farrows []pathArrow) Endpoint {
 	return func(req *Input) error {
-		if len(req.Resource) != len(farrows) {
+		if len(req.Resource) < len(farrows) {
 			return NoMatch{}
 		}
 
@@ -43,36 +38,6 @@ func mkPathEndpoint(farrows []pathArrow) Endpoint {
 		return nil
 	}
 }
-
-/*
-
-Prefix is an endpoint to match URL of HTTP request. The function takes
-url matching primitives, which are defined by the package `path`.
-
-  import "github.com/fogfish/gouldian/path"
-
-  e := µ.GET( µ.Path(path.Is("foo")) )
-  e(mock.Input(mock.URL("/foo"))) == nil
-  e(mock.Input(mock.URL("/bar"))) != nil
-*/
-// func Prefix(arrows ...interface{}) Endpoint {
-// 	farrows := mkPathMatcher(arrows)
-
-// 	return func(req *Input) error {
-// 		if len(req.Resource) < len(farrows) {
-// 			return NoMatch{}
-// 		}
-
-// 		ctx := req.Context
-// 		for i, f := range farrows {
-// 			if err := f(ctx, req.Resource[i]); err != nil {
-// 				return err
-// 			}
-// 		}
-
-// 		return nil
-// 	}
-// }
 
 func mkPathMatcher(arrows []interface{}) []pathArrow {
 	seq := make([]pathArrow, len(arrows))
@@ -99,7 +64,7 @@ func mkPathMatcher(arrows []interface{}) []pathArrow {
 /*
 
 Is matches a path segment to defined literal
-  e := µ.GET( µ.Path(path.Is("foo")) )
+  e := µ.GET( µ.Path("foo") )
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) != nil
 */
@@ -114,10 +79,7 @@ func pathIs(val string) pathArrow {
 
 /*
 
-Any is a wildcard matcher of path segment
-  e := µ.GET( µ.Path(path.Any()) )
-  e(mock.Input(mock.URL("/foo"))) == nil
-  e(mock.Input(mock.URL("/bar"))) == nil
+None matches nothing
 */
 func pathNone() pathArrow {
 	return func(Context, string) error {
@@ -128,7 +90,7 @@ func pathNone() pathArrow {
 /*
 
 Any is a wildcard matcher of path segment
-  e := µ.GET( µ.Path(path.Any()) )
+  e := µ.GET( µ.Path(path.Any) )
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) == nil
 */

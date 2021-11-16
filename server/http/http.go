@@ -18,6 +18,7 @@ func Serve(endpoints ...µ.Endpoint) {
 type routes struct{ endpoint µ.Endpoint }
 
 func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// r.URL.Path string
 	input := &µ.Input{
 		Context: µ.NewContext(context.Background()),
 		Method:  r.Method,

@@ -2,7 +2,6 @@ package gouldian
 
 import (
 	"context"
-	"io"
 
 	"github.com/fogfish/gouldian/optics"
 )
@@ -20,7 +19,6 @@ type Context interface {
 
 	// Put and Get are optics function store and lifts HTTP terms
 	Put(optics.Lens, string) error
-	PutStream(optics.Lens, io.Reader) error
 	Get(interface{}) error
 }
 
@@ -68,11 +66,6 @@ func (ctx *µContext) Put(lens optics.Lens, str string) error {
 	}
 
 	ctx.morphism = append(ctx.morphism, optics.Setter{Lens: lens, Value: val})
-	return nil
-}
-
-func (ctx *µContext) PutStream(lens optics.Lens, r io.Reader) error {
-	// TODO
 	return nil
 }
 

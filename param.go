@@ -94,6 +94,8 @@ value cannot be decoded to the target type. See optics.Lens type for details.
   x := optics.Lenses1(myT{})
   e := µ.GET( µ.Param("foo").To(x) )
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+	e(mock.Input(mock.URL("/?foo"))) != nil
+	e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
 func (key Param) To(lens optics.Lens) Endpoint {
 	return func(req *Input) error {
@@ -114,8 +116,10 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
   type myT struct{ Val string }
 
   x := optics.Lenses1(myT{})
-  e := µ.GET( µ.Param("foo").To(x) )
+  e := µ.GET( µ.Param("foo").Maybe(x) )
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
+	e(mock.Input(mock.URL("/?foo"))) == nil
+	e(mock.Input(mock.URL("/"))) == nil
 
 */
 func (key Param) Maybe(lens optics.Lens) Endpoint {
@@ -129,7 +133,7 @@ func (key Param) Maybe(lens optics.Lens) Endpoint {
 
 /*
 
-JSON matches a param key to closed struct.
+JSON matches a param key to struct.
 It assumes that key holds JSON value as url encoded string
 */
 func (key Param) JSON(lens optics.Lens) Endpoint {

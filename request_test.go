@@ -30,11 +30,9 @@ func TestZ(t *testing.T) {
 
 	val := optics.Lenses1(myT{})
 	foo := µ.Or(
-		µ.GET(µ.Text(val), µ.Path("a")),
-		µ.GET(µ.Text(val), µ.Path("b")),
+		µ.GET(µ.Body(val), µ.Path("a")),
+		µ.GET(µ.Body(val), µ.Path("b")),
 	)
-
-	µ.GET(µ.Text(val))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
