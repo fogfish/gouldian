@@ -55,6 +55,13 @@ request processing.
 */
 type Endpoint func(*Input) error
 
+// NoMatch is returned by Endpoint if Input is not matched.
+type NoMatch struct{}
+
+func (err NoMatch) Error() string {
+	return "No Match"
+}
+
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
 	return func(http *Input) (err error) {

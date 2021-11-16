@@ -38,6 +38,10 @@ type Params map[string][]string
 // Get parameter by key
 func (params Params) Get(key string) (string, bool) {
 	v, exists := params[key]
+	if !exists {
+		return "", exists
+	}
+
 	return v[0], exists
 }
 
@@ -54,6 +58,9 @@ func (headers Headers) Get(key string) (string, bool) {
 	if !exists {
 		// Note: required due to browser behavior
 		v, exists = headers[strings.ToLower(header)]
+		if !exists {
+			return "", exists
+		}
 		return v[0], exists
 	}
 	return v[0], exists
@@ -74,7 +81,7 @@ type Input struct {
 	Stream   io.Reader
 }
 
-// ReadAll ...
+// ReadAll is helper function to consume Stream multiple types
 func (in *Input) ReadAll() error {
 	if in.Stream != nil {
 		buf, err := ioutil.ReadAll(in.Stream)
