@@ -6,9 +6,13 @@ Package optics ...
 package optics
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
+
+	"github.com/ajg/form"
 )
 
 /*
@@ -25,7 +29,7 @@ type Value struct {
 
 /*
 
-Codec ...
+Codec transforms string ⟼ Value
 */
 type Codec interface {
 	FromString(string) (Value, error)
@@ -33,7 +37,7 @@ type Codec interface {
 
 /*
 
-Lens ...
+Lens is composable setter of Value to "some" struct
 */
 type Lens interface {
 	Codec
@@ -42,9 +46,9 @@ type Lens interface {
 
 /*
 
-Arrow ...
+Setter is product of Lens and Value
 */
-type Arrow struct {
+type Setter struct {
 	Lens
 	Value
 }
@@ -53,11 +57,11 @@ type Arrow struct {
 
 Morphism is collection of lenses and values to be applied for object
 */
-type Morphism []Arrow
+type Morphism []Setter
 
 /*
 
-Apply ...
+Apply Morphism to "some" struct
 */
 func (m Morphism) Apply(a interface{}) error {
 	g := reflect.ValueOf(a)
@@ -76,7 +80,7 @@ func (m Morphism) Apply(a interface{}) error {
 
 /*
 
-lensStruct ...
+lensStruct is a type for any lens
 */
 type lensStruct struct {
 	field  int
@@ -85,92 +89,116 @@ type lensStruct struct {
 
 /*
 
-lensStructString ...
+lensStructString implements lens for string type
 */
 type lensStructString struct{ lensStruct }
 
+// FromString transforms string ⟼ Value[string]
 func (lens lensStructString) FromString(s string) (Value, error) {
 	return Value{String: s}, nil
 }
 
+// Put Value[string] to struct
 func (lens lensStructString) Put(a reflect.Value, s Value) error {
 	f := a.Elem().Field(int(lens.field))
 
 	if f.Kind() == reflect.Ptr {
-		return lens.putToPtr(f, s)
+		p := reflect.New(lens.typeof.Elem())
+		p.Elem().SetString(s.String)
+		f.Set(p)
+		return nil
 	}
 
-	return lens.putToVal(f, s)
-}
-
-func (lens lensStructString) putToVal(a reflect.Value, s Value) error {
-	a.SetString(s.String)
-	return nil
-}
-
-func (lens lensStructString) putToPtr(a reflect.Value, s Value) error {
-	p := reflect.New(lens.typeof.Elem())
-	p.Elem().SetString(s.String)
-	a.Set(p)
+	f.SetString(s.String)
 	return nil
 }
 
 /*
 
-lensStructInt ...
+lensStructInt implements lens for int type
 */
 type lensStructInt struct{ lensStruct }
 
-// func (lens lensStructInt) FromString(s string) (Value, error) {
-// 	val, err := strconv.Atoi(s)
-// 	if err != nil {
-// 		return Value{}, err
-// 	}
+// FromString transforms string ⟼ Value[int]
+func (lens lensStructInt) FromString(s string) (Value, error) {
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		return Value{}, err
+	}
 
-// 	return Value{Number: val}, nil
-// }
+	return Value{Number: val}, nil
+}
 
-// func (lens lensStructInt) Put(a reflect.Value, s Value) error {
-// 	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
-// 	return nil
-// }
+// Put Value[int] to struct
+func (lens lensStructInt) Put(a reflect.Value, s Value) error {
+	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
+	return nil
+}
 
 /*
 
-lensStructFloat ...
+lensStructFloat implements lens for float type
 */
 type lensStructFloat struct{ lensStruct }
 
-// func (lens lensStructFloat) FromString(s string) (Value, error) {
-// 	val, err := strconv.ParseFloat(s, 64)
-// 	if err != nil {
-// 		return Value{}, err
-// 	}
+// FromString transforms string ⟼ Value[float64]
+func (lens lensStructFloat) FromString(s string) (Value, error) {
+	val, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return Value{}, err
+	}
 
-// 	return Value{Double: val}, nil
-// }
+	return Value{Double: val}, nil
+}
 
-// func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
-// 	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
-// 	return nil
-// }
+// Put Value[float64] to struct
+func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
+	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
+	return nil
+}
 
 /*
 
-lensStructJSON ...
+lensStructJSON implements lens for complex "product" type
 */
 type lensStructJSON struct{ lensStruct }
 
+// FromString transforms string ⟼ Value[string]
 func (lens lensStructJSON) FromString(s string) (Value, error) {
 	return Value{String: s}, nil
 }
 
+// Put Value[string] to struct
 func (lens lensStructJSON) Put(a reflect.Value, s Value) error {
 	c := reflect.New(lens.typeof)
 	o := c.Interface()
 
-	// TODO: decode based on MIME
 	if err := json.Unmarshal([]byte(s.String), &o); err != nil {
+		return err
+	}
+
+	a.Elem().Field(int(lens.field)).Set(c.Elem())
+	return nil
+}
+
+/*
+
+lensStructForm implements lens for complex "product" type
+*/
+type lensStructForm struct{ lensStruct }
+
+// FromString transforms string ⟼ Value[string]
+func (lens lensStructForm) FromString(s string) (Value, error) {
+	return Value{String: s}, nil
+}
+
+// Put Value[string] to struct
+func (lens lensStructForm) Put(a reflect.Value, s Value) error {
+	c := reflect.New(lens.typeof)
+	o := c.Interface()
+
+	buf := bytes.NewBuffer([]byte(s.String))
+	if err := form.NewDecoder(buf).Decode(&o); err != nil {
 		return err
 	}
 
@@ -204,7 +232,7 @@ func (lens lensStructSeq) Put(a reflect.Value, s Value) error {
 
 /*
 
-newLensStruct ...
+newLensStruct creates lens
 */
 func newLensStruct(id int, field reflect.StructField) Lens {
 	typeof := field.Type.Kind()
@@ -212,17 +240,26 @@ func newLensStruct(id int, field reflect.StructField) Lens {
 		typeof = field.Type.Elem().Kind()
 	}
 
-	fmt.Println(field.Tag.Get("lens"))
-
 	switch typeof {
 	case reflect.String:
 		return &lensStructString{lensStruct{id, field.Type}}
-	// case reflect.Int:
-	// 	return &lensStructInt{lensStruct{id, field.Type}}
-	// case reflect.Float64:
-	// 	return &lensStructFloat{lensStruct{id, field.Type}}
-	// case reflect.Struct:
-	// 	return &lensStructJSON{lensStruct{id, field.Type}}
+	case reflect.Int:
+		return &lensStructInt{lensStruct{id, field.Type}}
+	case reflect.Float64:
+		return &lensStructFloat{lensStruct{id, field.Type}}
+	case reflect.Struct:
+		switch field.Tag.Get("content") {
+		case "form":
+			return &lensStructForm{lensStruct{id, field.Type}}
+		case "application/x-www-form-urlencoded":
+			return &lensStructForm{lensStruct{id, field.Type}}
+		case "json":
+			return &lensStructJSON{lensStruct{id, field.Type}}
+		case "application/json":
+			return &lensStructJSON{lensStruct{id, field.Type}}
+		default:
+			return &lensStructJSON{lensStruct{id, field.Type}}
+		}
 	// case reflect.Slice:
 	// 	return &lensStructSeq{lensStruct{id, field.Type}}
 	default:
@@ -241,7 +278,7 @@ func typeOf(t interface{}) reflect.Type {
 
 /*
 
-Lenses1 ...
+Lenses1 split structure with 1 field to set of lenses
 */
 func Lenses1(t interface{}) Lens {
 	tc := typeOf(t)
@@ -254,7 +291,7 @@ func Lenses1(t interface{}) Lens {
 
 /*
 
-Lenses2 ...
+Lenses2 split structure with 2 fields to set of lenses
 */
 func Lenses2(t interface{}) (Lens, Lens) {
 	tc := typeOf(t)
@@ -268,7 +305,7 @@ func Lenses2(t interface{}) (Lens, Lens) {
 
 /*
 
-Lenses3 ...
+Lenses3 split structure with 3 fields to set of lenses
 */
 func Lenses3(t interface{}) (Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -283,7 +320,7 @@ func Lenses3(t interface{}) (Lens, Lens, Lens) {
 
 /*
 
-Lenses4 ...
+Lenses4 split structure with 4 fields to set of lenses
 */
 func Lenses4(t interface{}) (Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -299,7 +336,7 @@ func Lenses4(t interface{}) (Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses5 ...
+Lenses5 split structure with 5 fields to set of lenses
 */
 func Lenses5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -316,7 +353,7 @@ func Lenses5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses6 ...
+Lenses6 split structure with 6 fields to set of lenses
 */
 func Lenses6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -334,7 +371,7 @@ func Lenses6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses7 ...
+Lenses7 split structure with 7 fields to set of lenses
 */
 func Lenses7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -353,7 +390,7 @@ func Lenses7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses8 ...
+Lenses8 split structure with 8 fields to set of lenses
 */
 func Lenses8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -373,7 +410,7 @@ func Lenses8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses9 ...
+Lenses9 split structure with 9 fields to set of lenses
 */
 func Lenses9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
@@ -394,7 +431,7 @@ func Lenses9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Len
 
 /*
 
-Lenses10 ...
+Lenses10 split structure with 10 fields to set of lenses
 */
 func Lenses10(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)

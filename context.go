@@ -67,7 +67,7 @@ func (ctx *µContext) Put(lens optics.Lens, str string) error {
 		return NoMatch{}
 	}
 
-	ctx.morphism = append(ctx.morphism, optics.Arrow{Lens: lens, Value: val})
+	ctx.morphism = append(ctx.morphism, optics.Setter{Lens: lens, Value: val})
 	return nil
 }
 
