@@ -37,6 +37,7 @@ type Output interface {
 	With(Header, string) Output
 	JSON(interface{}) Output
 	Bytes([]byte) Output
+	Text(string) Output
 }
 
 /*
@@ -145,82 +146,82 @@ func (code StatusCode) PermanentRedirect(url string) Output {
 
 // BadRequest ⟼ http.StatusBadRequest
 func (code StatusCode) BadRequest(err error, title ...string) Output {
-	return NewFailure(http.StatusBadRequest, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusBadRequest, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // Unauthorized ⟼ http.StatusUnauthorized
 func (code StatusCode) Unauthorized(err error, title ...string) Output {
-	return NewFailure(http.StatusUnauthorized, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusUnauthorized, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // PaymentRequired ⟼ http.StatusPaymentRequired
 func (code StatusCode) PaymentRequired(err error, title ...string) Output {
-	return NewFailure(http.StatusPaymentRequired, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusPaymentRequired, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // Forbidden ⟼ http.StatusForbidden
 func (code StatusCode) Forbidden(err error, title ...string) Output {
-	return NewFailure(http.StatusForbidden, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusForbidden, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // NotFound ⟼ http.StatusNotFound
 func (code StatusCode) NotFound(err error, title ...string) Output {
-	return NewFailure(http.StatusNotFound, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusNotFound, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // MethodNotAllowed ⟼ http.StatusMethodNotAllowed
 func (code StatusCode) MethodNotAllowed(err error, title ...string) Output {
-	return NewFailure(http.StatusMethodNotAllowed, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusMethodNotAllowed, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // NotAcceptable ⟼ http.StatusNotAcceptable
 func (code StatusCode) NotAcceptable(err error, title ...string) Output {
-	return NewFailure(http.StatusNotAcceptable, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusNotAcceptable, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // ProxyAuthRequired ⟼ http.StatusProxyAuthRequired
 func (code StatusCode) ProxyAuthRequired(err error, title ...string) Output {
-	return NewFailure(http.StatusProxyAuthRequired, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusProxyAuthRequired, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // RequestTimeout ⟼ http.StatusRequestTimeout
 func (code StatusCode) RequestTimeout(err error, title ...string) Output {
-	return NewFailure(http.StatusRequestTimeout, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusRequestTimeout, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // Conflict ⟼ http.StatusConflict
 func (code StatusCode) Conflict(err error, title ...string) Output {
-	return NewFailure(http.StatusConflict, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusConflict, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // Gone ⟼ http.StatusGone
 func (code StatusCode) Gone(err error, title ...string) Output {
-	return NewFailure(http.StatusGone, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusGone, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // LengthRequired ⟼ http.StatusLengthRequired
 func (code StatusCode) LengthRequired(err error, title ...string) Output {
-	return NewFailure(http.StatusLengthRequired, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusLengthRequired, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // PreconditionFailed ⟼ http.StatusPreconditionFailed
 func (code StatusCode) PreconditionFailed(err error, title ...string) Output {
-	return NewFailure(http.StatusPreconditionFailed, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusPreconditionFailed, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // RequestEntityTooLarge ⟼ http.StatusRequestEntityTooLarge
 func (code StatusCode) RequestEntityTooLarge(err error, title ...string) Output {
-	return NewFailure(http.StatusRequestEntityTooLarge, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusRequestEntityTooLarge, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // RequestURITooLong ⟼ http.StatusRequestURITooLong
 func (code StatusCode) RequestURITooLong(err error, title ...string) Output {
-	return NewFailure(http.StatusRequestURITooLong, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusRequestURITooLong, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // UnsupportedMediaType ⟼ http.StatusUnsupportedMediaType
 func (code StatusCode) UnsupportedMediaType(err error, title ...string) Output {
-	return NewFailure(http.StatusUnsupportedMediaType, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusUnsupportedMediaType, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 /*
@@ -242,32 +243,32 @@ TODO:
 
 // InternalServerError ⟼ http.StatusInternalServerError
 func (code StatusCode) InternalServerError(err error, title ...string) Output {
-	return NewFailure(http.StatusInternalServerError, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusInternalServerError, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // NotImplemented ⟼ http.StatusNotImplemented
 func (code StatusCode) NotImplemented(err error, title ...string) Output {
-	return NewFailure(http.StatusNotImplemented, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusNotImplemented, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // BadGateway ⟼ http.StatusBadGateway
 func (code StatusCode) BadGateway(err error, title ...string) Output {
-	return NewFailure(http.StatusBadGateway, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusBadGateway, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // ServiceUnavailable ⟼ http.StatusServiceUnavailable
 func (code StatusCode) ServiceUnavailable(err error, title ...string) Output {
-	return NewFailure(http.StatusServiceUnavailable, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusServiceUnavailable, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // GatewayTimeout ⟼ http.StatusGatewayTimeout
 func (code StatusCode) GatewayTimeout(err error, title ...string) Output {
-	return NewFailure(http.StatusGatewayTimeout, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusGatewayTimeout, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 // HTTPVersionNotSupported ⟼ http.StatusHTTPVersionNotSupported
 func (code StatusCode) HTTPVersionNotSupported(err error, title ...string) Output {
-	return NewFailure(http.StatusHTTPVersionNotSupported, err).Bytes([]byte(strings.Join(title, " ")))
+	return NewFailure(http.StatusHTTPVersionNotSupported, err).Bytes([]byte(strings.Join(title, "")))
 }
 
 /*
@@ -333,6 +334,13 @@ func (out *Success) Bytes(content []byte) Output {
 	return out
 }
 
+// Text appends arbitrary octet/stream payload to HTTP response
+// content type shall be specified using With method
+func (out *Success) Text(content string) Output {
+	out.Body = content
+	return out
+}
+
 // With sets HTTP header to the response
 func (out *Success) With(header Header, value string) Output {
 	out.Headers[header] = value
@@ -376,7 +384,18 @@ func (issue *Failure) JSON(val interface{}) Output {
 // Bytes appends arbitrary octet/stream payload to HTTP response
 // content type shall be specified using With method
 func (issue *Failure) Bytes(content []byte) Output {
-	issue.Title = string(content)
+	if len(content) > 0 {
+		issue.Title = string(content)
+	}
+	return issue
+}
+
+// Text appends arbitrary octet/stream payload to HTTP response
+// content type shall be specified using With method
+func (issue *Failure) Text(content string) Output {
+	if len(content) > 0 {
+		issue.Title = content
+	}
 	return issue
 }
 

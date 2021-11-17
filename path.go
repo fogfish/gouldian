@@ -1,6 +1,8 @@
 package gouldian
 
 import (
+	"path/filepath"
+
 	"github.com/fogfish/gouldian/optics"
 )
 
@@ -24,15 +26,49 @@ func Path(arrows ...interface{}) Endpoint {
 
 func mkPathEndpoint(farrows []pathArrow) Endpoint {
 	return func(req *Input) error {
-		if len(req.Resource) < len(farrows) {
+		if len(farrows) != len(req.Resource) {
 			return NoMatch{}
 		}
 
-		ctx := req.Context
 		for i, f := range farrows {
-			if err := f(ctx, req.Resource[i]); err != nil {
+			if err := f(req.Context, req.Resource[i]); err != nil {
 				return err
 			}
+		}
+		return nil
+	}
+}
+
+/*
+
+PathSeq is an endpoint to match URL of HTTP request. The function takes
+url matching primitives, which are defined by the package `path`.
+
+  import "github.com/fogfish/gouldian/path"
+
+  e := µ.GET( µ.PathSeq("foo", suffix) )
+  e(mock.Input(mock.URL("/foo/bar"))) == nil
+  e(mock.Input(mock.URL("/bar"))) != nil
+*/
+func PathSeq(arrows ...interface{}) Endpoint {
+	return mkPathSeqEndpoint(mkPathMatcher(arrows))
+}
+
+func mkPathSeqEndpoint(farrows []pathArrow) Endpoint {
+	return func(req *Input) error {
+		if len(farrows) > len(req.Resource) || len(farrows) < 1 {
+			return NoMatch{}
+		}
+
+		last := len(farrows) - 1
+		for i := 0; i < last; i++ {
+			if err := farrows[i](req.Context, req.Resource[i]); err != nil {
+				return err
+			}
+		}
+
+		if err := farrows[last](req.Context, filepath.Join(req.Resource[last:]...)); err != nil {
+			return err
 		}
 
 		return nil

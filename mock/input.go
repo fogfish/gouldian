@@ -19,7 +19,9 @@
 package mock
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/textproto"
 	"net/url"
 	"strings"
@@ -123,17 +125,17 @@ func Header(header string, value string) Mock {
 }
 
 // JSON adds payload to mocked HTTP request
-// func JSON(val interface{}) Mock {
-// 	return func(mock *µ.Input) *µ.Input {
-// 		body, err := json.Marshal(val)
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		mock.Headers["Content-Type"] = "application/json"
-// 		mock.payload = body
-// 		return mock
-// 	}
-// }
+func JSON(val interface{}) Mock {
+	return func(mock *µ.Input) *µ.Input {
+		body, err := json.Marshal(val)
+		if err != nil {
+			panic(err)
+		}
+		mock.Headers["Content-Type"] = []string{"application/json"}
+		mock.Stream = bytes.NewReader(body)
+		return mock
+	}
+}
 
 // Text adds payload to mocked HTTP request
 func Text(val string) Mock {
