@@ -22,6 +22,7 @@ import (
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
+	ƒ "github.com/fogfish/gouldian/output"
 	"testing"
 )
 
@@ -138,5 +139,35 @@ func BenchmarkBody128(mb *testing.B) {
 
 	for i := 0; i < mb.N; i++ {
 		foo128(req128)
+	}
+}
+
+type TEcho struct {
+	Echo string
+}
+
+var lensEcho = optics.Lenses1(TEcho{})
+
+var echo = µ.GET(
+	µ.Path("echo", lensEcho),
+	func(r *µ.Input) error {
+		var req TEcho
+		if err := r.Context.Get(&req); err != nil {
+			return µ.Status.BadRequest(ƒ.Issue(err))
+		}
+
+		return µ.Status.OK(
+			ƒ.ContentType.Text,
+			ƒ.Server.Is("echo"),
+			ƒ.Text(req.Echo),
+		)
+	},
+)
+
+var reqEcho = mock.Input(mock.URL("/echo/123456"))
+
+func BenchmarkEcho(mb *testing.B) {
+	for i := 0; i < mb.N; i++ {
+		echo(reqEcho)
 	}
 }
