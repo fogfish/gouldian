@@ -93,7 +93,7 @@ Get ...
 */
 func (ctx *µContext) Get(val interface{}) error {
 	if err := ctx.morphism.Apply(val); err != nil {
-		return Status.BadRequest(err, "Unable to decode request")
+		return err
 	}
 
 	return nil

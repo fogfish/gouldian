@@ -23,7 +23,9 @@ import (
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
+	ƒ "github.com/fogfish/gouldian/output"
 	"github.com/fogfish/it"
+	"net/http"
 	"testing"
 )
 
@@ -313,7 +315,7 @@ func TestText(t *testing.T) {
 func TestFMapSuccess(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.OK().Text("bar") },
+		func(*µ.Input) error { return µ.Status.OK(ƒ.Text("bar")) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -328,11 +330,11 @@ func TestFMapSuccess(t *testing.T) {
 func TestFMap2Success(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.OK().Text("bar") },
+		func(*µ.Input) error { return µ.Status.OK(ƒ.Text("bar")) },
 	)
 	bar := µ.GET(
 		µ.Path("bar"),
-		func(*µ.Input) error { return µ.Status.OK().Text("foo") },
+		func(*µ.Input) error { return µ.Status.OK(ƒ.Text("foo")) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -347,14 +349,19 @@ func TestFMap2Success(t *testing.T) {
 func TestFMapFailure(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.Unauthorized(fmt.Errorf("")) },
+		func(*µ.Input) error { return µ.Status.Unauthorized(ƒ.Issue(fmt.Errorf(""))) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
 		If(foo(req)).Should().Assert(
 		func(be interface{}) bool {
-			return be.(error).Error() == "401: Unauthorized"
+			switch v := be.(type) {
+			case *µ.Output:
+				return v.Status == http.StatusUnauthorized
+			default:
+				return false
+			}
 		},
 	)
 }
@@ -388,7 +395,7 @@ func TestBodyLeak(t *testing.T) {
 					}
 				}
 				req.Item = Item{Seq: seq}
-				return µ.Status.OK().JSON(req.Item)
+				return µ.Status.OK(ƒ.JSON(req.Item))
 			},
 		)
 	}

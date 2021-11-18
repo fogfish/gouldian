@@ -4,6 +4,7 @@ import (
 	"fmt"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/optics"
+	ƒ "github.com/fogfish/gouldian/output"
 	"path/filepath"
 	"strings"
 )
@@ -127,19 +128,23 @@ func (h Authorize) With(f func(string, string) error) µ.Endpoint {
 		auth, exists := req.Headers.Get("Authorization")
 		if !exists {
 			return µ.Status.Unauthorized(
-				fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
+				ƒ.Issue(
+					fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
+				),
 			)
 		}
 
 		cred := strings.Split(auth, " ")
 		if len(cred) != 2 {
 			return µ.Status.Unauthorized(
-				fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
+				ƒ.Issue(
+					fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
+				),
 			)
 		}
 
 		if err := f(cred[0], cred[1]); err != nil {
-			return µ.Status.Unauthorized(err)
+			return µ.Status.Unauthorized(ƒ.Issue(err))
 		}
 
 		return nil

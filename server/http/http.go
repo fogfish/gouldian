@@ -2,9 +2,9 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	µ "github.com/fogfish/gouldian"
+	ƒ "github.com/fogfish/gouldian/output"
 	"net/http"
 	"strings"
 )
@@ -31,17 +31,17 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch v := routes.endpoint(input).(type) {
-	case *µ.Success:
-		routes.sendSuccess(w, v)
-	case *µ.Failure:
-		routes.sendFailure(w, v)
+	case *µ.Output:
+		routes.output(w, v)
 	case µ.NoMatch:
-		err := fmt.Errorf("NoMatch %s", r.URL.Path)
-		routes.sendFailure(w, µ.NewFailure(µ.StatusCode(501), err))
+		failure := µ.Status.NotImplemented(
+			ƒ.Issue(fmt.Errorf("NoMatch %s", r.URL.Path)),
+		).(*µ.Output)
+		routes.output(w, failure)
 	}
 }
 
-func (routes *routes) sendSuccess(w http.ResponseWriter, out *µ.Success) {
+func (routes *routes) output(w http.ResponseWriter, out *µ.Output) {
 	for h, v := range out.Headers {
 		w.Header().Set(string(h), v)
 	}
@@ -49,12 +49,5 @@ func (routes *routes) sendSuccess(w http.ResponseWriter, out *µ.Success) {
 
 	if len(out.Body) > 0 {
 		w.Write([]byte(out.Body))
-	}
-}
-
-func (routes *routes) sendFailure(w http.ResponseWriter, out *µ.Failure) {
-	w.WriteHeader(int(out.Status))
-	if text, err := json.Marshal(out); err == nil {
-		w.Write(text)
 	}
 }
