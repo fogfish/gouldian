@@ -92,5 +92,9 @@ func (ctx *µContext) Put(lens optics.Lens, str string) error {
 Get ...
 */
 func (ctx *µContext) Get(val interface{}) error {
-	return ctx.morphism.Apply(val)
+	if err := ctx.morphism.Apply(val); err != nil {
+		return Status.BadRequest(err, "Unable to decode request")
+	}
+
+	return nil
 }

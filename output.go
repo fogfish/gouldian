@@ -285,7 +285,7 @@ TODO:
 //
 
 // NewSuccess creates HTTP response with given HTTP Status code
-func NewSuccess(status StatusCode) Output {
+func NewSuccess(status StatusCode) *Success {
 	return &Success{
 		Status:  status,
 		Headers: map[Header]string{},
@@ -352,7 +352,7 @@ func (out *Success) With(header Header, value string) Output {
 //
 
 // NewFailure creates HTTP issue with given HTTP Status code
-func NewFailure(status StatusCode, err error) Output {
+func NewFailure(status StatusCode, err error) *Failure {
 	return &Failure{
 		ID:      guid.Seq.ID(),
 		Type:    fmt.Sprintf("https://httpstatuses.com/%d", status),
