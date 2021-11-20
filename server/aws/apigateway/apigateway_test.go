@@ -12,7 +12,7 @@ import (
 )
 
 func TestServeMatch(t *testing.T) {
-	api := mock()
+	api := mock("echo")
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/echo",
@@ -35,7 +35,7 @@ func TestServeMatch(t *testing.T) {
 }
 
 func TestServeNoMatch(t *testing.T) {
-	api := mock()
+	api := mock("echo")
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/foo",
@@ -55,74 +55,27 @@ func TestServeNoMatch(t *testing.T) {
 	// "Access-Control-Max-Age":       "600",
 }
 
-/*
-
-
-
-func TestServeUnescapedPath(t *testing.T) {
-	fun := µ.Serve(unescaped())
-	req := mock.Input(mock.URL("/"))
-	req.APIGatewayProxyRequest.Path = "/h%rt"
-	req.Path = []string{"h%rt"}
-	rsp, _ := fun(req.APIGatewayProxyRequest)
-
-	head := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-		"Access-Control-Max-Age":       "600",
-		"Content-Type":                 "text/plain",
+func TestServeMatchUnescaped(t *testing.T) {
+	api := mock("h%rt")
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "GET",
+		Path:       "/h%rt",
 	}
 
-	it.Ok(t).
-		If(rsp.StatusCode).Should().Equal(200).
-		If(rsp.Headers).Should().Equal(head).
-		If(rsp.Body).Should().Equal("Hello World!")
-}
-
-func unescaped() µ.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("h%rt")),
-		µ.FMap(
-			func() error { return µ.Ok().Text("Hello World!") },
-		),
-	)
-}
-
-func TestServeUnknownError(t *testing.T) {
-	fun := µ.Serve(unknown())
-	req := mock.Input(mock.URL("/"))
-	req.APIGatewayProxyRequest.Path = "/h%rt"
-	req.Path = []string{"h%rt"}
-	rsp, _ := fun(req.APIGatewayProxyRequest)
-
-	head := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-		"Access-Control-Max-Age":       "600",
-		"Content-Type":                 "application/json",
-	}
+	out, err1 := api(req)
+	it.Ok(t).If(err1).Must().Equal(nil)
 
 	it.Ok(t).
-		If(rsp.StatusCode).Should().Equal(500).
-		If(rsp.Headers).Should().Equal(head)
+		If(out.StatusCode).Should().Equal(http.StatusOK).
+		If(out.Headers["Server"]).Should().Equal("echo").
+		If(out.Headers["Content-Type"]).Should().Equal("text/plain").
+		If(out.Body).Should().Equal("echo")
 }
 
-func unknown() µ.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("h%rt")),
-		µ.FMap(
-			func() error { return fmt.Errorf("Unknown error") },
-		),
-	)
-}
-*/
-
-func mock() func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	return apigateway.Serve(
 		µ.GET(
-			µ.Path("echo"),
+			µ.Path(path),
 			µ.FMap(func(ctx µ.Context) error {
 				return µ.Status.OK(
 					headers.ContentType.Value(headers.TextPlain),

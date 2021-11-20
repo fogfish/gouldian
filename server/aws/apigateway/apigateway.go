@@ -21,6 +21,7 @@ package apigateway
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -35,11 +36,29 @@ func Request(r *events.APIGatewayProxyRequest) *µ.Input {
 	return &µ.Input{
 		Context:  µ.NewContext(context.Background()),
 		Method:   r.HTTPMethod,
-		Resource: strings.Split(r.Path, "/")[1:],
+		Resource: splitPath(r.Path),
 		Params:   µ.Params(r.MultiValueQueryStringParameters),
 		Headers:  µ.Headers(r.MultiValueHeaders),
 		Payload:  r.Body,
 	}
+}
+
+func splitPath(path string) µ.Segments {
+	seq := strings.Split(path, "/")[1:]
+	segments := make(µ.Segments, 0, len(seq))
+	for _, x := range seq {
+		if val, err := url.PathUnescape(x); err != nil {
+			segments = append(segments, x)
+		} else {
+			segments = append(segments, val)
+		}
+	}
+
+	if len(segments) == 1 && segments[0] == "" {
+		segments = segments[:0]
+	}
+
+	return segments
 }
 
 // Serve HTTP service
@@ -118,35 +137,5 @@ func JWT(val *AccessToken) Endpoint {
 
 		return NoMatch{}
 	}
-}
-*/
-
-// TODO: Gone
-// Input wraps HTTP request
-/*
-type Input struct {
-	events.APIGatewayProxyRequest
-	Path []string
-	Body string
-}
-*/
-
-// Request creates new Input from API Gateway request
-/*
-func Request(req events.APIGatewayProxyRequest) *Input {
-	segments := []string{}
-	for _, x := range strings.Split(req.Path, "/")[1:] {
-		if val, err := url.PathUnescape(x); err != nil {
-			segments = append(segments, x)
-		} else {
-			segments = append(segments, val)
-		}
-	}
-
-	if len(segments) == 1 && segments[0] == "" {
-		segments = []string{}
-	}
-
-	return &Input{req, segments, ""}
 }
 */
