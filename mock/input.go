@@ -29,33 +29,6 @@ import (
 	µ "github.com/fogfish/gouldian"
 )
 
-/*
-
-µMock is abstract container of HTTP terms for testing purposes
-*/
-// type µMock struct {
-// 	ctx      µ.Context
-// 	method   string
-// 	resource µ.Segments
-// 	params   µ.Params
-// 	headers  µ.Headers
-// 	payload  []byte
-// }
-
-// var _ µ.Input = (*µMock)(nil)
-
-// func (mock *µMock) Context() µ.Context { return mock.ctx }
-
-// func (mock *µMock) Method() string { return mock.method }
-
-// func (mock *µMock) Resource() µ.Segments { return mock.resource }
-
-// func (mock *µMock) Params() µ.Params { return mock.params }
-
-// func (mock *µMock) Headers() µ.Headers { return mock.headers }
-
-// func (mock *µMock) Payload() []byte { return mock.payload }
-
 // Mock is an option type to customize mock event
 type Mock func(*µ.Input) *µ.Input
 
