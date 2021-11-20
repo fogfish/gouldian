@@ -285,7 +285,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 	})
 }
 
-func TestAuthorize(t *testing.T) {
+func TestHeaderAuthorize(t *testing.T) {
 	auth := func(scheme, token string) error {
 		if token == "foo" {
 			return nil
@@ -316,7 +316,7 @@ func TestAuthorize(t *testing.T) {
 	})
 }
 
-func TestContentJSON(t *testing.T) {
+func TestHeaderContentJSON(t *testing.T) {
 	for _, header := range []string{
 		"application/json",
 		"application/x-www-form-urlencoded",
@@ -331,4 +331,14 @@ func TestContentJSON(t *testing.T) {
 			If(foo(success)).Should().Equal(nil).
 			If(foo(failure)).ShouldNot().Equal(nil)
 	}
+}
+
+func TestHeaderOutput(t *testing.T) {
+	out := µ.Status.OK(
+		µ.Header("foo").Value("bar"),
+	).(*µ.Output)
+
+	it.Ok(t).
+		If(out.Status).Should().Equal(200).
+		If(out.Headers["foo"]).Should().Equal("bar")
 }
