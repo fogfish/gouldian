@@ -73,7 +73,7 @@ type Issue struct {
 // NewIssue creates instance of Issue
 func NewIssue(status int) *Issue {
 	return &Issue{
-		ID:     guid.Seq.ID(),
+		ID:     guid.G.K(guid.Clock).String(),
 		Type:   fmt.Sprintf("https://httpstatuses.com/%d", status),
 		Status: status,
 		Title:  http.StatusText(status),
