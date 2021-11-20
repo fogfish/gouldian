@@ -19,6 +19,7 @@
 package gouldian
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -27,28 +28,7 @@ import (
 
 /*
 
-TODO: Same out put style as input
-
-Not Good
-return µ.Status.
-				OK().
-				With("Server", "echo").
-				With("Content-Type", "text/plain").
-				Bytes([]byte(req.Echo))
-
-Good (so that it is composable):
-return µ.Output.OK(
-	µ.Header("Server").Is("echo"),
-	µ.Header("Content-Type").Is("text/plain"),
-	µ.Body([]byte(req.Echo)),
-)
-
-
-*/
-
-/*
-
-Output of HTTP request
+Output is HTTP response
 */
 type Output struct {
 	Status  int
@@ -75,9 +55,9 @@ func NewOutput(status int) *Output {
 Result is a composable function that abstract results of HTTP endpoint.
 The function takes instance of HTTP output and mutates its value
 
-  µ.Status.OK(
-		output.Header("Content-Type").Is("application/json"),
-		output.JSON(value),
+  return µ.Status.OK(
+		headers.ContentType.Value("application/json"),
+		µ.WithJSON(value),
 	)
 */
 type Result func(*Output) error
@@ -90,7 +70,7 @@ type Issue struct {
 	Title  string `json:"title"`
 }
 
-// New Issue
+// NewIssue creates instance of Issue
 func NewIssue(status int) *Issue {
 	return &Issue{
 		ID:     guid.Seq.ID(),
@@ -347,3 +327,71 @@ TODO:
 	NotExtended
 	NetworkAuthenticationRequired
 */
+
+// WithHeader appends header to HTTP response
+func WithHeader(header, value string) Result {
+	return func(out *Output) error {
+		out.Headers[header] = value
+		return nil
+	}
+}
+
+// WithJSON appends application/json payload to HTTP response
+func WithJSON(val interface{}) Result {
+	return func(out *Output) error {
+		body, err := json.Marshal(val)
+		if err != nil {
+			out.Status = http.StatusInternalServerError
+			out.Headers["Content-Type"] = "text/plain"
+			out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
+
+			return nil
+		}
+
+		out.Headers["Content-Type"] = "application/json"
+		out.Body = string(body)
+		return nil
+	}
+}
+
+// WithBytes appends arbitrary octet/stream payload to HTTP response
+// content type shall be specified using With method
+func WithBytes(content []byte) Result {
+	return func(out *Output) error {
+		out.Body = string(content)
+		return nil
+	}
+}
+
+// WithText appends arbitrary octet/stream payload to HTTP response
+// content type shall be specified using With method
+func WithText(content string) Result {
+	return func(out *Output) error {
+		out.Body = content
+		return nil
+	}
+}
+
+// WithIssue appends Issue, RFC 7807: Problem Details for HTTP APIs
+func WithIssue(err error, title ...string) Result {
+	return func(out *Output) error {
+		issue := NewIssue(out.Status)
+		if len(title) != 0 {
+			issue.Title = title[0]
+		}
+
+		body, err := json.Marshal(issue)
+		if err != nil {
+			out.Status = http.StatusInternalServerError
+			out.Headers["Content-Type"] = "text/plain"
+			out.Body = fmt.Sprintf("JSON serialization is failed for <Issue>")
+
+			return nil
+		}
+
+		out.Headers["Content-Type"] = "application/json"
+		out.Body = string(body)
+		out.Failure = err
+		return nil
+	}
+}

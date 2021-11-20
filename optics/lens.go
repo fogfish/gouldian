@@ -278,9 +278,9 @@ func typeOf(t interface{}) reflect.Type {
 
 /*
 
-Lenses1 split structure with 1 field to set of lenses
+ForProduct1 split structure with 1 field to set of lenses
 */
-func Lenses1(t interface{}) Lens {
+func ForProduct1(t interface{}) Lens {
 	tc := typeOf(t)
 	if tc.NumField() != 1 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 1", tc.Name(), tc.NumField()))
@@ -291,9 +291,9 @@ func Lenses1(t interface{}) Lens {
 
 /*
 
-Lenses2 split structure with 2 fields to set of lenses
+ForProduct2 split structure with 2 fields to set of lenses
 */
-func Lenses2(t interface{}) (Lens, Lens) {
+func ForProduct2(t interface{}) (Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 2 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 2", tc.Name(), tc.NumField()))
@@ -305,9 +305,9 @@ func Lenses2(t interface{}) (Lens, Lens) {
 
 /*
 
-Lenses3 split structure with 3 fields to set of lenses
+ForProduct3 split structure with 3 fields to set of lenses
 */
-func Lenses3(t interface{}) (Lens, Lens, Lens) {
+func ForProduct3(t interface{}) (Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 3 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 3", tc.Name(), tc.NumField()))
@@ -320,9 +320,9 @@ func Lenses3(t interface{}) (Lens, Lens, Lens) {
 
 /*
 
-Lenses4 split structure with 4 fields to set of lenses
+ForProduct4 split structure with 4 fields to set of lenses
 */
-func Lenses4(t interface{}) (Lens, Lens, Lens, Lens) {
+func ForProduct4(t interface{}) (Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 4 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 4", tc.Name(), tc.NumField()))
@@ -336,9 +336,9 @@ func Lenses4(t interface{}) (Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses5 split structure with 5 fields to set of lenses
+ForProduct5 split structure with 5 fields to set of lenses
 */
-func Lenses5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
+func ForProduct5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 5 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 5", tc.Name(), tc.NumField()))
@@ -353,9 +353,9 @@ func Lenses5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses6 split structure with 6 fields to set of lenses
+ForProduct6 split structure with 6 fields to set of lenses
 */
-func Lenses6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
+func ForProduct6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 6 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 6", tc.Name(), tc.NumField()))
@@ -371,9 +371,9 @@ func Lenses6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses7 split structure with 7 fields to set of lenses
+ForProduct7 split structure with 7 fields to set of lenses
 */
-func Lenses7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+func ForProduct7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 7 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 7", tc.Name(), tc.NumField()))
@@ -390,9 +390,9 @@ func Lenses7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses8 split structure with 8 fields to set of lenses
+ForProduct8 split structure with 8 fields to set of lenses
 */
-func Lenses8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+func ForProduct8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 8 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 8", tc.Name(), tc.NumField()))
@@ -410,9 +410,9 @@ func Lenses8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 
 /*
 
-Lenses9 split structure with 9 fields to set of lenses
+ForProduct9 split structure with 9 fields to set of lenses
 */
-func Lenses9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+func ForProduct9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 9 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 9", tc.Name(), tc.NumField()))
@@ -431,9 +431,9 @@ func Lenses9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Len
 
 /*
 
-Lenses10 split structure with 10 fields to set of lenses
+ForProduct10 split structure with 10 fields to set of lenses
 */
-func Lenses10(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+func ForProduct10(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	tc := typeOf(t)
 	if tc.NumField() != 10 {
 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 10 lens", tc.Name(), tc.NumField()))

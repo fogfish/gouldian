@@ -1,4 +1,4 @@
-package aws_test
+package apigateway_test
 
 /*
 func TestServeSuccess(t *testing.T) {

@@ -18,7 +18,9 @@
 
 package gouldian
 
-import "github.com/fogfish/gouldian/optics"
+import (
+	"github.com/fogfish/gouldian/optics"
+)
 
 const (
 	// Any constant matches any term
@@ -91,7 +93,10 @@ func ANY(arrows ...Endpoint) Endpoint {
 	return Method(Any).Then(Join(arrows...))
 }
 
-// Method is an endpoint to match HTTP verb request
+/*
+
+Method is an endpoint to match HTTP verb request
+*/
 func Method(verb string) Endpoint {
 	if verb == Any {
 		return func(req *Input) error {
@@ -109,7 +114,10 @@ func Method(verb string) Endpoint {
 	}
 }
 
-// Body decodes HTTP request body to struct
+/*
+
+Body decodes HTTP request body and lifts it to the structure
+*/
 func Body(lens optics.Lens) Endpoint {
 	return func(req *Input) error {
 		if len(req.Payload) != 0 || req.Stream != nil {
@@ -129,6 +137,6 @@ func Body(lens optics.Lens) Endpoint {
 FMap applies clojure to matched HTTP request,
 taking the execution context as the input to closure
 */
-// func FMap(f func(Context) error) Endpoint {
-// 	return func(req *Input) error { return f(req.Context) }
-// }
+func FMap(f func(Context) error) Endpoint {
+	return func(req *Input) error { return f(req.Context) }
+}

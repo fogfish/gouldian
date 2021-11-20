@@ -159,7 +159,7 @@ func TestHeaderAny(t *testing.T) {
 func TestHeaderString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Header("X-Value").To(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -193,7 +193,7 @@ func TestHeaderString(t *testing.T) {
 func TestHeaderMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Header("X-Value").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -220,7 +220,7 @@ func TestHeaderMaybeString(t *testing.T) {
 func TestHeaderInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Header("X-Value").To(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -251,7 +251,7 @@ func TestHeaderInt(t *testing.T) {
 func TestHeaderMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Header("X-Value").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -317,13 +317,13 @@ func TestAuthorize(t *testing.T) {
 }
 
 func TestContentJSON(t *testing.T) {
-	for header, endpoint := range map[string]µ.Endpoint{
-		"application/json":                  headers.ContentType.JSON,
-		"application/x-www-form-urlencoded": headers.ContentType.Form,
-		"text/plain":                        headers.ContentType.Text,
-		"text/html":                         headers.ContentType.HTML,
+	for _, header := range []string{
+		"application/json",
+		"application/x-www-form-urlencoded",
+		"text/plain",
+		"text/html",
 	} {
-		foo := µ.GET(endpoint)
+		foo := µ.GET(headers.ContentType.Is(header))
 		success := mock.Input(mock.Header("Content-Type", header))
 		failure := mock.Input(mock.Header("Content-Type", "some/value"))
 

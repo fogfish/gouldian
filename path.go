@@ -11,10 +11,11 @@ type pathArrow func(Context, string) error
 
 /*
 
-Path is an endpoint to match URL of HTTP request. The function takes
-url matching primitives, which are defined by the package `path`.
-
-  import "github.com/fogfish/gouldian/path"
+Path is an endpoint to match URL of HTTP request. The function takes a path
+pattern as arguments. The pattern is sequence of either literals or lenses,
+where each term corresponds to the path segment. The function do not match
+if length of path is not equal to the length of pattern or segment do not
+match to pattern
 
   e := µ.GET( µ.Path("foo") )
   e(mock.Input(mock.URL("/foo"))) == nil
@@ -41,10 +42,8 @@ func mkPathEndpoint(farrows []pathArrow) Endpoint {
 
 /*
 
-PathSeq is an endpoint to match URL of HTTP request. The function takes
-url matching primitives, which are defined by the package `path`.
-
-  import "github.com/fogfish/gouldian/path"
+PathSeq is like Path but last element in the pattern must be lens that lifts
+the tail of path.
 
   e := µ.GET( µ.PathSeq("foo", suffix) )
   e(mock.Input(mock.URL("/foo/bar"))) == nil

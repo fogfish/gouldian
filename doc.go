@@ -19,16 +19,14 @@
 /*
 
 Package gouldian is Go combinator library for building HTTP services.
-The library is a thin layer of purely functional abstractions on top
-of AWS Gateway API. It resolves a challenge of building simple and
-declarative api implementations in the absence of pattern matching.
+The library is a thin layer of purely functional abstractions to
+building simple and declarative api implementations in the absence
+of pattern matching for traditional and serverless applications.
 
 
 Inspiration
 
-The library is heavily inspired by Scala Finch
-https://github.com/finagle/finch. However, gouldian primary target is
-a serverless development with AWS Lambda and AWS API Gateway.
+The library is heavily inspired by Scala Finch https://github.com/finagle/finch.
 
 
 Getting started

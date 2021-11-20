@@ -67,7 +67,7 @@ func NewContext(ctx context.Context) Context {
 
 /*
 
-Free ...
+Free the context
 */
 func (ctx *µContext) Free() {
 	ctx.morphism = ctx.morphism[:0]
@@ -75,7 +75,7 @@ func (ctx *µContext) Free() {
 
 /*
 
-Put ...
+Put injects value to the context
 */
 func (ctx *µContext) Put(lens optics.Lens, str string) error {
 	val, err := lens.FromString(str)
@@ -89,7 +89,7 @@ func (ctx *µContext) Put(lens optics.Lens, str string) error {
 
 /*
 
-Get ...
+Get decodes context into structure
 */
 func (ctx *µContext) Get(val interface{}) error {
 	if err := ctx.morphism.Apply(val); err != nil {

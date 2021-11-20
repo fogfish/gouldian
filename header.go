@@ -124,3 +124,14 @@ func (header Header) Maybe(lens optics.Lens) Endpoint {
 		return nil
 	}
 }
+
+/*
+
+Value outputs header value as the result of HTTP response
+*/
+func (header Header) Value(value string) Result {
+	return func(out *Output) error {
+		out.Headers[string(header)] = value
+		return nil
+	}
+}

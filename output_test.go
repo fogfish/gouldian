@@ -25,7 +25,6 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
-	ƒ "github.com/fogfish/gouldian/output"
 	"github.com/fogfish/it"
 )
 
@@ -61,22 +60,22 @@ type myT struct {
 
 func TestJSON(t *testing.T) {
 	output(t,
-		µ.Status.OK(ƒ.JSON(myT{"Hello"})),
-		µ.Status.OK(ƒ.JSON(myT{"Hello"})),
+		µ.Status.OK(µ.WithJSON(myT{"Hello"})),
+		µ.Status.OK(µ.WithJSON(myT{"Hello"})),
 	)
 }
 
 func TestOutputText(t *testing.T) {
 	output(t,
-		µ.Status.OK(ƒ.Text("Hello")),
-		µ.Status.OK(ƒ.Text("Hello")),
+		µ.Status.OK(µ.WithText("Hello")),
+		µ.Status.OK(µ.WithText("Hello")),
 	)
 }
 
 func TestOutputBytes(t *testing.T) {
 	output(t,
-		µ.Status.OK(ƒ.Bytes([]byte("Hello"))),
-		µ.Status.OK(ƒ.Bytes([]byte("Hello"))),
+		µ.Status.OK(µ.WithBytes([]byte("Hello"))),
+		µ.Status.OK(µ.WithBytes([]byte("Hello"))),
 	)
 }
 

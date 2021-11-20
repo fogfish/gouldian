@@ -50,7 +50,7 @@ func TestPathAny(t *testing.T) {
 func TestPathString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Path("foo", val))
 
 	t.Run("string", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestPathString(t *testing.T) {
 func TestPathInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Path("foo", val))
 
 	t.Run("string", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestPathVariableLen(t *testing.T) {
 func TestPathSeq(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.PathSeq("foo", val))
 
 	t.Run("seq0", func(t *testing.T) {

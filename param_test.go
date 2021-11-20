@@ -54,7 +54,7 @@ func TestParamAny(t *testing.T) {
 func TestParamString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").To(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -88,7 +88,7 @@ func TestParamString(t *testing.T) {
 func TestParamMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestParamMaybeString(t *testing.T) {
 func TestParamInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").To(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestParamInt(t *testing.T) {
 func TestParamMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").Maybe(val))
 
 	t.Run("string", func(t *testing.T) {
@@ -183,7 +183,7 @@ func TestParamMaybeInt(t *testing.T) {
 func TestParamFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").To(val))
 
 	t.Run("integer", func(t *testing.T) {
@@ -224,7 +224,7 @@ func TestParamFloat(t *testing.T) {
 func TestParamMaybeFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").Maybe(val))
 
 	t.Run("double", func(t *testing.T) {
@@ -271,7 +271,7 @@ func TestParamJSON(t *testing.T) {
 
 	type myT struct{ Val MyS }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").JSON(val))
 
 	t.Run("json", func(t *testing.T) {
@@ -316,7 +316,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 	type myT struct{ Val MyS }
 
-	val := optics.Lenses1(myT{})
+	val := optics.ForProduct1(myT{})
 	foo := µ.GET(µ.Param("foo").MaybeJSON(val))
 
 	t.Run("json", func(t *testing.T) {

@@ -99,32 +99,39 @@ func (in *Input) ReadAll() error {
 	return nil
 }
 
-// TODO: Gone
-// Input wraps HTTP request
 /*
-type Input struct {
-	events.APIGatewayProxyRequest
-	Path []string
-	Body string
-}
-*/
 
-// Request creates new Input from API Gateway request
+AccessToken is a container for user identity
+*/
+type AccessToken struct {
+	Jti      string `json:"jti,omitempty"`
+	Iss      string `json:"iss,omitempty"`
+	Exp      string `json:"exp,omitempty"`
+	Sub      string `json:"sub,omitempty"`
+	Scope    string `json:"scope,omitempty"`
+	UserID   string `json:"username,omitempty"`
+	ClientID string `json:"client_id,omitempty"`
+}
+
 /*
-func Request(req events.APIGatewayProxyRequest) *Input {
-	segments := []string{}
-	for _, x := range strings.Split(req.Path, "/")[1:] {
-		if val, err := url.PathUnescape(x); err != nil {
-			segments = append(segments, x)
-		} else {
-			segments = append(segments, val)
+
+NewAccessToken creates access token object
+*/
+func NewAccessToken(raw map[string]interface{}) AccessToken {
+	asString := func(id string) string {
+		if val, ok := raw[id]; ok {
+			return val.(string)
 		}
+		return ""
 	}
 
-	if len(segments) == 1 && segments[0] == "" {
-		segments = []string{}
+	return AccessToken{
+		Jti:      asString("jti"),
+		Iss:      asString("iss"),
+		Exp:      asString("exp"),
+		Sub:      asString("sub"),
+		Scope:    asString("scope"),
+		UserID:   asString("username"),
+		ClientID: asString("client_id"),
 	}
-
-	return &Input{req, segments, ""}
 }
-*/

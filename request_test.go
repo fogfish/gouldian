@@ -23,7 +23,6 @@ import (
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
-	ƒ "github.com/fogfish/gouldian/output"
 	"github.com/fogfish/it"
 	"net/http"
 	"testing"
@@ -220,7 +219,7 @@ func TestBodyJSON(t *testing.T) {
 	type request struct {
 		FooBar foobar
 	}
-	var lens = optics.Lenses1(request{})
+	var lens = optics.ForProduct1(request{})
 
 	var value request
 	foo := µ.GET(µ.Body(lens))
@@ -260,7 +259,7 @@ func TestBodyForm(t *testing.T) {
 	type request struct {
 		FooBar foobar `content:"form"`
 	}
-	var lens = optics.Lenses1(request{})
+	var lens = optics.ForProduct1(request{})
 
 	var value request
 	foo := µ.GET(µ.Body(lens))
@@ -298,7 +297,7 @@ func TestText(t *testing.T) {
 	type request struct {
 		FooBar string
 	}
-	var lens = optics.Lenses1(request{})
+	var lens = optics.ForProduct1(request{})
 
 	var value request
 	foo := µ.GET(µ.Body(lens))
@@ -315,7 +314,7 @@ func TestText(t *testing.T) {
 func TestFMapSuccess(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.OK(ƒ.Text("bar")) },
+		func(*µ.Input) error { return µ.Status.OK(µ.WithText("bar")) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -330,11 +329,11 @@ func TestFMapSuccess(t *testing.T) {
 func TestFMap2Success(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.OK(ƒ.Text("bar")) },
+		func(*µ.Input) error { return µ.Status.OK(µ.WithText("bar")) },
 	)
 	bar := µ.GET(
 		µ.Path("bar"),
-		func(*µ.Input) error { return µ.Status.OK(ƒ.Text("foo")) },
+		func(*µ.Input) error { return µ.Status.OK(µ.WithText("foo")) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -349,7 +348,7 @@ func TestFMap2Success(t *testing.T) {
 func TestFMapFailure(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.Unauthorized(ƒ.Issue(fmt.Errorf(""))) },
+		func(*µ.Input) error { return µ.Status.Unauthorized(µ.WithIssue(fmt.Errorf(""))) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -377,7 +376,7 @@ func TestBodyLeak(t *testing.T) {
 	type request struct {
 		Item Item
 	}
-	lens := optics.Lenses1(request{})
+	lens := optics.ForProduct1(request{})
 
 	endpoint := func() µ.Endpoint {
 		return µ.GET(
@@ -395,7 +394,7 @@ func TestBodyLeak(t *testing.T) {
 					}
 				}
 				req.Item = Item{Seq: seq}
-				return µ.Status.OK(ƒ.JSON(req.Item))
+				return µ.Status.OK(µ.WithJSON(req.Item))
 			},
 		)
 	}
