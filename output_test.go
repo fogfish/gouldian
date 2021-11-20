@@ -79,21 +79,28 @@ type myT struct {
 	A string
 }
 
-func TestJSON(t *testing.T) {
+func TestWithHeader(t *testing.T) {
+	output(t,
+		µ.Status.OK(µ.WithHeader("foo", "bar")),
+		µ.Status.OK(µ.WithHeader("foo", "bar")),
+	)
+}
+
+func TestWithJSON(t *testing.T) {
 	output(t,
 		µ.Status.OK(µ.WithJSON(myT{"Hello"})),
 		µ.Status.OK(µ.WithJSON(myT{"Hello"})),
 	)
 }
 
-func TestOutputText(t *testing.T) {
+func TestWithText(t *testing.T) {
 	output(t,
 		µ.Status.OK(µ.WithText("Hello")),
 		µ.Status.OK(µ.WithText("Hello")),
 	)
 }
 
-func TestOutputBytes(t *testing.T) {
+func TestWithBytes(t *testing.T) {
 	output(t,
 		µ.Status.OK(µ.WithBytes([]byte("Hello"))),
 		µ.Status.OK(µ.WithBytes([]byte("Hello"))),
