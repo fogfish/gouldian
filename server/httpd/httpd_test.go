@@ -12,8 +12,47 @@ import (
 	"github.com/fogfish/it"
 )
 
-func TestServe(t *testing.T) {
-	ts := httptest.NewServer(
+func TestServeMatch(t *testing.T) {
+	ts := mock()
+	defer ts.Close()
+
+	req, err1 := http.NewRequest("GET", ts.URL+"/echo", nil)
+	it.Ok(t).If(err1).Must().Equal(nil)
+
+	out, err2 := http.DefaultClient.Do(req)
+	it.Ok(t).If(err2).Must().Equal(nil)
+
+	msg, err3 := ioutil.ReadAll(out.Body)
+	it.Ok(t).If(err3).Must().Equal(nil)
+
+	it.Ok(t).
+		If(out.StatusCode).Should().Equal(http.StatusOK).
+		If(out.Header.Get("Server")).Should().Equal("echo").
+		If(out.Header.Get("Content-Type")).Should().Equal("text/plain").
+		If(msg).Should().Equal([]byte("echo"))
+}
+
+func TestServeNoMatch(t *testing.T) {
+	ts := mock()
+	defer ts.Close()
+
+	req, err1 := http.NewRequest("GET", ts.URL+"/foo", nil)
+	it.Ok(t).If(err1).Must().Equal(nil)
+
+	out, err2 := http.DefaultClient.Do(req)
+	it.Ok(t).If(err2).Must().Equal(nil)
+
+	msg, err3 := ioutil.ReadAll(out.Body)
+	it.Ok(t).If(err3).Must().Equal(nil)
+
+	it.Ok(t).
+		If(out.StatusCode).Should().Equal(http.StatusNotImplemented).
+		If(out.Header.Get("Content-Type")).Should().Equal("application/json").
+		If(msg).ShouldNot().Equal([]byte{})
+}
+
+func mock() *httptest.Server {
+	return httptest.NewServer(
 		httpd.Serve(
 			µ.GET(
 				µ.Path("echo"),
@@ -27,19 +66,4 @@ func TestServe(t *testing.T) {
 			),
 		),
 	)
-	defer ts.Close()
-
-	req, err1 := http.NewRequest("GET", ts.URL+"/echo", nil)
-	it.Ok(t).If(err1).Must().Equal(nil)
-
-	out, err2 := http.DefaultClient.Do(req)
-	it.Ok(t).If(err2).Must().Equal(nil)
-
-	msg, err3 := ioutil.ReadAll(out.Body)
-	it.Ok(t).If(err3).Must().Equal(nil)
-
-	it.Ok(t).
-		If(out.Header.Get("Server")).Should().Equal("echo").
-		If(out.Header.Get("Content-Type")).Should().Equal("text/plain").
-		If(msg).Should().Equal([]byte("echo"))
 }
