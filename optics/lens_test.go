@@ -35,29 +35,47 @@ func TestLensStructString(t *testing.T) {
 func TestLensStructInt(t *testing.T) {
 	type T struct{ A int }
 	a := optics.ForProduct1(T{})
-	x, _ := a.FromString("100")
+	x, err := a.FromString("100")
+	it.Ok(t).If(err).Must().Equal(nil)
+
 	m := optics.Morphism{{Lens: a, Value: x}}
 
 	var v T
-	err := m.Apply(&v)
+	err = m.Apply(&v)
 
 	it.Ok(t).
 		IfNil(err).
 		If(v.A).Equal(100)
 }
 
+func TestLensStructIntFail(t *testing.T) {
+	type T struct{ A int }
+	a := optics.ForProduct1(T{})
+	_, err := a.FromString("abc")
+	it.Ok(t).If(err).MustNot().Equal(nil)
+}
+
 func TestLensStructFloat(t *testing.T) {
 	type T struct{ A float64 }
 	a := optics.ForProduct1(T{})
-	x, _ := a.FromString("100.0")
+	x, err := a.FromString("100.0")
+	it.Ok(t).If(err).Must().Equal(nil)
+
 	m := optics.Morphism{{Lens: a, Value: x}}
 
 	var v T
-	err := m.Apply(&v)
+	err = m.Apply(&v)
 
 	it.Ok(t).
 		IfNil(err).
 		If(v.A).Equal(100.0)
+}
+
+func TestLensStructFloatFail(t *testing.T) {
+	type T struct{ A float64 }
+	a := optics.ForProduct1(T{})
+	_, err := a.FromString("abc")
+	it.Ok(t).If(err).MustNot().Equal(nil)
 }
 
 func TestLensStructJSON(t *testing.T) {
