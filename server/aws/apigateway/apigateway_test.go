@@ -1,106 +1,63 @@
 package apigateway_test
 
-/*
-func TestServeSuccess(t *testing.T) {
-	fun := µ.Serve(hello())
-	req := mock.Input(mock.URL("/hello"))
-	rsp, _ := fun(req.APIGatewayProxyRequest)
+import (
+	"net/http"
+	"testing"
 
-	head := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-		"Access-Control-Max-Age":       "600",
-		"Content-Type":                 "text/plain",
-	}
+	"github.com/aws/aws-lambda-go/events"
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/headers"
+	"github.com/fogfish/gouldian/server/aws/apigateway"
+	"github.com/fogfish/it"
+)
 
-	it.Ok(t).
-		If(rsp.StatusCode).Should().Equal(200).
-		If(rsp.Headers).Should().Equal(head).
-		If(rsp.Body).Should().Equal("Hello World!")
-}
-
-func hello() µ.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("hello")),
-		µ.FMap(
-			func() error { return µ.Ok().Text("Hello World!") },
-		),
-	)
-}
-
-func TestServeFailure(t *testing.T) {
-	fun := µ.Serve(unauthorized())
+func TestServeMatch(t *testing.T) {
+	api := mock()
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
-		Path:       "/issue",
+		Path:       "/echo",
 	}
-	head := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-		"Access-Control-Max-Age":       "600",
-		"Content-Type":                 "application/json",
-	}
-	rsp, _ := fun(req)
-	var issue µ.Issue
+
+	out, err1 := api(req)
+	it.Ok(t).If(err1).Must().Equal(nil)
 
 	it.Ok(t).
-		If(rsp.StatusCode).Should().Equal(401).
-		If(rsp.Headers).Should().Equal(head).
-		If(json.Unmarshal([]byte(rsp.Body), &issue)).Should().Equal(nil).
-		If(issue.Type).Should().Equal("https://httpstatuses.com/401").
-		If(issue.Status).Should().Equal(401).
-		If(issue.Title).Should().Equal("Unauthorized").
-		If(issue.ID).ShouldNot().Equal("")
-}
+		If(out.StatusCode).Should().Equal(http.StatusOK).
+		If(out.Headers["Server"]).Should().Equal("echo").
+		If(out.Headers["Content-Type"]).Should().Equal("text/plain").
+		If(out.Body).Should().Equal("echo")
 
-func unauthorized() µ.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("issue")),
-		µ.FMap(func() error { return µ.Unauthorized(errors.New("some reason")) }),
-	)
+	// 	"Access-Control-Allow-Origin":  "*",
+	// 	"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+	// 	"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+	// 	"Access-Control-Max-Age":       "600",
+	// }
 }
 
 func TestServeNoMatch(t *testing.T) {
-	fun := µ.Serve(hello())
+	api := mock()
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
-		Path:       "/issue",
+		Path:       "/foo",
 	}
-	head := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-		"Access-Control-Max-Age":       "600",
-		"Content-Type":                 "application/json",
-	}
-	rsp, _ := fun(req)
+
+	out, err1 := api(req)
+	it.Ok(t).If(err1).Must().Equal(nil)
 
 	it.Ok(t).
-		If(rsp.StatusCode).Should().Equal(501).
-		If(rsp.Headers).Should().Equal(head)
+		If(out.StatusCode).Should().Equal(http.StatusNotImplemented).
+		If(out.Headers["Content-Type"]).Should().Equal("application/json").
+		If(out.Body).ShouldNot().Equal("")
+
+	// "Access-Control-Allow-Origin":  "*",
+	// "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+	// "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+	// "Access-Control-Max-Age":       "600",
 }
 
-func TestServeNoMatchLogger(t *testing.T) {
-	fun := µ.Serve(µ.NoMatchLogger())
-	req := events.APIGatewayProxyRequest{
-		HTTPMethod: "GET",
-		Path:       "/issue",
-	}
-	head := map[string]string{
-		"Access-Control-Allow-Origin":  "*",
-		"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
-		"Access-Control-Max-Age":       "600",
-		"Content-Type":                 "application/json",
-	}
-	rsp, _ := fun(req)
+/*
 
-	it.Ok(t).
-		If(rsp.StatusCode).Should().Equal(501).
-		If(rsp.Headers).Should().Equal(head)
-}
+
 
 func TestServeUnescapedPath(t *testing.T) {
 	fun := µ.Serve(unescaped())
@@ -161,3 +118,18 @@ func unknown() µ.Endpoint {
 	)
 }
 */
+
+func mock() func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	return apigateway.Serve(
+		µ.GET(
+			µ.Path("echo"),
+			µ.FMap(func(ctx µ.Context) error {
+				return µ.Status.OK(
+					headers.ContentType.Value(headers.TextPlain),
+					headers.Server.Value("echo"),
+					µ.WithText("echo"),
+				)
+			}),
+		),
+	)
+}
