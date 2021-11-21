@@ -37,17 +37,23 @@ to /hello endpoint.
   package main
 
   import (
-    "github.com/aws/aws-lambda-go/lambda"
     µ "github.com/fogfish/gouldian"
+    "github.com/fogfish/gouldian/server/httpd"
+    "net/http"
   )
 
   func main() {
-    lambda.Start( µ.Serve(hello()) )
+    http.ListenAndServe(":8080",
+      httpd.Serve(hello()),
+    )
   }
 
   func hello() µ.Endpoint {
-    return µ.GET(µ.Path("hello")).FMap(
-      func() error { return µ.Ok().Text("Hello World!") },
+    return µ.GET(
+      µ.Path("hello"),
+      µ.FMap(func(ctx µ.Context) error {
+        return µ.Status.OK(µ.WithText("Hello World!"))
+      }),
     )
   }
 

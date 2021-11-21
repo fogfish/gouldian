@@ -1,7 +1,7 @@
 <p align="center">
   <img src="./doc/gouldian-v2.svg" height="120" />
-  <h3 align="center">Gouldian</h3>
-  <p align="center"><strong>Go HTTP combinator library for building serverless applications</strong></p>
+  <h3 align="center">µ-Gouldian</h3>
+  <p align="center"><strong>Go combinator library for building containerized and serverless HTTP services.</strong></p>
 
   <p align="center">
     <!-- Version -->
@@ -37,9 +37,7 @@
 
 --- 
 
-
-The library is a thin layer of purely functional abstractions on top HTTP protocol. It resolves a challenge of building simple and
-declarative api implementations in the absence of pattern matching at Golang.
+The library is a thin layer of purely functional abstractions to build HTTP services. In the contrast with other HTTP routers, the library resolves a challenge of building simple and declarative api implementations in the absence of pattern matching at Golang. The library support opaque migration of HTTP service between traditional, containers and serverless environments.
 
 [User Guide](./doc/user-guide.md) |
 [Example](./example/httpbin/main.go)
@@ -47,45 +45,46 @@ declarative api implementations in the absence of pattern matching at Golang.
 
 ## Inspiration
 
-Microservices have become a design style to evolve system architecture in parallel, implement stable and consistent interfaces. An expressive language is required to design the variety of network interfaces. A pure functional languages fits very well to express communication behavior due they rich techniques to hide the networking complexity. [Finch](https://github.com/finagle/finch) is the best library in Scala for microservice development.
+Microservices have become a design style to evolve system architecture in parallel, implement stable and consistent interfaces within distributed system. An expressive language is required to design the manifold of network interfaces. A pure functional languages fits very well to express communication behavior due they rich techniques to hide the networking complexity. [Finch](https://github.com/finagle/finch) is the best library in Scala for microservice development. Gouldian is heavily inspired by Finch. 
 
-Gouldian is heavily inspired by [Finch](https://github.com/finagle/finch). However, it is primarily designed for serverless application to implement microservices using AWS Lambda and AWS API Gateway. 
+The library solves few practical problems of HTTP service development in Golang:
+* The library support opaque migration of HTTP service between traditional, containers and serverless environments. The api implementation remains source compatible regardless the execution environment;  
+* The library enforces a type safe, pattern-based approach for api definition.
 
 
 ## Getting started
 
 The library requires **Go 1.13** or later due to usage of [new error interface](https://blog.golang.org/go1.13-errors).
 
-The latest version of the library is available at `master` branch. All development, including new features and bug fixes, take place on the `master` branch using forking and pull requests as described in contribution guidelines.
+The latest version of the library is available at `main` branch. All development, including new features and bug fixes, take place on the `main` branch using forking and pull requests as described in contribution guidelines. The stable version is available via Golang modules.
 
 Here is minimal "Hello World!" example that matches any HTTP requests
-to `/hello` endpoint. You can run this example locally see the [instructions](example/hello-world). 
+to `/hello` endpoint. You can run this example locally see the [instructions](example). 
 
 ```go
 package main
 
 import (
-	"github.com/aws/aws-lambda-go/lambda"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/path"
+  µ "github.com/fogfish/gouldian"
+  "github.com/fogfish/gouldian/server/httpd"
+  "net/http"
 )
 
 func main() {
-	lambda.Start(µ.Serve(hello()))
+  http.ListenAndServe(":8080",
+    httpd.Serve(hello()),
+  )
 }
 
 func hello() µ.Endpoint {
-	return µ.GET(
-		µ.Path(path.Is("hello")),
-		µ.FMap(
-			func() error { return µ.Ok().Text("Hello World!") },
-		),
-	)
+  return µ.GET(
+    µ.Path("hello"),
+    µ.FMap(func(ctx µ.Context) error {
+      return µ.Status.OK(µ.WithText("Hello World!"))
+    }),
+  )
 }
 ```
-
-See [example](example) folder for advanced use-case. The library  [api specification](http://godoc.org/github.com/fogfish/gouldian) is available via Go doc.
-
 
 
 ## Next steps
@@ -97,6 +96,10 @@ See [example](example) folder for advanced use-case. The library  [api specifica
 * Endpoint always returns some `Output` that defines HTTP response. There are three cases of output: HTTP Success, HTTP Failure and general error. See [Output](http://godoc.org/github.com/fogfish/gouldian/#Output), [Issue](http://godoc.org/github.com/fogfish/gouldian/#Issue) types.
 
 * Learn about microservice deployment with AWS CDK.
+
+* Example
+
+See [example](example) folder for other advanced use-case. The library  [api specification](http://godoc.org/github.com/fogfish/gouldian) is available via Go doc.
 
 
 ## How To Contribute

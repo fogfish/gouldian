@@ -39,17 +39,17 @@ match to pattern
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) != nil
 */
-func Path(arrows ...interface{}) Endpoint {
-	return mkPathEndpoint(mkPathMatcher(arrows))
+func Path(segments ...interface{}) Endpoint {
+	return mkPathEndpoint(mkPathMatcher(segments))
 }
 
-func mkPathEndpoint(farrows []pathArrow) Endpoint {
+func mkPathEndpoint(segments []pathArrow) Endpoint {
 	return func(req *Input) error {
-		if len(farrows) != len(req.Resource) {
+		if len(segments) != len(req.Resource) {
 			return NoMatch{}
 		}
 
-		for i, f := range farrows {
+		for i, f := range segments {
 			if err := f(req.Context, req.Resource[i]); err != nil {
 				return err
 			}
