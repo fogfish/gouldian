@@ -1,28 +1,36 @@
 <p align="center">
-  <img src="./doc/logo.svg" height="180" />
+  <img src="./doc/gouldian-v2.svg" height="180" />
   <h3 align="center">Gouldian</h3>
-  <p align="center"><strong>Go combinator library for building HTTP serverless applications</strong></p>
+  <p align="center"><strong>Go HTTP combinator library for building serverless applications</strong></p>
 
   <p align="center">
+    <!-- Version -->
+    <a href="https://github.com/fogfish/gouldian/releases">
+      <img src="https://img.shields.io/github/v/tag/fogfish/gouldian?label=version" />
+    </a>
     <!-- Documentation -->
-    <a href="http://godoc.org/github.com/fogfish/gouldian">
-      <img src="https://godoc.org/github.com/fogfish/gouldian?status.svg" />
+    <a href="https://pkg.go.dev/github.com/fogfish/gouldian">
+      <img src="https://pkg.go.dev/badge/github.com/gouldian/dynamo" />
     </a>
     <!-- Build Status  -->
-    <a href="http://travis-ci.org/fogfish/gouldian">
-      <img src="https://secure.travis-ci.org/fogfish/gouldian.svg?branch=master" />
+    <a href="https://github.com/fogfish/gouldian/actions/">
+      <img src="https://github.com/fogfish/gouldian/workflows/build/badge.svg" />
     </a>
     <!-- GitHub -->
     <a href="http://github.com/fogfish/gouldian">
       <img src="https://img.shields.io/github/last-commit/fogfish/gouldian.svg" />
     </a>
     <!-- Coverage -->
-    <a href="https://coveralls.io/github/fogfish/gouldian?branch=master">
-      <img src="https://coveralls.io/repos/github/fogfish/gouldian/badge.svg?branch=master" />
+    <a href="https://coveralls.io/github/fogfish/gouldian?branch=main">
+      <img src="https://coveralls.io/repos/github/fogfish/gouldian/badge.svg?branch=main" />
     </a>
     <!-- Go Card -->
     <a href="https://goreportcard.com/report/github.com/fogfish/gouldian">
       <img src="https://goreportcard.com/badge/github.com/fogfish/gouldian" />
+    </a>
+    <!-- Maintainability -->
+    <a href="https://codeclimate.com/github/fogfish/gouldian/maintainability">
+      <img src="https://api.codeclimate.com/v1/badges/633dc8add2dfc0e7f88e/maintainability" />
     </a>
   </p>
 </p>
@@ -30,9 +38,8 @@
 --- 
 
 
-The library is a thin layer of purely functional abstractions on top
-of AWS Gateway API. It resolves a challenge of building simple and
-declarative api implementations in the absence of pattern matching.
+The library is a thin layer of purely functional abstractions on top HTTP protocol. It resolves a challenge of building simple and
+declarative api implementations in the absence of pattern matching at Golang.
 
 [User Guide](./doc/user-guide.md) |
 [Example](./example/httpbin/main.go)
