@@ -190,26 +190,6 @@ func TestHeader(t *testing.T) {
 		If(foobar(req)).ShouldNot().Equal(nil)
 }
 
-/*
-func TestJWT(t *testing.T) {
-	var token µ.AccessToken
-	foo := µ.GET(µ.JWT(&token))
-	req := mock.Input(
-		mock.Auth(
-			µ.AccessToken{
-				Sub:   "00000000-0000-0000-0000-000000000000",
-				Scope: "a b",
-			},
-		),
-	)
-
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(token.Sub).Should().Equal("00000000-0000-0000-0000-000000000000").
-		If(token.Scope).Should().Equal("a b")
-}
-*/
-
 func TestBodyJSON(t *testing.T) {
 	type foobar struct {
 		Foo string `json:"foo"`
@@ -413,4 +393,36 @@ func TestBodyLeak(t *testing.T) {
 		out := foo(req)
 		it.Ok(t).If(out.Error()).Should().Equal(expect)
 	}
+}
+
+func TestAccessIs(t *testing.T) {
+	foo := µ.GET(µ.Access(µ.JWT.Sub).Is("sub"))
+	success := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
+	failure := mock.Input(mock.JWT(µ.JWT{"sub": "foo"}))
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
+func TestAccessTo(t *testing.T) {
+	type MyT struct {
+		Sub      string
+		Username string
+	}
+	sub, uid := optics.ForProduct2(MyT{})
+
+	foo := µ.GET(
+		µ.Access(µ.JWT.Sub).To(sub),
+		µ.Access(µ.JWT.Username).To(uid),
+	)
+
+	var val MyT
+	req := mock.Input(mock.JWT(µ.JWT{"sub": "sub", "username": "joe"}))
+
+	it.Ok(t).
+		If(foo(req)).Should().Equal(nil).
+		If(req.Context.Get(&val)).Should().Equal(nil).
+		If(val.Sub).Should().Equal("sub").
+		If(val.Username).Should().Equal("joe")
 }

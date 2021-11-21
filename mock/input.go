@@ -118,28 +118,10 @@ func Text(val string) Mock {
 	}
 }
 
-// Auth adds Authorizer payload to mocked HTTP request
-/*
-
-TODO
-
-func Auth(token µ.AccessToken) Mock {
+// JWT adds JWT token to mocked HTTP request
+func JWT(token µ.JWT) Mock {
 	return func(mock *µ.Input) *µ.Input {
-		bin, err := json.Marshal(token)
-		if err != nil {
-			panic(err)
-		}
-		var claims map[string]interface{}
-		if err := json.Unmarshal(bin, &claims); err != nil {
-			panic(err)
-		}
-
-		mock.RequestContext = events.APIGatewayProxyRequestContext{
-			Authorizer: map[string]interface{}{
-				"claims": claims,
-			},
-		}
+		mock.JWT = token
 		return mock
 	}
 }
-*/

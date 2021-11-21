@@ -140,3 +140,95 @@ taking the execution context as the input to closure
 func FMap(f func(Context) error) Endpoint {
 	return func(req *Input) error { return f(req.Context) }
 }
+
+/*
+
+Access type defines primitives to match JWT token in the HTTP requests.
+
+  endpoint := µ.GET(
+    µ.Access(µ.JWT.Username).Is("joedoe"),
+  )
+
+  endpoint(
+    mock.Input(
+			mock.JWT(µ.JWT{"username": "joedoe"})
+    )
+  ) == nil
+
+*/
+type Access func(JWT) string
+
+/*
+
+Is matches a key of JWT to defined literal value
+
+  e := µ.GET( µ.Access(µ.JWT.Username).Is("joedoe") )
+  e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"})) == nil
+  e(mock.Input(mock.JWT(µ.JWT{"username": "landau"})) != nil
+*/
+func (key Access) Is(val string) Endpoint {
+	return func(req *Input) error {
+		if req.JWT == nil {
+			return NoMatch{}
+		}
+
+		if key(req.JWT) != val {
+			return NoMatch{}
+		}
+
+		return nil
+	}
+}
+
+/*
+
+To matches key of JWT value to the request context. It uses lens abstraction to
+decode value into Golang type. The Endpoint causes no-match if param
+value cannot be decoded to the target type. See optics.Lens type for details.
+
+  type MyT struct{ Username string }
+
+  username := optics.Lenses1(MyT{})
+  e := µ.GET( µ.Access(µ.JWT.Sub).To(username) )
+  e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"}))) == nil
+*/
+func (key Access) To(lens optics.Lens) Endpoint {
+	return func(req *Input) error {
+		if req.JWT == nil {
+			return NoMatch{}
+		}
+
+		if val := key(req.JWT); val != "" {
+			return req.Context.Put(lens, val)
+		}
+
+		return NoMatch{}
+	}
+}
+
+/*
+
+Maybe matches key of JWT to the request context. It uses lens abstraction to
+decode value into Golang type. The Endpoint does not cause no-match
+if header value cannot be decoded to the target type. See optics.Lens type for details.
+
+  type MyT struct{ Username string }
+
+  userna,e := optics.Lenses1(MyT{})
+  e := µ.GET( µ.Access(µ.JWT.Sub).Maybe(username) )
+  e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"}))) == nil
+
+*/
+func (key Access) Maybe(lens optics.Lens) Endpoint {
+	return func(req *Input) error {
+		if req.JWT == nil {
+			return NoMatch{}
+		}
+
+		if val := key(req.JWT); val != "" {
+			req.Context.Put(lens, val)
+		}
+
+		return nil
+	}
+}

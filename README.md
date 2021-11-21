@@ -91,15 +91,13 @@ func hello() µ.Endpoint {
 
 * Study [User Guide](doc/user-guide.md).
 
-* Check build-in collection of endpoints to deal with HTTP request: [path](path/path.go), [query param](param/param.go), [http header](header/header.go), [body and other](request.go) 
+* Check build-in collection of endpoints to deal with HTTP request: [path](path.go), [query param](param.go), [http header](header.go), [body and other](request.go) 
 
-* Endpoint always returns some `Output` that defines HTTP response. There are three cases of output: HTTP Success, HTTP Failure and general error. See [Output](http://godoc.org/github.com/fogfish/gouldian/#Output), [Issue](http://godoc.org/github.com/fogfish/gouldian/#Issue) types.
+* Endpoint always returns some `Output` that defines HTTP response. There are three cases of output: HTTP Success, HTTP Failure and general error. See [Output](output.go) type.
 
-* Learn about microservice deployment with AWS CDK.
+* See [example](example) folder for other advanced use-case. 
 
-* Example
-
-See [example](example) folder for other advanced use-case. The library  [api specification](http://godoc.org/github.com/fogfish/gouldian) is available via Go doc.
+* Learn about microservice deployment with AWS CDK, in case of serverless development
 
 
 ## How To Contribute
@@ -121,6 +119,7 @@ The build and testing process requires [Go](https://golang.org) version 1.13 or 
 git clone https://github.com/fogfish/gouldian
 cd gouldian
 go test
+go test -run=^$ -bench=. -cpu 1
 ```
 
 ## License

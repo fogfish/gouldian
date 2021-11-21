@@ -41,13 +41,13 @@ func TestAccessToken(t *testing.T) {
 	err := json.Unmarshal([]byte(raw), &jwt)
 	it.Ok(t).If(err).Must().Equal(nil)
 
-	token := µ.NewAccessToken(jwt)
+	token := µ.NewJWT(jwt)
 	it.Ok(t).
-		If(token.Jti).Equal("jti").
-		If(token.Iss).Equal("iss").
-		If(token.Exp).Equal("exp").
-		If(token.Sub).Equal("sub").
-		If(token.Scope).Equal("scope").
-		If(token.UserID).Equal("username").
-		If(token.ClientID).Equal("client_id")
+		If(token.Jti()).Equal("jti").
+		If(token.Iss()).Equal("iss").
+		If(token.Exp()).Equal("exp").
+		If(token.Sub()).Equal("sub").
+		If(token.Scope()).Equal("scope").
+		If(token.Username()).Equal("username").
+		If(token.ClientID()).Equal("client_id")
 }

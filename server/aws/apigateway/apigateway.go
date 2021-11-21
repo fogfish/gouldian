@@ -39,6 +39,7 @@ func Request(r *events.APIGatewayProxyRequest) *µ.Input {
 		Resource: splitPath(r.Path),
 		Params:   µ.Params(r.MultiValueQueryStringParameters),
 		Headers:  µ.Headers(r.MultiValueHeaders),
+		JWT:      jwtFromAuthorizer(r),
 		Payload:  r.Body,
 	}
 }
@@ -59,6 +60,22 @@ func splitPath(path string) µ.Segments {
 	}
 
 	return segments
+}
+
+func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
+	if r.RequestContext.Authorizer == nil {
+		return nil
+	}
+
+	if jwt, isJwt := r.RequestContext.Authorizer["claims"]; isJwt {
+		switch tkn := jwt.(type) {
+		case map[string]interface{}:
+			return µ.NewJWT(tkn)
+		}
+	}
+
+	return nil
+
 }
 
 // Serve HTTP service
@@ -117,25 +134,3 @@ func joinHead(a, b map[string]string) map[string]string {
 	}
 	return b
 }
-
-// JWT decodes token associated with the request.
-// Endpoint fails if Authentication context is not found in the request.
-/*
-func JWT(val *AccessToken) Endpoint {
-	return func(req Input) error {
-		if req.RequestContext.Authorizer == nil {
-			return NoMatch{}
-		}
-
-		if jwt, isJwt := req.RequestContext.Authorizer["claims"]; isJwt {
-			switch tkn := jwt.(type) {
-			case map[string]interface{}:
-				*val = mkAccessToken(tkn)
-				return nil
-			}
-		}
-
-		return NoMatch{}
-	}
-}
-*/

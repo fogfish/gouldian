@@ -28,8 +28,6 @@ import (
 
 Param type defines primitives to match query param in the HTTP requests.
 
-  import "github.com/fogfish/gouldian/header"
-
   endpoint := µ.GET(
     µ.Param("foo").Is("bar"),
   )

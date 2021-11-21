@@ -79,6 +79,7 @@ type Input struct {
 	Resource Segments
 	Params   Params
 	Headers  Headers
+	JWT      JWT
 	Payload  string
 	Stream   io.Reader
 }
@@ -103,23 +104,36 @@ func (in *Input) ReadAll() error {
 
 /*
 
-AccessToken is a container for user identity
+JWT is a container for access token
 */
-type AccessToken struct {
-	Jti      string `json:"jti,omitempty"`
-	Iss      string `json:"iss,omitempty"`
-	Exp      string `json:"exp,omitempty"`
-	Sub      string `json:"sub,omitempty"`
-	Scope    string `json:"scope,omitempty"`
-	UserID   string `json:"username,omitempty"`
-	ClientID string `json:"client_id,omitempty"`
-}
+type JWT map[string]string
+
+// Jti is unique JWT token identity
+func (t JWT) Jti() string { return t["jti"] }
+
+// Iss -uer of token
+func (t JWT) Iss() string { return t["iss"] }
+
+// Exp -ires after
+func (t JWT) Exp() string { return t["exp"] }
+
+// Sub -ject of token
+func (t JWT) Sub() string { return t["sub"] }
+
+// Scope of the token
+func (t JWT) Scope() string { return t["scope"] }
+
+// Username associated with token
+func (t JWT) Username() string { return t["username"] }
+
+// ClientID associated with token
+func (t JWT) ClientID() string { return t["client_id"] }
 
 /*
 
-NewAccessToken creates access token object
+NewJWT creates access token object
 */
-func NewAccessToken(raw map[string]interface{}) AccessToken {
+func NewJWT(raw map[string]interface{}) JWT {
 	asString := func(id string) string {
 		if val, ok := raw[id]; ok {
 			return val.(string)
@@ -127,13 +141,13 @@ func NewAccessToken(raw map[string]interface{}) AccessToken {
 		return ""
 	}
 
-	return AccessToken{
-		Jti:      asString("jti"),
-		Iss:      asString("iss"),
-		Exp:      asString("exp"),
-		Sub:      asString("sub"),
-		Scope:    asString("scope"),
-		UserID:   asString("username"),
-		ClientID: asString("client_id"),
+	return JWT{
+		"jti":       asString("jti"),
+		"iss":       asString("iss"),
+		"exp":       asString("exp"),
+		"sub":       asString("sub"),
+		"scope":     asString("scope"),
+		"username":  asString("username"),
+		"client_id": asString("client_id"),
 	}
 }
