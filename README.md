@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./doc/gouldian-v2.svg" height="180" />
+  <img src="./doc/gouldian-v2.svg" height="120" />
   <h3 align="center">Gouldian</h3>
   <p align="center"><strong>Go HTTP combinator library for building serverless applications</strong></p>
 
