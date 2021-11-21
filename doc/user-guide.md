@@ -260,13 +260,31 @@ e := µ.Body(user)
 e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
 ```
 
-<!--
 
 **Authentication with AWS Cognito**
 
-The library defines a type `µ.AccessToken` and `func JWT(val *µ.AccessToken) µ.Endpoint` to extract JWT access token, which is provided by AWS Cognito service.
+The library defines a types `µ.JWT`, `µ.Access` that builds the `Endpoint` to extract JWT access token. The type defines a functions `Is` matches fields of JWT token; `To` and `Maybe` to extracts values. The serverless factory of support automatic decoding of JWT access token, which is provided by AWS Cognito service.
 
--->
+```go
+/*
+
+Endpoint matches if HTTP request contains JWT created by AWS Cognito for user
+*/ 
+type A struct{ User string }
+
+user := optics.Lenses1(MyT{})
+e := µ.GET( µ.Access(µ.JWT.Username).To(user) )
+
+/*
+
+Endpoint matches if HTTP request contains JWT created by AWS Cognito for trusted client
+*/ 
+type A struct{ Client string }
+
+client := optics.Lenses1(MyT{})
+e := µ.GET( µ.Access(µ.JWT.ClientID).To(client) )
+```
+
 
 ## High-order Endpoints
 
