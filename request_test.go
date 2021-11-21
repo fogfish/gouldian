@@ -398,31 +398,62 @@ func TestBodyLeak(t *testing.T) {
 func TestAccessIs(t *testing.T) {
 	foo := µ.GET(µ.Access(µ.JWT.Sub).Is("sub"))
 	success := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
-	failure := mock.Input(mock.JWT(µ.JWT{"sub": "foo"}))
+	failure1 := mock.Input(mock.JWT(µ.JWT{"sub": "foo"}))
+	failure2 := mock.Input()
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
 func TestAccessTo(t *testing.T) {
-	type MyT struct {
-		Sub      string
-		Username string
-	}
-	sub, uid := optics.ForProduct2(MyT{})
+	type MyT struct{ Sub string }
+	sub := optics.ForProduct1(MyT{})
 
-	foo := µ.GET(
-		µ.Access(µ.JWT.Sub).To(sub),
-		µ.Access(µ.JWT.Username).To(uid),
-	)
+	foo := µ.GET(µ.Access(µ.JWT.Sub).To(sub))
 
-	var val MyT
-	req := mock.Input(mock.JWT(µ.JWT{"sub": "sub", "username": "joe"}))
+	t.Run("some", func(t *testing.T) {
+		var val MyT
+		req := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
 
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(req.Context.Get(&val)).Should().Equal(nil).
-		If(val.Sub).Should().Equal("sub").
-		If(val.Username).Should().Equal("joe")
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(val.Sub).Should().Equal("sub")
+	})
+
+	t.Run("none", func(t *testing.T) {
+		req := mock.Input()
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+}
+
+func TestAccessMaybe(t *testing.T) {
+	type MyT struct{ Sub string }
+	sub := optics.ForProduct1(MyT{})
+
+	foo := µ.GET(µ.Access(µ.JWT.Sub).Maybe(sub))
+
+	t.Run("some", func(t *testing.T) {
+		var val MyT
+		req := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(val.Sub).Should().Equal("sub")
+	})
+
+	t.Run("none", func(t *testing.T) {
+		var val MyT
+		req := mock.Input(mock.JWT(µ.JWT{}))
+
+		it.Ok(t).
+			If(foo(req)).Should().Equal(nil).
+			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(val.Sub).Should().Equal("")
+	})
 }

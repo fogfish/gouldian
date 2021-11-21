@@ -122,6 +122,14 @@ go test
 go test -run=^$ -bench=. -cpu 1
 ```
 
+### commit message
+
+The commit message helps us to write a good release note, speed-up review process. The message should address two question what changed and why. The project follows the template defined by chapter [Contributing to a Project](http://git-scm.com/book/ch5-2.html) of Git book.
+
+### bugs
+
+If you experience any issues with the library, please let us know via [GitHub issues](https://github.com/fogfish/gouldian/issue). We appreciate detailed and accurate reports that help us to identity and replicate the issue. 
+
 ## License
 
 [![See LICENSE](https://img.shields.io/github/license/fogfish/gouldian.svg?style=for-the-badge)](LICENSE)
