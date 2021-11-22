@@ -378,3 +378,17 @@ switch v := endpoint(request).(type) {
     // error
 }
 ```
+
+The library also supports testing using standard test server
+
+```go
+import "net/http/httptest"
+
+httptest.NewServer(
+  httpd.Serve(
+    µ.GET(/* ... */),
+    µ.GET(/* ... */),
+    /* ... */
+  ),
+)
+```

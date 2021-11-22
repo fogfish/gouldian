@@ -54,9 +54,27 @@ The library solves few practical problems of HTTP service development in Golang:
 
 ## Getting started
 
+### Installing
+
 The library requires **Go 1.13** or later due to usage of [new error interface](https://blog.golang.org/go1.13-errors).
 
 The latest version of the library is available at `main` branch. All development, including new features and bug fixes, take place on the `main` branch using forking and pull requests as described in contribution guidelines. The stable version is available via Golang modules.
+
+1. Use `go get` to retrieve the library and add it as dependency to your application.
+
+```bash
+go get -u github.com/fogfish/gouldian
+```
+
+2. Import it in your code
+
+```go
+import (
+  µ "github.com/fogfish/gouldian"
+)
+```
+
+## Quick Example
 
 Here is minimal "Hello World!" example that matches any HTTP requests
 to `/hello` endpoint. You can run this example locally see the [instructions](example). 
