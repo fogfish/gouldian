@@ -1,32 +1,32 @@
-//
-//   Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-//
+/*
+
+  Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+*/
 
 /*
 
 Package gouldian is Go combinator library for building HTTP services.
-The library is a thin layer of purely functional abstractions on top
-of AWS Gateway API. It resolves a challenge of building simple and
-declarative api implementations in the absence of pattern matching.
+The library is a thin layer of purely functional abstractions to
+building simple and declarative api implementations in the absence
+of pattern matching for traditional and serverless applications.
 
 
 Inspiration
 
-The library is heavily inspired by Scala Finch
-https://github.com/finagle/finch. However, gouldian primary target is
-a serverless development with AWS Lambda and AWS API Gateway.
+The library is heavily inspired by Scala Finch https://github.com/finagle/finch.
 
 
 Getting started
@@ -37,17 +37,23 @@ to /hello endpoint.
   package main
 
   import (
-    "github.com/aws/aws-lambda-go/lambda"
     µ "github.com/fogfish/gouldian"
+    "github.com/fogfish/gouldian/server/httpd"
+    "net/http"
   )
 
   func main() {
-    lambda.Start( µ.Serve(hello()) )
+    http.ListenAndServe(":8080",
+      httpd.Serve(hello()),
+    )
   }
 
   func hello() µ.Endpoint {
-    return µ.GET(µ.Path("hello")).FMap(
-      func() error { return µ.Ok().Text("Hello World!") },
+    return µ.GET(
+      µ.Path("hello"),
+      µ.FMap(func(ctx µ.Context) error {
+        return µ.Status.OK(µ.WithText("Hello World!"))
+      }),
     )
   }
 

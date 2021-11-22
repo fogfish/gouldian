@@ -1,18 +1,20 @@
-//
-//   Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
-//
-//   Licensed under the Apache License, Version 2.0 (the "License");
-//   you may not use this file except in compliance with the License.
-//   You may obtain a copy of the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BASIS,
-//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permissions and
-//   limitations under the License.
-//
+/*
+
+  Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+*/
 
 package gouldian
 
@@ -21,12 +23,12 @@ import (
 )
 
 /*
+
 Endpoint is a composable function that abstract HTTP endpoint.
 The function takes HTTP request and returns value of some type:
 `Input => Output`.
 
-↣ `Input` is a wrapper over HTTP request with additional context. The library
-support: Lambda AWS Gateway Event.
+↣ `Input` is a wrapper over HTTP request with additional context.
 
 ↣ `Output` is sum type that represents if it is matched on a given input
 or not. The library uses `error` type to represent both valid and invalid
@@ -53,6 +55,13 @@ request processing.
 */
 type Endpoint func(*Input) error
 
+// NoMatch is returned by Endpoint if Input is not matched.
+type NoMatch struct{}
+
+func (err NoMatch) Error() string {
+	return "No Match"
+}
+
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
 	return func(http *Input) (err error) {
@@ -75,6 +84,10 @@ func (a Endpoint) Or(b Endpoint) Endpoint {
 
 // Join builds a product endpoint from sequence
 func Join(seq ...Endpoint) Endpoint {
+	if len(seq) == 1 {
+		return seq[0]
+	}
+
 	return func(http *Input) (err error) {
 		for _, f := range seq {
 			if err = f(http); err != nil {
@@ -87,6 +100,10 @@ func Join(seq ...Endpoint) Endpoint {
 
 // Or joins sequence of Endpoint(s) to co-product Endpoint.
 func Or(seq ...Endpoint) Endpoint {
+	if len(seq) == 1 {
+		return seq[0]
+	}
+
 	return func(http *Input) (err error) {
 		for _, f := range seq {
 			if err = f(http); !errors.Is(err, NoMatch{}) {
