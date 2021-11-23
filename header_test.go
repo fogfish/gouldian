@@ -26,6 +26,7 @@ import (
 	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
+
 	"github.com/fogfish/it"
 )
 
@@ -168,7 +169,7 @@ func TestHeaderString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -178,7 +179,7 @@ func TestHeaderString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 
@@ -202,7 +203,7 @@ func TestHeaderMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -212,7 +213,7 @@ func TestHeaderMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("")
 	})
 }
@@ -236,7 +237,7 @@ func TestHeaderInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1024)
 	})
 
@@ -260,7 +261,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 
@@ -270,7 +271,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1024)
 	})
 
@@ -280,7 +281,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 }

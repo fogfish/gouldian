@@ -18,18 +18,11 @@
 
 package gouldian
 
-import (
-	"io"
-	"io/ioutil"
-	"net/textproto"
-	"strings"
-)
-
 /*
 
 Segments of path in HTTP request
 */
-type Segments []string
+// type Segments []string
 
 /*
 
@@ -51,40 +44,41 @@ func (params Params) Get(key string) (string, bool) {
 
 Headers of HTTP request
 */
-type Headers map[string][]string
+// type Headers map[string][]string
 
 // Get header by its value
-func (headers Headers) Get(key string) (string, bool) {
-	header := textproto.CanonicalMIMEHeaderKey(key)
-	v, exists := headers[header]
-	if !exists {
-		// Note: required due to browser behavior
-		v, exists = headers[strings.ToLower(header)]
-		if !exists {
-			return "", exists
-		}
-		return v[0], exists
-	}
-	return v[0], exists
-}
+// func (headers Headers) Get(key string) (string, bool) {
+// 	header := textproto.CanonicalMIMEHeaderKey(key)
+// 	v, exists := headers[header]
+// 	if !exists {
+// 		// Note: required due to browser behavior
+// 		v, exists = headers[strings.ToLower(header)]
+// 		if !exists {
+// 			return "", exists
+// 		}
+// 		return v[0], exists
+// 	}
+// 	return v[0], exists
+// }
 
 /*
 
 Input is the HTTP request
 */
-type Input struct {
-	Context Context
+// type Input struct {
+// 	Context Context
 
-	Method   string
-	Resource Segments
-	Params   Params
-	Headers  Headers
-	JWT      JWT
-	Payload  string
-	Stream   io.Reader
-}
+// 	Method   string
+// 	Resource Segments
+// 	Params   Params
+// 	Headers  Headers
+// 	JWT      JWT
+// 	Payload  string
+// 	Stream   io.Reader
+// }
 
 // ReadAll is helper function to consume Stream multiple types
+/*
 func (in *Input) ReadAll() error {
 	if in.Stream != nil {
 		buf, err := ioutil.ReadAll(in.Stream)
@@ -101,6 +95,7 @@ func (in *Input) ReadAll() error {
 
 	return nil
 }
+*/
 
 /*
 

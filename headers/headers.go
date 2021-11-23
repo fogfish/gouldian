@@ -22,7 +22,6 @@ import (
 	"fmt"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/optics"
-	"path/filepath"
 	"strings"
 )
 
@@ -104,12 +103,12 @@ func (h Authorize) Maybe(lens optics.Lens) µ.Endpoint {
 
 // With validates content of HTTP Authorization header
 func (h Authorize) With(f func(string, string) error) µ.Endpoint {
-	return func(req *µ.Input) error {
-		auth, exists := req.Headers.Get("Authorization")
-		if !exists {
+	return func(ctx *µ.Context) error {
+		auth := ctx.Request.Header.Get("Authorization")
+		if auth == "" {
 			return µ.Status.Unauthorized(
 				µ.WithIssue(
-					fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
+					fmt.Errorf("Unauthorized %s", ctx.Request.URL.Path),
 				),
 			)
 		}
@@ -118,7 +117,7 @@ func (h Authorize) With(f func(string, string) error) µ.Endpoint {
 		if len(cred) != 2 {
 			return µ.Status.Unauthorized(
 				µ.WithIssue(
-					fmt.Errorf("Unauthorized %v", filepath.Join(req.Resource...)),
+					fmt.Errorf("Unauthorized %v", ctx.Request.URL.Path),
 				),
 			)
 		}

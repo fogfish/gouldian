@@ -19,13 +19,11 @@
 package gouldian
 
 import (
-	"path/filepath"
-
 	"github.com/fogfish/gouldian/optics"
 )
 
 //
-type pathArrow func(Context, string) error
+type pathArrow func(*Context, string) error
 
 /*
 
@@ -43,17 +41,43 @@ func Path(segments ...interface{}) Endpoint {
 	return mkPathEndpoint(mkPathMatcher(segments))
 }
 
+// segment is custom implementation of strings.Split
+func segment(path string, a int) (int, string) {
+	for i := a + 1; i < len(path); i++ {
+		if path[i] == '/' {
+			return i, path[a+1 : i]
+		}
+	}
+	return len(path) - 1, path[a+1:]
+}
+
 func mkPathEndpoint(segments []pathArrow) Endpoint {
-	return func(req *Input) error {
-		if len(segments) != len(req.Resource) {
+	return func(ctx *Context) error {
+		path := ctx.Request.URL.Path
+		last := len(path) - 1
+
+		hd := 0
+		for at, f := range segments {
+			tl, segment := segment(path, hd)
+			if hd == tl {
+				return NoMatch{}
+			}
+			if err := f(ctx, segment); err != nil {
+				return err
+			}
+			hd = tl
+
+			// url resource path is shorter than pattern
+			if hd == last && at != len(segments)-1 {
+				return NoMatch{}
+			}
+		}
+
+		// url resource path is not consumed by the pattern
+		if hd != last {
 			return NoMatch{}
 		}
 
-		for i, f := range segments {
-			if err := f(req.Context, req.Resource[i]); err != nil {
-				return err
-			}
-		}
 		return nil
 	}
 }
@@ -71,20 +95,31 @@ func PathSeq(arrows ...interface{}) Endpoint {
 	return mkPathSeqEndpoint(mkPathMatcher(arrows))
 }
 
-func mkPathSeqEndpoint(farrows []pathArrow) Endpoint {
-	return func(req *Input) error {
-		if len(farrows) > len(req.Resource) || len(farrows) < 1 {
+func mkPathSeqEndpoint(segments []pathArrow) Endpoint {
+	return func(ctx *Context) error {
+		path := ctx.Request.URL.Path
+		// last := len(path) - 1
+
+		hd := 0
+		last := len(segments) - 1
+		for at := 0; at < last; at++ {
+			tl, segment := segment(path, hd)
+			if hd == tl {
+				return NoMatch{}
+			}
+			if err := segments[at](ctx, segment); err != nil {
+				return err
+			}
+			hd = tl
+		}
+
+		// url resource path is not consumed by the pattern
+		if hd == len(path)-1 {
 			return NoMatch{}
 		}
 
-		last := len(farrows) - 1
-		for i := 0; i < last; i++ {
-			if err := farrows[i](req.Context, req.Resource[i]); err != nil {
-				return err
-			}
-		}
-
-		if err := farrows[last](req.Context, filepath.Join(req.Resource[last:]...)); err != nil {
+		// url resource path consume suffix
+		if err := segments[last](ctx, path[hd+1:]); err != nil {
 			return err
 		}
 
@@ -122,7 +157,7 @@ Is matches a path segment to defined literal
   e(mock.Input(mock.URL("/bar"))) != nil
 */
 func pathIs(val string) pathArrow {
-	return func(ctx Context, segment string) error {
+	return func(ctx *Context, segment string) error {
 		if segment == val {
 			return nil
 		}
@@ -135,7 +170,7 @@ func pathIs(val string) pathArrow {
 None matches nothing
 */
 func pathNone() pathArrow {
-	return func(Context, string) error {
+	return func(*Context, string) error {
 		return NoMatch{}
 	}
 }
@@ -148,7 +183,7 @@ Any is a wildcard matcher of path segment
   e(mock.Input(mock.URL("/bar"))) == nil
 */
 func pathAny() pathArrow {
-	return func(Context, string) error {
+	return func(*Context, string) error {
 		return nil
 	}
 }
@@ -158,7 +193,7 @@ func pathAny() pathArrow {
 Lifts the path segment to lens
 */
 func pathTo(l optics.Lens) pathArrow {
-	return func(ctx Context, segment string) error {
+	return func(ctx *Context, segment string) error {
 		return ctx.Put(l, segment)
 	}
 }

@@ -50,12 +50,16 @@ Is matches a param key to defined literal value
   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
 func (key Param) Is(val string) Endpoint {
-	if val == Any {
-		return key.Any
-	}
+	// if val == Any {
+	// 	return key.Any
+	// }
 
-	return func(req *Input) error {
-		opt, exists := req.Params.Get(string(key))
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		opt, exists := ctx.params.Get(string(key))
 		if exists && opt == val {
 			return nil
 		}
@@ -73,8 +77,12 @@ Any is a wildcard matcher of param key. It fails if key is not defined.
   e(mock.Input(mock.URL("/?foo=baz"))) == nil
   e(mock.Input()) != nil
 */
-func (key Param) Any(req *Input) error {
-	_, exists := req.Params.Get(string(key))
+func (key Param) Any(ctx *Context) error {
+	if ctx.params == nil {
+		ctx.params = Params(ctx.Request.URL.Query())
+	}
+
+	_, exists := ctx.params.Get(string(key))
 	if exists {
 		return nil
 	}
@@ -96,10 +104,14 @@ value cannot be decoded to the target type. See optics.Lens type for details.
 	e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
 func (key Param) To(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		opt, exists := req.Params.Get(string(key))
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		opt, exists := ctx.params.Get(string(key))
 		if exists {
-			return req.Context.Put(lens, opt)
+			return ctx.Put(lens, opt)
 		}
 		return NoMatch{}
 	}
@@ -121,9 +133,13 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 
 */
 func (key Param) Maybe(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		if opt, exists := req.Params.Get(string(key)); exists {
-			req.Context.Put(lens, opt)
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		if opt, exists := ctx.params.Get(string(key)); exists {
+			ctx.Put(lens, opt)
 		}
 		return nil
 	}
@@ -135,8 +151,12 @@ JSON matches a param key to struct.
 It assumes that key holds JSON value as url encoded string
 */
 func (key Param) JSON(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		opt, exists := req.Params.Get(string(key))
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		opt, exists := ctx.params.Get(string(key))
 		if !exists {
 			return NoMatch{}
 		}
@@ -146,7 +166,7 @@ func (key Param) JSON(lens optics.Lens) Endpoint {
 			return NoMatch{}
 		}
 
-		return req.Context.Put(lens, str)
+		return ctx.Put(lens, str)
 	}
 }
 
@@ -157,8 +177,12 @@ It assumes that key holds JSON value as url encoded string.
 It does not fail if key is not defined.
 */
 func (key Param) MaybeJSON(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		opt, exists := req.Params.Get(string(key))
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		opt, exists := ctx.params.Get(string(key))
 		if !exists {
 			return nil
 		}
@@ -168,7 +192,7 @@ func (key Param) MaybeJSON(lens optics.Lens) Endpoint {
 			return nil
 		}
 
-		req.Context.Put(lens, str)
+		ctx.Put(lens, str)
 		return nil
 	}
 }

@@ -33,7 +33,7 @@ func main() {
 func hello() µ.Endpoint {
 	return µ.GET(
 		µ.Path("hello"),
-		µ.FMap(func(ctx µ.Context) error {
+		µ.FMap(func(ctx *µ.Context) error {
 			return µ.Status.OK(µ.WithText("Hello World!"))
 		}),
 	)

@@ -24,9 +24,27 @@ import (
 	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/server/httpd"
+	"net/http"
 	"path/filepath"
 	"testing"
 )
+
+type mockResponseWriter struct{}
+
+func (m *mockResponseWriter) Header() (h http.Header) {
+	return http.Header{}
+}
+
+func (m *mockResponseWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (m *mockResponseWriter) WriteString(s string) (n int, err error) {
+	return len(s), nil
+}
+
+func (m *mockResponseWriter) WriteHeader(int) {}
 
 //
 // Microbenchmark
@@ -58,6 +76,23 @@ func BenchmarkPathParam1(mb *testing.B) {
 	}
 }
 
+func BenchmarkServerParam1(mb *testing.B) {
+	w := new(mockResponseWriter)
+	router := httpd.Serve(
+		µ.Join(
+			foo1,
+			func(c *µ.Context) error { return nil },
+		),
+	)
+	r, _ := http.NewRequest("GET", "/user/123456", nil)
+
+	mb.ReportAllocs()
+	mb.ResetTimer()
+	for i := 0; i < mb.N; i++ {
+		router.ServeHTTP(w, r)
+	}
+}
+
 /*
 
 Path Pattern with 5 param
@@ -79,6 +114,23 @@ func BenchmarkPathParam5(mb *testing.B) {
 
 	for i := 0; i < mb.N; i++ {
 		foo5(req5)
+	}
+}
+
+func BenchmarkServerParam5(mb *testing.B) {
+	w := new(mockResponseWriter)
+	router := httpd.Serve(
+		µ.Join(
+			foo5,
+			func(c *µ.Context) error { return nil },
+		),
+	)
+	r, _ := http.NewRequest("GET", "/a/b/c/d/e", nil)
+
+	mb.ReportAllocs()
+	mb.ResetTimer()
+	for i := 0; i < mb.N; i++ {
+		router.ServeHTTP(w, r)
 	}
 }
 
@@ -134,7 +186,7 @@ Endpoint decode with 1 param
 
 var endpoint1 = µ.GET(
 	path1,
-	µ.FMap(func(ctx µ.Context) error {
+	µ.FMap(func(ctx *µ.Context) error {
 		var req MyT1
 		if err := ctx.Get(&req); err != nil {
 			return µ.Status.BadRequest(µ.WithIssue(err))
@@ -165,7 +217,7 @@ Endpoint decode with 5 param
 
 var endpoint5 = µ.GET(
 	path5,
-	µ.FMap(func(ctx µ.Context) error {
+	µ.FMap(func(ctx *µ.Context) error {
 		var req MyT5
 		if err := ctx.Get(&req); err != nil {
 			return µ.Status.BadRequest(µ.WithIssue(err))
@@ -184,6 +236,6 @@ func BenchmarkEndpoint5(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		endpoint1(req1)
+		endpoint5(req5)
 	}
 }

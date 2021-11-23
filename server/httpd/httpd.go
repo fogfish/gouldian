@@ -23,23 +23,8 @@ import (
 	"fmt"
 	µ "github.com/fogfish/gouldian"
 	"net/http"
-	"strings"
+	"sync"
 )
-
-/*
-
-Request is http.Request ⟼ µ.Input
-*/
-func Request(r *http.Request) *µ.Input {
-	return &µ.Input{
-		Context:  µ.NewContext(context.Background()),
-		Method:   r.Method,
-		Resource: strings.Split(r.URL.Path, "/")[1:],
-		Params:   µ.Params(r.URL.Query()),
-		Headers:  µ.Headers(r.Header),
-		Stream:   r.Body,
-	}
-}
 
 /*
 
@@ -48,15 +33,26 @@ Serve builds http.Handler for sequence of endpoints
   http.ListenAndServe(":8080", httpd.Server( ... ))
 */
 func Serve(endpoints ...µ.Endpoint) http.Handler {
-	return &routes{
+	routes := &routes{
 		endpoint: µ.Or(endpoints...),
 	}
+	routes.pool.New = func() interface{} {
+		return µ.NewContext(context.Background())
+	}
+
+	return routes
 }
 
-type routes struct{ endpoint µ.Endpoint }
+type routes struct {
+	endpoint µ.Endpoint
+	pool     sync.Pool
+}
 
 func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	req := Request(r)
+	req := routes.pool.Get().(*µ.Context)
+	req.Free()
+	req.Request = r
+
 	switch v := routes.endpoint(req).(type) {
 	case *µ.Output:
 		routes.output(w, v)
@@ -66,6 +62,8 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		).(*µ.Output)
 		routes.output(w, failure)
 	}
+
+	routes.pool.Put(req)
 }
 
 func (routes *routes) output(w http.ResponseWriter, out *µ.Output) {

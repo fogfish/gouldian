@@ -20,6 +20,8 @@ package gouldian
 
 import (
 	"context"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/fogfish/gouldian/optics"
 )
@@ -29,39 +31,26 @@ import (
 Context of HTTP request. The context accumulates matched terms of HTTP and
 passes it to destination function.
 */
-type Context interface {
+type Context struct {
 	context.Context
 
-	// Free all resource allocated by the context
-	Free()
+	Request *http.Request
+	params  Params
+	payload []byte
 
-	// Put and Get are optics function store and lifts HTTP terms
-	Put(optics.Lens, string) error
-	Get(interface{}) error
-}
-
-/*
-
-µContext is an internal implementation of the Context interface
-*/
-type µContext struct {
-	context.Context
+	JWT JWT
 
 	morphism optics.Morphism
 }
-
-var (
-	_ Context = (*µContext)(nil)
-)
 
 /*
 
 NewContext create a new context for HTTP request
 */
-func NewContext(ctx context.Context) Context {
-	return &µContext{
+func NewContext(ctx context.Context) *Context {
+	return &Context{
 		Context:  ctx,
-		morphism: make(optics.Morphism, 0, 10),
+		morphism: make(optics.Morphism, 0, 20),
 	}
 }
 
@@ -69,7 +58,19 @@ func NewContext(ctx context.Context) Context {
 
 Free the context
 */
-func (ctx *µContext) Free() {
+func (ctx *Context) free() {
+	ctx.morphism = ctx.morphism[:0]
+}
+
+/*
+
+Free the context
+*/
+func (ctx *Context) Free() {
+	ctx.JWT = nil
+	ctx.params = nil
+	ctx.payload = nil
+	ctx.Request = nil
 	ctx.morphism = ctx.morphism[:0]
 }
 
@@ -77,7 +78,7 @@ func (ctx *µContext) Free() {
 
 Put injects value to the context
 */
-func (ctx *µContext) Put(lens optics.Lens, str string) error {
+func (ctx *Context) Put(lens optics.Lens, str string) error {
 	val, err := lens.FromString(str)
 	if err != nil {
 		return NoMatch{}
@@ -91,9 +92,25 @@ func (ctx *µContext) Put(lens optics.Lens, str string) error {
 
 Get decodes context into structure
 */
-func (ctx *µContext) Get(val interface{}) error {
+func (ctx *Context) Get(val interface{}) error {
 	if err := ctx.morphism.Apply(val); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (ctx *Context) cacheBody() error {
+	if ctx.Request.Body != nil {
+		buf, err := ioutil.ReadAll(ctx.Request.Body)
+		if err != nil {
+			return err
+		}
+		// This is copied from runtime. It relies on the string
+		// header being a prefix of the slice header!
+		// ctx.payload = *(*string)(unsafe.Pointer(&buf))
+		ctx.payload = buf
+		return nil
 	}
 
 	return nil
