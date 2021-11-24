@@ -289,6 +289,19 @@ func TestText(t *testing.T) {
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
+func TestContextFree(t *testing.T) {
+	foo := µ.GET(µ.Path("foo"))
+	req := mock.Input(mock.URL("/foo"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Equal(nil)
+
+	req.Free()
+
+	it.Ok(t).
+		If(foo(req)).ShouldNot().Equal(nil)
+}
+
 func TestFMapSuccess(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),

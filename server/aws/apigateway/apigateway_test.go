@@ -33,7 +33,8 @@ func TestServeMatch(t *testing.T) {
 	api := mock("echo")
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
-		Path:       "/echo",
+		Path:       "/echo?foo=bar",
+		Headers:    map[string]string{"Accept": "*/*"},
 	}
 
 	out, err1 := api(req)

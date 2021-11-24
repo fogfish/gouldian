@@ -109,8 +109,11 @@ func Method(verb string) Endpoint {
 	}
 
 	return func(ctx *Context) error {
+		if ctx.Request == nil {
+			return NoMatch{}
+		}
+
 		if ctx.Request.Method == verb {
-			// req.Context.Free()
 			ctx.free()
 			return nil
 		}
