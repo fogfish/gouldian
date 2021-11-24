@@ -43,7 +43,7 @@ var lensEcho = optics.ForProduct1(reqEcho{})
 
 func echo() µ.Endpoint {
 	return µ.GET(
-		µ.Path("name", lensEcho),
+		µ.Path("echo", lensEcho),
 		µ.FMap(func(ctx *µ.Context) error {
 			var req reqEcho
 			if err := ctx.Get(&req); err != nil {

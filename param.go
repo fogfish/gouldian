@@ -50,9 +50,9 @@ Is matches a param key to defined literal value
   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
 func (key Param) Is(val string) Endpoint {
-	// if val == Any {
-	// 	return key.Any
-	// }
+	if val == Any {
+		return key.Any
+	}
 
 	return func(ctx *Context) error {
 		if ctx.params == nil {

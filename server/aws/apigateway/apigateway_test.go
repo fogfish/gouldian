@@ -86,9 +86,6 @@ func TestServeMatchUnescaped(t *testing.T) {
 
 	it.Ok(t).
 		If(out.StatusCode).Should().Equal(http.StatusBadRequest)
-	// If(out.Headers["Server"]).Should().Equal("echo").
-	// If(out.Headers["Content-Type"]).Should().Equal("text/plain").
-	// If(out.Body).Should().Equal("echo")
 }
 
 func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {

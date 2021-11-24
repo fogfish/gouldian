@@ -20,12 +20,6 @@ package gouldian
 
 /*
 
-Segments of path in HTTP request
-*/
-// type Segments []string
-
-/*
-
 Params of path query in HTTP request
 */
 type Params map[string][]string
@@ -39,63 +33,6 @@ func (params Params) Get(key string) (string, bool) {
 
 	return v[0], exists
 }
-
-/*
-
-Headers of HTTP request
-*/
-// type Headers map[string][]string
-
-// Get header by its value
-// func (headers Headers) Get(key string) (string, bool) {
-// 	header := textproto.CanonicalMIMEHeaderKey(key)
-// 	v, exists := headers[header]
-// 	if !exists {
-// 		// Note: required due to browser behavior
-// 		v, exists = headers[strings.ToLower(header)]
-// 		if !exists {
-// 			return "", exists
-// 		}
-// 		return v[0], exists
-// 	}
-// 	return v[0], exists
-// }
-
-/*
-
-Input is the HTTP request
-*/
-// type Input struct {
-// 	Context Context
-
-// 	Method   string
-// 	Resource Segments
-// 	Params   Params
-// 	Headers  Headers
-// 	JWT      JWT
-// 	Payload  string
-// 	Stream   io.Reader
-// }
-
-// ReadAll is helper function to consume Stream multiple types
-/*
-func (in *Input) ReadAll() error {
-	if in.Stream != nil {
-		buf, err := ioutil.ReadAll(in.Stream)
-		if err != nil {
-			return err
-		}
-		// This is copied from runtime. It relies on the string
-		// header being a prefix of the slice header!
-		// in.Payload = *(*string)(unsafe.Pointer(&buf))
-		in.Payload = string(buf)
-		in.Stream = nil
-		return nil
-	}
-
-	return nil
-}
-*/
 
 /*
 
