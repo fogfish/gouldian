@@ -21,7 +21,8 @@ package apigateway
 import (
 	"context"
 	"fmt"
-	"net/url"
+	"io"
+	"net/http"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -32,34 +33,29 @@ import (
 
 Request is events.APIGatewayProxyRequest ⟼ µ.Input
 */
-func Request(r *events.APIGatewayProxyRequest) *µ.Input {
-	return &µ.Input{
-		Context:  µ.NewContext(context.Background()),
-		Method:   r.HTTPMethod,
-		Resource: splitPath(r.Path),
-		Params:   µ.Params(r.MultiValueQueryStringParameters),
-		Headers:  µ.Headers(r.MultiValueHeaders),
-		JWT:      jwtFromAuthorizer(r),
-		Payload:  r.Body,
-	}
-}
+func Request(r *events.APIGatewayProxyRequest) *µ.Context {
+	ctx := µ.NewContext(context.Background())
+	body := io.NopCloser(strings.NewReader(r.Body))
 
-func splitPath(path string) µ.Segments {
-	seq := strings.Split(path, "/")[1:]
-	segments := make(µ.Segments, 0, len(seq))
-	for _, x := range seq {
-		if val, err := url.PathUnescape(x); err != nil {
-			segments = append(segments, x)
-		} else {
-			segments = append(segments, val)
-		}
+	req, err := http.NewRequest(r.HTTPMethod, r.Path, body)
+	if err != nil {
+		return nil
 	}
 
-	if len(segments) == 1 && segments[0] == "" {
-		segments = segments[:0]
+	for header, value := range r.Headers {
+		req.Header.Set(header, value)
 	}
 
-	return segments
+	q := req.URL.Query()
+	for key, val := range r.QueryStringParameters {
+		q.Add(key, val)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	ctx.Request = req
+	ctx.JWT = jwtFromAuthorizer(r)
+
+	return ctx
 }
 
 func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
@@ -84,6 +80,13 @@ func Serve(endpoints ...µ.Endpoint) func(events.APIGatewayProxyRequest) (events
 
 	return func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		req := Request(&r)
+		if req == nil {
+			failure := µ.Status.BadRequest(
+				µ.WithIssue(fmt.Errorf("Unknown response %s", r.Path)),
+			).(*µ.Output)
+			return output(failure, req)
+		}
+
 		switch v := api(req).(type) {
 		case *µ.Output:
 			return output(v, req)
@@ -101,7 +104,7 @@ func Serve(endpoints ...µ.Endpoint) func(events.APIGatewayProxyRequest) (events
 	}
 }
 
-func output(out *µ.Output, req *µ.Input) (events.APIGatewayProxyResponse, error) {
+func output(out *µ.Output, req *µ.Context) (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		Body:       out.Body,
 		StatusCode: out.Status,
@@ -109,7 +112,7 @@ func output(out *µ.Output, req *µ.Input) (events.APIGatewayProxyResponse, erro
 	}, nil
 }
 
-func defaultCORS(req *µ.Input) map[string]string {
+func defaultCORS(req *µ.Context) map[string]string {
 	return map[string]string{
 		"Access-Control-Allow-Origin":  defaultOrigin(req),
 		"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
@@ -118,9 +121,13 @@ func defaultCORS(req *µ.Input) map[string]string {
 	}
 }
 
-func defaultOrigin(req *µ.Input) string {
-	origin, exists := req.Headers.Get("Origin")
-	if exists {
+func defaultOrigin(req *µ.Context) string {
+	if req == nil {
+		return "*"
+	}
+
+	origin := req.Request.Header.Get("Origin")
+	if origin != "" {
 		return origin
 	}
 	return "*"

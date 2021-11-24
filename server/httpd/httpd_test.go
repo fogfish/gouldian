@@ -74,7 +74,7 @@ func mock() *httptest.Server {
 		httpd.Serve(
 			µ.GET(
 				µ.Path("echo"),
-				µ.FMap(func(ctx µ.Context) error {
+				µ.FMap(func(ctx *µ.Context) error {
 					return µ.Status.OK(
 						headers.ContentType.Value(headers.TextPlain),
 						headers.Server.Value("echo"),

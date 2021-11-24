@@ -116,7 +116,7 @@ func TestErrorOnJSON(t *testing.T) {
 
 func output(t *testing.T, a, b error) {
 	t.Helper()
-	foo := µ.GET(func(*µ.Input) error { return a })
+	foo := µ.GET(func(*µ.Context) error { return a })
 	req := mock.Input()
 
 	it.Ok(t).

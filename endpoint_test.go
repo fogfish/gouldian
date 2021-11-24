@@ -29,8 +29,8 @@ import (
 
 func TestEndpointThen(t *testing.T) {
 	var ok = errors.New("b")
-	var a µ.Endpoint = func(x *µ.Input) error { return nil }
-	var b µ.Endpoint = func(x *µ.Input) error { return ok }
+	var a µ.Endpoint = func(x *µ.Context) error { return nil }
+	var b µ.Endpoint = func(x *µ.Context) error { return ok }
 	var c µ.Endpoint = a.Then(b)
 
 	it.Ok(t).
@@ -39,8 +39,8 @@ func TestEndpointThen(t *testing.T) {
 
 func TestEndpointOr(t *testing.T) {
 	var ok = errors.New("a")
-	var a µ.Endpoint = func(x *µ.Input) error { return ok }
-	var b µ.Endpoint = func(x *µ.Input) error { return µ.NoMatch{} }
+	var a µ.Endpoint = func(x *µ.Context) error { return ok }
+	var b µ.Endpoint = func(x *µ.Context) error { return µ.NoMatch{} }
 
 	t.Run("a", func(t *testing.T) {
 		var c µ.Endpoint = a.Or(b)

@@ -19,6 +19,8 @@
 package gouldian
 
 import (
+	"unsafe"
+
 	"github.com/fogfish/gouldian/optics"
 )
 
@@ -99,15 +101,20 @@ Method is an endpoint to match HTTP verb request
 */
 func Method(verb string) Endpoint {
 	if verb == Any {
-		return func(req *Input) error {
-			req.Context.Free()
+		return func(ctx *Context) error {
+			// req.Context.Free()
+			ctx.free()
 			return nil
 		}
 	}
 
-	return func(req *Input) error {
-		if req.Method == verb {
-			req.Context.Free()
+	return func(ctx *Context) error {
+		if ctx.Request == nil {
+			return NoMatch{}
+		}
+
+		if ctx.Request.Method == verb {
+			ctx.free()
 			return nil
 		}
 		return NoMatch{}
@@ -119,13 +126,17 @@ func Method(verb string) Endpoint {
 Body decodes HTTP request body and lifts it to the structure
 */
 func Body(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		if len(req.Payload) != 0 || req.Stream != nil {
-			if err := req.ReadAll(); err != nil {
+	return func(ctx *Context) error {
+		if ctx.payload == nil {
+			if err := ctx.cacheBody(); err != nil {
 				return err
 			}
 
-			return req.Context.Put(lens, req.Payload)
+			if ctx.payload == nil {
+				return NoMatch{}
+			}
+
+			return ctx.Put(lens, *(*string)(unsafe.Pointer(&ctx.payload)))
 		}
 
 		return NoMatch{}
@@ -137,8 +148,8 @@ func Body(lens optics.Lens) Endpoint {
 FMap applies clojure to matched HTTP request,
 taking the execution context as the input to closure
 */
-func FMap(f func(Context) error) Endpoint {
-	return func(req *Input) error { return f(req.Context) }
+func FMap(f func(*Context) error) Endpoint {
+	return func(req *Context) error { return f(req) }
 }
 
 /*
@@ -167,12 +178,12 @@ Is matches a key of JWT to defined literal value
   e(mock.Input(mock.JWT(µ.JWT{"username": "landau"})) != nil
 */
 func (key Access) Is(val string) Endpoint {
-	return func(req *Input) error {
-		if req.JWT == nil {
+	return func(ctx *Context) error {
+		if ctx.JWT == nil {
 			return NoMatch{}
 		}
 
-		if key(req.JWT) != val {
+		if key(ctx.JWT) != val {
 			return NoMatch{}
 		}
 
@@ -193,13 +204,13 @@ value cannot be decoded to the target type. See optics.Lens type for details.
   e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"}))) == nil
 */
 func (key Access) To(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		if req.JWT == nil {
+	return func(ctx *Context) error {
+		if ctx.JWT == nil {
 			return NoMatch{}
 		}
 
-		if val := key(req.JWT); val != "" {
-			return req.Context.Put(lens, val)
+		if val := key(ctx.JWT); val != "" {
+			return ctx.Put(lens, val)
 		}
 
 		return NoMatch{}
@@ -220,13 +231,13 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 
 */
 func (key Access) Maybe(lens optics.Lens) Endpoint {
-	return func(req *Input) error {
-		if req.JWT == nil {
+	return func(ctx *Context) error {
+		if ctx.JWT == nil {
 			return NoMatch{}
 		}
 
-		if val := key(req.JWT); val != "" {
-			req.Context.Put(lens, val)
+		if val := key(ctx.JWT); val != "" {
+			ctx.Put(lens, val)
 		}
 
 		return nil

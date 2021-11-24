@@ -22,7 +22,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/textproto"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -30,17 +31,17 @@ import (
 )
 
 // Mock is an option type to customize mock event
-type Mock func(*µ.Input) *µ.Input
+type Mock func(*µ.Context) *µ.Context
 
 // Input mocks HTTP request, takes mock options to customize event
-func Input(spec ...Mock) *µ.Input {
-	input := &µ.Input{
-		Context:  µ.NewContext(context.Background()),
-		Method:   "GET",
-		Resource: µ.Segments{},
-		Params:   µ.Params{},
-		Headers:  µ.Headers{},
+func Input(spec ...Mock) *µ.Context {
+	input := µ.NewContext(context.Background())
+
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		panic(err)
 	}
+	input.Request = req
 
 	for _, f := range spec {
 		input = f(input)
@@ -50,77 +51,57 @@ func Input(spec ...Mock) *µ.Input {
 
 // Method changes the verb of mocked HTTP request
 func Method(verb string) Mock {
-	return func(mock *µ.Input) *µ.Input {
-		mock.Method = verb
+	return func(mock *µ.Context) *µ.Context {
+		mock.Request.Method = verb
 		return mock
 	}
 }
 
 // URL changes URL of mocked HTTP request
 func URL(httpURL string) Mock {
-	return func(mock *µ.Input) *µ.Input {
-		uri, err := url.Parse(httpURL)
-		if err != nil {
-			panic(err)
-		}
-
-		segments := strings.Split(uri.Path, "/")[1:]
-		if len(segments) == 1 && segments[0] == "" {
-			segments = []string{}
-		}
-		mock.Resource = segments
-
-		params := µ.Params{}
-		for key, val := range uri.Query() {
-			params[key] = []string{strings.Join(val, "")}
-		}
-		mock.Params = params
-
-		return mock
+	uri, err := url.Parse(httpURL)
+	if err != nil {
+		panic(err)
 	}
-}
 
-// Param add raw param string to mocked HTTP request
-func Param(key, val string) Mock {
-	return func(mock *µ.Input) *µ.Input {
-		mock.Params[key] = []string{val}
+	return func(mock *µ.Context) *µ.Context {
+		mock.Request.URL = uri
 		return mock
 	}
 }
 
 // Header adds Header to mocked HTTP request
 func Header(header string, value string) Mock {
-	return func(mock *µ.Input) *µ.Input {
-		head := textproto.CanonicalMIMEHeaderKey(header)
-		mock.Headers[head] = []string{value}
+	return func(mock *µ.Context) *µ.Context {
+		mock.Request.Header.Set(header, value)
 		return mock
 	}
 }
 
 // JSON adds payload to mocked HTTP request
 func JSON(val interface{}) Mock {
-	return func(mock *µ.Input) *µ.Input {
+	return func(mock *µ.Context) *µ.Context {
 		body, err := json.Marshal(val)
 		if err != nil {
 			panic(err)
 		}
-		mock.Headers["Content-Type"] = []string{"application/json"}
-		mock.Stream = bytes.NewReader(body)
+		mock.Request.Header.Set("Content-Type", "application/json")
+		mock.Request.Body = io.NopCloser(bytes.NewReader(body))
 		return mock
 	}
 }
 
 // Text adds payload to mocked HTTP request
 func Text(val string) Mock {
-	return func(mock *µ.Input) *µ.Input {
-		mock.Stream = strings.NewReader(val)
+	return func(mock *µ.Context) *µ.Context {
+		mock.Request.Body = io.NopCloser(strings.NewReader(val))
 		return mock
 	}
 }
 
 // JWT adds JWT token to mocked HTTP request
 func JWT(token µ.JWT) Mock {
-	return func(mock *µ.Input) *µ.Input {
+	return func(mock *µ.Context) *µ.Context {
 		mock.JWT = token
 		return mock
 	}

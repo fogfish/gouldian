@@ -19,32 +19,89 @@
 package gouldian_test
 
 import (
-	"testing"
-
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/it"
+	"testing"
 )
 
 func TestPathIs(t *testing.T) {
 	foo := µ.GET(µ.Path("foo"))
-	success := mock.Input(mock.URL("/foo"))
-	failure := mock.Input(mock.URL("/bar"))
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
+	t.Run("success", func(t *testing.T) {
+		for _, url := range []string{
+			"/foo",
+		} {
+			req := mock.Input(mock.URL(url))
+			it.Ok(t).IfNil(foo(req))
+		}
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		for _, url := range []string{
+			"/",
+			"/bar",
+			"/bar/foo",
+			"/foo/bar",
+			"/foo/foo/bar",
+		} {
+			req := mock.Input(mock.URL(url))
+			it.Ok(t).IfNotNil(foo(req))
+		}
+	})
 }
 
 func TestPathAny(t *testing.T) {
-	foo := µ.GET(µ.Path("foo", "_"))
-	success1 := mock.Input(mock.URL("/foo/bar"))
-	success2 := mock.Input(mock.URL("/foo/foo"))
+	foo := µ.GET(µ.Path("foo", µ.Any))
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil)
+	t.Run("success", func(t *testing.T) {
+		for _, url := range []string{
+			"/foo/bar",
+			"/foo/foo",
+		} {
+			req := mock.Input(mock.URL(url))
+			it.Ok(t).IfNil(foo(req))
+		}
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		for _, url := range []string{
+			"/",
+			"/foo",
+			"/bar/",
+			"/bar/foo",
+			"/foo/foo/bar",
+		} {
+			req := mock.Input(mock.URL(url))
+			it.Ok(t).IfNotNil(foo(req))
+		}
+	})
+}
+
+func TestPathEmpty(t *testing.T) {
+	foo := µ.GET(µ.Path())
+
+	t.Run("success", func(t *testing.T) {
+		for _, url := range []string{
+			"/",
+		} {
+			req := mock.Input(mock.URL(url))
+			it.Ok(t).IfNil(foo(req))
+		}
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		for _, url := range []string{
+			"/foo",
+			"/bar/foo",
+			"/foo/foo/bar",
+		} {
+			req := mock.Input(mock.URL(url))
+			it.Ok(t).IfNotNil(foo(req))
+		}
+	})
+
 }
 
 func TestPathString(t *testing.T) {
@@ -59,7 +116,7 @@ func TestPathString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -69,7 +126,7 @@ func TestPathString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 }
@@ -93,50 +150,9 @@ func TestPathInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
-}
-
-// //
-// // TODO: recover
-// //
-// // func TestPathOr(t *testing.T) {
-// // 	pat := path.Is("foo").Or(path.Is("bar"))
-// // 	foo := µ.GET(µ.Path(pat))
-// // 	success1 := mock.Input(mock.URL("/foo"))
-// // 	success2 := mock.Input(mock.URL("/bar"))
-// // 	failure := mock.Input(mock.URL("/baz"))
-
-// // 	it.Ok(t).
-// // 		If(foo(success1)).Should().Equal(nil).
-// // 		If(foo(success2)).Should().Equal(nil).
-// // 		If(foo(failure)).ShouldNot().Equal(nil)
-// // }
-
-// // func TestPathThen(t *testing.T) {
-// // 	pat := path.Is("foo").Then(path.Is("bar"))
-// // 	foo := µ.GET(µ.Path(pat))
-// // 	success := mock.Input(mock.URL("/foo/bar"))
-// // 	failure1 := mock.Input(mock.URL("/foo"))
-// // 	failure2 := mock.Input(mock.URL("/foo/bar/baz"))
-
-// // 	it.Ok(t).
-// // 		If(foo(success)).Should().Equal(nil).
-// // 		If(foo(failure1)).ShouldNot().Equal(nil).
-// // 		If(foo(failure2)).ShouldNot().Equal(nil)
-// // }
-
-func TestPathVariableLen(t *testing.T) {
-	foo := µ.GET(µ.Path("foo"))
-	success1 := mock.Input(mock.URL("/foo"))
-	failure1 := mock.Input(mock.URL("/foo/bar"))
-	failure2 := mock.Input(mock.URL("/"))
-
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
 func TestPathSeq(t *testing.T) {
@@ -158,7 +174,7 @@ func TestPathSeq(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("a")
 	})
 
@@ -168,7 +184,36 @@ func TestPathSeq(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("a/b/c")
 	})
 }
+
+// // //
+// // // TODO: recover
+// // //
+// // // func TestPathOr(t *testing.T) {
+// // // 	pat := path.Is("foo").Or(path.Is("bar"))
+// // // 	foo := µ.GET(µ.Path(pat))
+// // // 	success1 := mock.Input(mock.URL("/foo"))
+// // // 	success2 := mock.Input(mock.URL("/bar"))
+// // // 	failure := mock.Input(mock.URL("/baz"))
+
+// // // 	it.Ok(t).
+// // // 		If(foo(success1)).Should().Equal(nil).
+// // // 		If(foo(success2)).Should().Equal(nil).
+// // // 		If(foo(failure)).ShouldNot().Equal(nil)
+// // // }
+
+// // // func TestPathThen(t *testing.T) {
+// // // 	pat := path.Is("foo").Then(path.Is("bar"))
+// // // 	foo := µ.GET(µ.Path(pat))
+// // // 	success := mock.Input(mock.URL("/foo/bar"))
+// // // 	failure1 := mock.Input(mock.URL("/foo"))
+// // // 	failure2 := mock.Input(mock.URL("/foo/bar/baz"))
+
+// // // 	it.Ok(t).
+// // // 		If(foo(success)).Should().Equal(nil).
+// // // 		If(foo(failure1)).ShouldNot().Equal(nil).
+// // // 		If(foo(failure2)).ShouldNot().Equal(nil)
+// // // }

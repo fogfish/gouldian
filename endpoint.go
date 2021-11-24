@@ -26,9 +26,9 @@ import (
 
 Endpoint is a composable function that abstract HTTP endpoint.
 The function takes HTTP request and returns value of some type:
-`Input => Output`.
+`Context => Output`.
 
-↣ `Input` is a wrapper over HTTP request with additional context.
+↣ `Context` is a wrapper over HTTP request with additional context.
 
 ↣ `Output` is sum type that represents if it is matched on a given input
 or not. The library uses `error` type to represent both valid and invalid
@@ -53,9 +53,9 @@ gouldian library delivers set of built-in endpoints to deal with HTTP
 request processing.
 
 */
-type Endpoint func(*Input) error
+type Endpoint func(*Context) error
 
-// NoMatch is returned by Endpoint if Input is not matched.
+// NoMatch is returned by Endpoint if Context is not matched.
 type NoMatch struct{}
 
 func (err NoMatch) Error() string {
@@ -64,7 +64,7 @@ func (err NoMatch) Error() string {
 
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
-	return func(http *Input) (err error) {
+	return func(http *Context) (err error) {
 		if err = a(http); err == nil {
 			return b(http)
 		}
@@ -74,7 +74,7 @@ func (a Endpoint) Then(b Endpoint) Endpoint {
 
 // Or builds co-product Endpoint
 func (a Endpoint) Or(b Endpoint) Endpoint {
-	return func(http *Input) (err error) {
+	return func(http *Context) (err error) {
 		if err = a(http); !errors.Is(err, NoMatch{}) {
 			return err
 		}
@@ -88,7 +88,7 @@ func Join(seq ...Endpoint) Endpoint {
 		return seq[0]
 	}
 
-	return func(http *Input) (err error) {
+	return func(http *Context) (err error) {
 		for _, f := range seq {
 			if err = f(http); err != nil {
 				return err
@@ -104,7 +104,7 @@ func Or(seq ...Endpoint) Endpoint {
 		return seq[0]
 	}
 
-	return func(http *Input) (err error) {
+	return func(http *Context) (err error) {
 		for _, f := range seq {
 			if err = f(http); !errors.Is(err, NoMatch{}) {
 				return err

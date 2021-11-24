@@ -20,12 +20,13 @@ package gouldian_test
 
 import (
 	"fmt"
+	"net/http"
+	"testing"
+
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/it"
-	"net/http"
-	"testing"
 )
 
 func TestVerbAny(t *testing.T) {
@@ -67,7 +68,6 @@ func TestVerbPatch(t *testing.T) {
 	it.Ok(t).
 		If(endpoint(success)).Should().Equal(nil).
 		If(endpoint(failure)).ShouldNot().Equal(nil)
-
 }
 
 func TestVerbPost(t *testing.T) {
@@ -78,7 +78,6 @@ func TestVerbPost(t *testing.T) {
 	it.Ok(t).
 		If(endpoint(success)).Should().Equal(nil).
 		If(endpoint(failure)).ShouldNot().Equal(nil)
-
 }
 
 func TestVerbPut(t *testing.T) {
@@ -89,7 +88,6 @@ func TestVerbPut(t *testing.T) {
 	it.Ok(t).
 		If(endpoint(success)).Should().Equal(nil).
 		If(endpoint(failure)).ShouldNot().Equal(nil)
-
 }
 
 func TestPath(t *testing.T) {
@@ -116,44 +114,44 @@ func TestPathRoot(t *testing.T) {
 		If(root(failure)).ShouldNot().Equal(nil)
 }
 
-//
-/*
-type MyType []string
+// //
+// /*
+// type MyType []string
 
-func (id *MyType) Pattern() µ.Endpoint {
-	return func(req *µ.Input) error {
-		var (
-			a string
-			b string
-		)
+// func (id *MyType) Pattern() µ.Endpoint {
+// 	return func(req *µ.Input) error {
+// 		var (
+// 			a string
+// 			b string
+// 		)
 
-		f := path.String(&a).Then(path.String(&b))
-		switch err := f(segments).(type) {
-		case µ.Match:
-			*id = []string{a, b}
-			return err
-		default:
-			return err
-		}
-	}
-}
+// 		f := path.String(&a).Then(path.String(&b))
+// 		switch err := f(segments).(type) {
+// 		case µ.Match:
+// 			*id = []string{a, b}
+// 			return err
+// 		default:
+// 			return err
+// 		}
+// 	}
+// }
 
-func TestPathTypeSafePattern(t *testing.T) {
-	var id MyType
+// func TestPathTypeSafePattern(t *testing.T) {
+// 	var id MyType
 
-	foo := µ.GET(µ.Path(path.Is("foo"), id.Pattern()))
-	success := mock.Input(mock.URL("/foo/a/b"))
-	failure1 := mock.Input(mock.URL("/foo/a"))
-	failure2 := mock.Input(mock.URL("/foo/a/b/c"))
+// 	foo := µ.GET(µ.Path(path.Is("foo"), id.Pattern()))
+// 	success := mock.Input(mock.URL("/foo/a/b"))
+// 	failure1 := mock.Input(mock.URL("/foo/a"))
+// 	failure2 := mock.Input(mock.URL("/foo/a/b/c"))
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(id[0]).Should().Equal("a").
-		If(id[1]).Should().Equal("b").
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
-}
-*/
+// 	it.Ok(t).
+// 		If(foo(success)).Should().Equal(nil).
+// 		If(id[0]).Should().Equal("a").
+// 		If(id[1]).Should().Equal("b").
+// 		If(foo(failure1)).ShouldNot().Equal(nil).
+// 		If(foo(failure2)).ShouldNot().Equal(nil)
+// }
+// */
 
 func TestParam(t *testing.T) {
 	foo := µ.GET(µ.Param("foo").Is("bar"))
@@ -218,15 +216,15 @@ func TestBodyJSON(t *testing.T) {
 
 	it.Ok(t).
 		If(foo(success1)).Should().Equal(nil).
-		If(success1.Context.Get(&value)).Should().Equal(nil).
+		If(success1.Get(&value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo1", 10}).
 		//
 		If(foo(success2)).Should().Equal(nil).
-		If(success2.Context.Get(&value)).Should().Equal(nil).
+		If(success2.Get(&value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo2", 10}).
 		//
 		If(foo(failure1)).Should().Equal(nil).
-		If(failure1.Context.Get(&value)).ShouldNot().Equal(nil).
+		If(failure1.Get(&value)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
@@ -261,15 +259,15 @@ func TestBodyForm(t *testing.T) {
 	it.Ok(t).
 		//
 		If(foo(success1)).Should().Equal(nil).
-		If(success1.Context.Get(&value)).Should().Equal(nil).
+		If(success1.Get(&value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo1", 10}).
 		//
 		If(foo(success2)).Should().Equal(nil).
-		If(success2.Context.Get(&value)).Should().Equal(nil).
+		If(success2.Get(&value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo2", 10}).
 		//
 		If(foo(failure1)).Should().Equal(nil).
-		If(failure1.Context.Get(&value)).ShouldNot().Equal(nil).
+		If(failure1.Get(&value)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
@@ -286,15 +284,28 @@ func TestText(t *testing.T) {
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
-		If(success.Context.Get(&value)).Should().Equal(nil).
+		If(success.Get(&value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal("foobar").
 		If(foo(failure)).ShouldNot().Equal(nil)
+}
+
+func TestContextFree(t *testing.T) {
+	foo := µ.GET(µ.Path("foo"))
+	req := mock.Input(mock.URL("/foo"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Equal(nil)
+
+	req.Free()
+
+	it.Ok(t).
+		If(foo(req)).ShouldNot().Equal(nil)
 }
 
 func TestFMapSuccess(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.OK(µ.WithText("bar")) },
+		func(*µ.Context) error { return µ.Status.OK(µ.WithText("bar")) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -309,11 +320,11 @@ func TestFMapSuccess(t *testing.T) {
 func TestFMap2Success(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.OK(µ.WithText("bar")) },
+		func(*µ.Context) error { return µ.Status.OK(µ.WithText("bar")) },
 	)
 	bar := µ.GET(
 		µ.Path("bar"),
-		func(*µ.Input) error { return µ.Status.OK(µ.WithText("foo")) },
+		func(*µ.Context) error { return µ.Status.OK(µ.WithText("foo")) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -328,7 +339,7 @@ func TestFMap2Success(t *testing.T) {
 func TestFMapFailure(t *testing.T) {
 	foo := µ.GET(
 		µ.Path("foo"),
-		func(*µ.Input) error { return µ.Status.Unauthorized(µ.WithIssue(fmt.Errorf(""))) },
+		func(*µ.Context) error { return µ.Status.Unauthorized(µ.WithIssue(fmt.Errorf(""))) },
 	)
 	req := mock.Input(mock.URL("/foo"))
 
@@ -361,9 +372,9 @@ func TestBodyLeak(t *testing.T) {
 	endpoint := func() µ.Endpoint {
 		return µ.GET(
 			µ.Body(lens),
-			func(in *µ.Input) error {
+			func(ctx *µ.Context) error {
 				var req request
-				if err := in.Context.Get(&req); err != nil {
+				if err := ctx.Get(&req); err != nil {
 					return err
 				}
 
@@ -419,7 +430,7 @@ func TestAccessTo(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Sub).Should().Equal("sub")
 	})
 
@@ -443,7 +454,7 @@ func TestAccessMaybe(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Sub).Should().Equal("sub")
 	})
 
@@ -453,7 +464,7 @@ func TestAccessMaybe(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Context.Get(&val)).Should().Equal(nil).
+			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Sub).Should().Equal("")
 	})
 }

@@ -33,7 +33,8 @@ func TestServeMatch(t *testing.T) {
 	api := mock("echo")
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
-		Path:       "/echo",
+		Path:       "/echo?foo=bar",
+		Headers:    map[string]string{"Accept": "*/*"},
 	}
 
 	out, err1 := api(req)
@@ -84,17 +85,14 @@ func TestServeMatchUnescaped(t *testing.T) {
 	it.Ok(t).If(err1).Must().Equal(nil)
 
 	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusOK).
-		If(out.Headers["Server"]).Should().Equal("echo").
-		If(out.Headers["Content-Type"]).Should().Equal("text/plain").
-		If(out.Body).Should().Equal("echo")
+		If(out.StatusCode).Should().Equal(http.StatusBadRequest)
 }
 
 func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	return apigateway.Serve(
 		µ.GET(
 			µ.Path(path),
-			µ.FMap(func(ctx µ.Context) error {
+			µ.FMap(func(ctx *µ.Context) error {
 				return µ.Status.OK(
 					headers.ContentType.Value(headers.TextPlain),
 					headers.Server.Value("echo"),
