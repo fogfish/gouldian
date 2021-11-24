@@ -40,7 +40,7 @@
 The library is a thin layer of purely functional abstractions to build HTTP services. In the contrast with other HTTP routers, the library resolves a challenge of building simple and declarative api implementations in the absence of pattern matching at Golang. The library support opaque migration of HTTP service between traditional, containers and serverless environments.
 
 [User Guide](./doc/user-guide.md) |
-[Example](./example/httpbin/main.go)
+[Example](./example/echo/echo.go)
 
 
 ## Inspiration

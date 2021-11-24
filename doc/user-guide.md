@@ -17,12 +17,12 @@ A `µ.Endpoint` is a key abstraction in the framework. It is a *pure function* t
 ```go
 /*
 
-Endpoint: Input ⟼ Output
+Endpoint: Context ⟼ Output
 */
-type Endpoint func(*Input) error
+type Endpoint func(*Context) error
 ```
 
-`Input` is a convenient wrapper of HTTP request with some Gouldian specific context. This library supports integration with 
+`Context` is a convenient wrapper of HTTP request with some Gouldian specific context. This library supports integration with 
 * Golang standard HTTP server: [`http.Request`](https://pkg.go.dev/net/http)
 * AWS API Gateway: [`APIGatewayProxyRequest`](https://github.com/aws/aws-lambda-go/blob/master/events/apigw.go).
 
@@ -89,7 +89,7 @@ service := httpd.Serve(
 
 It is important to understand the life-cycle behavior for development of a [High-Order Endpoints](#high-order-endpoints) and writing a [Unit Testing](#unit-testing) in your application.
 
-1. The library envelops each incoming request to `Input` type and applies it to the endpoint `service(input)`.
+1. The library envelops each incoming request to `Context` type and applies it to the endpoint `service(input)`.
 2. The resulting value of `error` (aka `Output`) type is matched against
 * `NoMatch` causes abort of current *product* `Endpoint`. The request is passed to succeeding *co-product* `Endpoint`.
 * `nil` continues evaluation of *product* `Endpoint` to succeeding item.
@@ -130,13 +130,13 @@ Extractor uses lenses to inject decoded terms of HTTP request into the applicati
 
 So far, the library has used a simplified definition of Endpoint
 
-  Endpoint: Input ⟼ Output
+  Endpoint: Context ⟼ Output
 
 from the type-safe perspective of api specification, each endpoint is implemented by function
 
   F[A, B]: A ⟼ B 
 
-Therefore, endpoint needs to transform Input to A, apply function F and output type B.
+Therefore, endpoint needs to transform Context to A, apply function F and output type B.
 */
 type A struct {
   Bar, Zar string
@@ -152,7 +152,7 @@ var bar, zar = optics.ForProduct2(A{})
   // these lenses are passed to extractors 
   µ.Path("foo", bar),
   µ.Param("baz").To(zar),
-  µ.FMap(func(ctx µ.Context) error {
+  µ.FMap(func(ctx *µ.Context) error {
     // the context contains matched value and can be decoded to value of type A
     var a A
     if err := ctx.Get(&a); err != nil {
@@ -339,7 +339,7 @@ A business logic is defined as Endpoint mapper with help of closure functions `C
 ```go
 µ.GET(
   µ.Path("foo"),
-  µ.FMap(func(µ.Context) error { µ.Status.OK() }),
+  µ.FMap(func(*µ.Context) error { µ.Status.OK() }),
 )
 ```
 
@@ -353,7 +353,7 @@ The library provides factory functions named after HTTP status codes. Use them t
 µ.GET(
   µ.Path(path.Is("foo")),
   µ.FMap(
-    func(µ.Context) error {
+    func(*µ.Context) error {
       return µ.Status.Ok(
         µ.WithJSON(User{"Joe Doe"}),
       ),
