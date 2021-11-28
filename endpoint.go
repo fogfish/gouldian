@@ -64,14 +64,15 @@ type Builder func(*Node) *Node
 //
 func (n *Node) EvalRoot(http *Context) (err error) {
 	path := http.Request.URL.Path
-	i, node := RGet(n, path)
+	http.values = http.values[:0]
+	i, node := n.lookup(path, &http.values)
 
 	// fmt.Println("s > ", path, i, node)
 
 	// panic('x')
 
 	if len(path) == i && node.Endpoint != nil {
-		// fmt.Println("s > ", stack)
+		// fmt.Println("s > ", http.values)
 		return node.Endpoint(http)
 	}
 

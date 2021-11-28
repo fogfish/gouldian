@@ -670,7 +670,7 @@ func loadRouter(routes []struct{ method, path string }) http.Handler {
 		// )
 	}
 
-	µ.Walk(root,
+	root.Walk(
 		func(i int, n *µ.Node) {
 			fmt.Println(strings.Repeat(" ", i), n.Path)
 		},

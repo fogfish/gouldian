@@ -17,72 +17,54 @@ type Node struct {
 
 /*
 
-Walk ...
+lookup is hot-path discovery of node at the path
 */
-func Walk(root *Node, f func(int, *Node)) {
-	walk(root, 0, f)
-}
-
-func walk(node *Node, level int, f func(int, *Node)) {
-	f(level, node)
-	for _, n := range node.Heir {
-		walk(n, level+1, f)
-	}
-}
-
-var stack = make([]string, 0, 20)
-
-func RGet(root *Node, path string) (int, *Node) {
-	i := 0
-	node := root
-	stack = stack[:0]
-	// heir := root.Heir
-walk:
+func (root *Node) lookup(path string, values *[]string) (at int, node *Node) {
+	node = root
+lookup:
 	for {
+		// leaf node, no futher lookup is possible
+		// return current `node`` and position `at` path
 		if len(node.Heir) == 0 {
-			return i, node
+			return
 		}
 
-		for _, n := range node.Heir {
-			if len(n.Path) == 0 {
+		for _, heir := range node.Heir {
+			if len(path[at:]) < len(heir.Path) {
+				// No match, path cannot match node
 				continue
 			}
 
-			// fmt.Println("> ", n.Path, path)
-			if len(path[i:]) < len(n.Path) {
+			if path[at] != heir.Path[0] {
+				// No match, path cannot match node
+				// this is micro-optimization to reduce overhead of memequal
 				continue
 			}
 
-			if path[i] != n.Path[0] {
-				continue
-			}
-
-			if len(n.Path) == 2 && n.Path[1] == ':' {
-				// wild card skip segment
+			if len(heir.Path) == 2 && heir.Path[1] == ':' {
+				// the node is a wild-card that matches any path segment
+				// let's skip the path until next segment and re-call the value
 				p := 1
-				max := len(path[i:])
-				for p < max && path[i+p] != '/' {
+				max := len(path[at:])
+				for p < max && path[at+p] != '/' {
 					p++
 				}
-				stack = append(stack, path[i+1:i+p])
-				i = i + p
-				node = n
-				continue walk
+				*values = append(*values, path[at+1:at+p])
+				at = at + p
+				node = heir
+				continue lookup
 			}
 
-			// fmt.Println("> ", n.Path, path)
-
-			if path[i:i+len(n.Path)] == n.Path {
-				i = i + len(n.Path)
-				node = n
-				// heir = n.Heir
-				continue walk
+			if path[at:at+len(heir.Path)] == heir.Path {
+				// node matches the path, continue lookup
+				at = at + len(heir.Path)
+				node = heir
+				continue lookup
 			}
 		}
 
-		return i, node
+		return
 	}
-
 }
 
 /*
@@ -127,7 +109,7 @@ It returns the candidate node and length of "consumed" path
 */
 func (root *Node) appendTo(path string) (at int, node *Node) {
 	node = root
-walk:
+lookup:
 	for {
 		if len(node.Heir) == 0 {
 			// leaf node, no futher lookup is possible
@@ -145,7 +127,7 @@ walk:
 			case prefix == len(heir.Path):
 				// Common prefix is the node itself, continue lookup into heirs
 				node = heir
-				continue walk
+				continue lookup
 			default:
 				// Common prefix is shorter than node itself, split is required
 				if prefixNode := node.heirByPath(heir.Path[:prefix]); prefixNode != nil {
@@ -185,6 +167,21 @@ func (root *Node) heirByPath(path string) *Node {
 		}
 	}
 	return nil
+}
+
+/*
+
+walk through trie, use for debug purposes only
+*/
+func (root *Node) Walk(f func(int, *Node)) {
+	walk(root, 0, f)
+}
+
+func walk(node *Node, level int, f func(int, *Node)) {
+	f(level, node)
+	for _, n := range node.Heir {
+		walk(n, level+1, f)
+	}
 }
 
 //

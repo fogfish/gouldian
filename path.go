@@ -59,31 +59,31 @@ func (segments seth) mkPathEndpointA(ctx *Context) (err error) {
 }
 
 func (segments seth) mkPathEndpoint(ctx *Context) (err error) {
-	path := ctx.Request.URL.Path
-	last := len(path) - 1
+	// path := ctx.Request.URL.Path
+	// last := len(path) - 1
 
-	/* */
-	if len(ctx.segments) == 0 {
-		// fmt.Println("building " + ctx.Request.RequestURI)
-		for hd := 0; hd < last; {
-			tl, segment := segment(path, hd)
-			ctx.segments = append(ctx.segments, segment)
-			hd = tl
-		}
-	}
-	// fmt.Println("using " + ctx.Request.RequestURI)
-	// fmt.Println(ctx.segments)
+	// /* */
+	// if len(ctx.segments) == 0 {
+	// 	// fmt.Println("building " + ctx.Request.RequestURI)
+	// 	for hd := 0; hd < last; {
+	// 		tl, segment := segment(path, hd)
+	// 		ctx.segments = append(ctx.segments, segment)
+	// 		hd = tl
+	// 	}
+	// }
+	// // fmt.Println("using " + ctx.Request.RequestURI)
+	// // fmt.Println(ctx.segments)
 
-	if len(segments) != len(ctx.segments) {
-		return ErrNoMatch
-	}
+	// if len(segments) != len(ctx.segments) {
+	// 	return ErrNoMatch
+	// }
 
-	for i, f := range segments {
-		seg := ctx.segments[i]
-		if err = f(ctx, seg); err != nil {
-			return err
-		}
-	}
+	// for i, f := range segments {
+	// 	seg := ctx.segments[i]
+	// 	if err = f(ctx, seg); err != nil {
+	// 		return err
+	// 	}
+	// }
 	return nil
 	/* */
 
