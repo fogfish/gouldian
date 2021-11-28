@@ -100,26 +100,157 @@ func ANY(arrows ...Endpoint) Endpoint {
 Method is an endpoint to match HTTP verb request
 */
 func Method(verb string) Endpoint {
-	if verb == Any {
-		return func(ctx *Context) error {
-			// req.Context.Free()
-			ctx.free()
-			return nil
-		}
+	return v(verb).match
+	// if verb == Any {
+	// 	return func(ctx *Context) error {
+	// 		ctx.free()
+	// 		return nil
+	// 	}
+	// }
+
+	// return func(ctx *Context) error {
+	// 	if ctx.Request == nil {
+	// 		return ErrNoMatch
+	// 	}
+
+	// 	if ctx.Request.Method == verb {
+	// 		ctx.free()
+	// 		return nil
+	// 	}
+
+	// 	return ErrNoMatch
+	// }
+}
+
+type v string
+
+func (verb v) match(ctx *Context) error {
+	if ctx.Request.Method == string(verb) {
+		ctx.free()
+		return nil
 	}
 
-	return func(ctx *Context) error {
-		if ctx.Request == nil {
-			return NoMatch{}
-		}
+	return ErrNoMatch
+}
 
-		if ctx.Request.Method == verb {
-			ctx.free()
-			return nil
-		}
-		return NoMatch{}
+// Method2 ...
+// func Method2(verb string) Builder {
+// 	return func(root *Node) *Node {
+// 		return root.mkByID(verb, func(ctx *Context) error {
+// 			if ctx.Request.Method == verb {
+// 				ctx.free()
+// 				return nil
+// 			}
+
+// 			return ErrNoMatch
+// 		})
+// 	}
+// }
+
+// Path2 ...
+func Path2(path ...string) Builder {
+	return func(root *Node) (n *Node) {
+		root.appendEndpoint(path, func(c *Context) error { return nil })
+		// Put(root, path)
+		return root
+		// n = root
+		// for i, term := range seq {
+		// 	n = n.mkByID(term, func(c *Context) error {
+		// 		if len(c.segments) < i+1 {
+		// 			return ErrNoMatch
+		// 		}
+
+		// 		if len(c.segments[i]) != len(term) {
+		// 			return ErrNoMatch
+		// 		}
+
+		// 		if c.segments[i] == term {
+		// 			return nil
+		// 		}
+		// 		return ErrNoMatch
+		// 	})
+		// }
+		// return
 	}
 }
+
+/*
+TODO: How to make a node selector so that
+
+join takes root, but each next is hierarchical "node injection"
+
+GET -> "a" -> "b" -> "c" -> ...
+
+µ.Join(
+	µ.Method(...)
+	µ.Path(...)
+	µ....
+)
+
+*/
+
+// func Path22(path string) *Node {
+// 	return &Node{
+// 		Endpoint: p(path).match2,
+// 		Children: make([]*Node, 0),
+// 	}
+// }
+
+// func Path23(path string) *Node {
+// 	return &Node{
+// 		Endpoint: p(path).match3,
+// 		Children: make([]*Node, 0),
+// 	}
+// }
+
+// type p string
+
+// func (path p) match1(ctx *Context) error {
+// 	if ctx.segments[0] == string(path) {
+// 		return nil
+// 	}
+
+// 	// if strings.HasPrefix(ctx.Request.RequestURI, string(path)) {
+// 	// 	return nil
+// 	// }
+// 	// if ctx.Request.RequestURI == string(path) {
+// 	// 	return nil
+// 	// }
+
+// 	return ErrNoMatch
+// }
+
+// func (path p) match2(ctx *Context) error {
+// 	// fmt.Println(ctx.segments[1], string(path))
+// 	if ctx.segments[1] == string(path) {
+// 		return nil
+// 	}
+
+// 	// if strings.HasPrefix(ctx.Request.RequestURI, string(path)) {
+// 	// 	return nil
+// 	// }
+// 	// if ctx.Request.RequestURI == string(path) {
+// 	// 	return nil
+// 	// }
+
+// 	return ErrNoMatch
+// }
+
+// func (path p) match3(ctx *Context) error {
+// 	// fmt.Println(ctx.segments[1], string(path))
+// 	if ctx.segments[2] == string(path) {
+// 		return nil
+// 	}
+
+// 	// if strings.HasPrefix(ctx.Request.RequestURI, string(path)) {
+// 	// 	return nil
+// 	// }
+// 	// if ctx.Request.RequestURI == string(path) {
+// 	// 	return nil
+// 	// }
+
+// 	return ErrNoMatch
+// }
 
 /*
 
@@ -133,13 +264,13 @@ func Body(lens optics.Lens) Endpoint {
 			}
 
 			if ctx.payload == nil {
-				return NoMatch{}
+				return ErrNoMatch
 			}
 
 			return ctx.Put(lens, *(*string)(unsafe.Pointer(&ctx.payload)))
 		}
 
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 
@@ -180,11 +311,11 @@ Is matches a key of JWT to defined literal value
 func (key Access) Is(val string) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return NoMatch{}
+			return ErrNoMatch
 		}
 
 		if key(ctx.JWT) != val {
-			return NoMatch{}
+			return ErrNoMatch
 		}
 
 		return nil
@@ -206,14 +337,14 @@ value cannot be decoded to the target type. See optics.Lens type for details.
 func (key Access) To(lens optics.Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return NoMatch{}
+			return ErrNoMatch
 		}
 
 		if val := key(ctx.JWT); val != "" {
 			return ctx.Put(lens, val)
 		}
 
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 
@@ -233,7 +364,7 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 func (key Access) Maybe(lens optics.Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return NoMatch{}
+			return ErrNoMatch
 		}
 
 		if val := key(ctx.JWT); val != "" {

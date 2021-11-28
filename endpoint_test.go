@@ -40,7 +40,7 @@ func TestEndpointThen(t *testing.T) {
 func TestEndpointOr(t *testing.T) {
 	var ok = errors.New("a")
 	var a µ.Endpoint = func(x *µ.Context) error { return ok }
-	var b µ.Endpoint = func(x *µ.Context) error { return µ.NoMatch{} }
+	var b µ.Endpoint = func(x *µ.Context) error { return µ.ErrNoMatch }
 
 	t.Run("a", func(t *testing.T) {
 		var c µ.Endpoint = a.Or(b)

@@ -61,7 +61,7 @@ func (header Header) Is(val string) Endpoint {
 		if opt != "" && strings.HasPrefix(opt, val) {
 			return nil
 		}
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 
@@ -79,7 +79,7 @@ func (header Header) Any(ctx *Context) error {
 	if opt != "" {
 		return nil
 	}
-	return NoMatch{}
+	return ErrNoMatch
 }
 
 /*
@@ -99,7 +99,7 @@ func (header Header) To(lens optics.Lens) Endpoint {
 		if opt := ctx.Request.Header.Get(string(header)); opt != "" {
 			return ctx.Put(lens, opt)
 		}
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 

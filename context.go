@@ -35,8 +35,10 @@ type Context struct {
 	context.Context
 
 	Request *http.Request
-	params  Params
-	payload []byte
+	// method   uint64
+	segments []string
+	params   Params
+	payload  []byte
 
 	JWT JWT
 
@@ -50,6 +52,7 @@ NewContext create a new context for HTTP request
 func NewContext(ctx context.Context) *Context {
 	return &Context{
 		Context:  ctx,
+		segments: make([]string, 0, 20),
 		morphism: make(optics.Morphism, 0, 20),
 	}
 }
@@ -59,7 +62,24 @@ func NewContext(ctx context.Context) *Context {
 Free the context
 */
 func (ctx *Context) free() {
+	ctx.customSplit(ctx.Request.URL.Path)
+	// ctx.segments = strings.Split(ctx.Request.URL.Path, "/")[1:]
 	ctx.morphism = ctx.morphism[:0]
+}
+
+func (ctx *Context) customSplit(path string) {
+	// path := ctx.Request.URL.Path
+	last := len(path) - 1
+
+	/* */
+	if len(ctx.segments) == 0 {
+		// fmt.Println("building " + ctx.Request.RequestURI)
+		for hd := 0; hd < last; {
+			tl, segment := segment(path, hd)
+			ctx.segments = append(ctx.segments, segment)
+			hd = tl
+		}
+	}
 }
 
 /*
@@ -71,6 +91,8 @@ func (ctx *Context) Free() {
 	ctx.params = nil
 	ctx.payload = nil
 	ctx.Request = nil
+	// ctx.method = 0
+	ctx.segments = ctx.segments[:0]
 	ctx.morphism = ctx.morphism[:0]
 }
 
@@ -81,7 +103,7 @@ Put injects value to the context
 func (ctx *Context) Put(lens optics.Lens, str string) error {
 	val, err := lens.FromString(str)
 	if err != nil {
-		return NoMatch{}
+		return ErrNoMatch
 	}
 
 	ctx.morphism = append(ctx.morphism, optics.Setter{Lens: lens, Value: val})

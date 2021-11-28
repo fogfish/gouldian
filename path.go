@@ -38,7 +38,8 @@ match to pattern
   e(mock.Input(mock.URL("/bar"))) != nil
 */
 func Path(segments ...interface{}) Endpoint {
-	return mkPathEndpoint(mkPathMatcher(segments))
+	x := mkPathMatcher(segments)
+	return seth(x).mkPathEndpointA
 }
 
 // segment is custom implementation of strings.Split
@@ -51,11 +52,42 @@ func segment(path string, a int) (int, string) {
 	return len(path) - 1, path[a+1:]
 }
 
-func mkPathEndpoint(segments []pathArrow) Endpoint {
-	return func(ctx *Context) error {
-		path := ctx.Request.URL.Path
-		last := len(path) - 1
+type seth []pathArrow
 
+func (segments seth) mkPathEndpointA(ctx *Context) (err error) {
+	return ErrNoMatch
+}
+
+func (segments seth) mkPathEndpoint(ctx *Context) (err error) {
+	path := ctx.Request.URL.Path
+	last := len(path) - 1
+
+	/* */
+	if len(ctx.segments) == 0 {
+		// fmt.Println("building " + ctx.Request.RequestURI)
+		for hd := 0; hd < last; {
+			tl, segment := segment(path, hd)
+			ctx.segments = append(ctx.segments, segment)
+			hd = tl
+		}
+	}
+	// fmt.Println("using " + ctx.Request.RequestURI)
+	// fmt.Println(ctx.segments)
+
+	if len(segments) != len(ctx.segments) {
+		return ErrNoMatch
+	}
+
+	for i, f := range segments {
+		seg := ctx.segments[i]
+		if err = f(ctx, seg); err != nil {
+			return err
+		}
+	}
+	return nil
+	/* */
+
+	/*
 		hd := 0
 		for at, f := range segments {
 			tl, segment := segment(path, hd)
@@ -79,7 +111,7 @@ func mkPathEndpoint(segments []pathArrow) Endpoint {
 		}
 
 		return nil
-	}
+	*/
 }
 
 /*
@@ -92,40 +124,41 @@ the tail of path.
   e(mock.Input(mock.URL("/bar"))) != nil
 */
 func PathSeq(arrows ...interface{}) Endpoint {
-	return mkPathSeqEndpoint(mkPathMatcher(arrows))
+	return nil
+	// return mkPathSeqEndpoint(mkPathMatcher(arrows))
 }
 
-func mkPathSeqEndpoint(segments []pathArrow) Endpoint {
-	return func(ctx *Context) error {
-		path := ctx.Request.URL.Path
-		// last := len(path) - 1
+// func mkPathSeqEndpoint(segments []pathArrow) Endpoint {
+// 	return func(ctx *Context) error {
+// 		path := ctx.Request.URL.Path
+// 		// last := len(path) - 1
 
-		hd := 0
-		last := len(segments) - 1
-		for at := 0; at < last; at++ {
-			tl, segment := segment(path, hd)
-			if hd == tl {
-				return NoMatch{}
-			}
-			if err := segments[at](ctx, segment); err != nil {
-				return err
-			}
-			hd = tl
-		}
+// 		hd := 0
+// 		last := len(segments) - 1
+// 		for at := 0; at < last; at++ {
+// 			tl, segment := segment(path, hd)
+// 			if hd == tl {
+// 				return NoMatch{}
+// 			}
+// 			if err := segments[at](ctx, segment); err != nil {
+// 				return err
+// 			}
+// 			hd = tl
+// 		}
 
-		// url resource path is not consumed by the pattern
-		if hd == len(path)-1 {
-			return NoMatch{}
-		}
+// 		// url resource path is not consumed by the pattern
+// 		if hd == len(path)-1 {
+// 			return NoMatch{}
+// 		}
 
-		// url resource path consume suffix
-		if err := segments[last](ctx, path[hd+1:]); err != nil {
-			return err
-		}
+// 		// url resource path consume suffix
+// 		if err := segments[last](ctx, path[hd+1:]); err != nil {
+// 			return err
+// 		}
 
-		return nil
-	}
-}
+// 		return nil
+// 	}
+// }
 
 func mkPathMatcher(arrows []interface{}) []pathArrow {
 	seq := make([]pathArrow, len(arrows))
@@ -157,12 +190,39 @@ Is matches a path segment to defined literal
   e(mock.Input(mock.URL("/bar"))) != nil
 */
 func pathIs(val string) pathArrow {
-	return func(ctx *Context, segment string) error {
-		if segment == val {
-			return nil
-		}
-		return NoMatch{}
-	}
+	// fn := func(ctx *Context, segment string) error {
+	// 	if len(segment) != len(val) {
+	// 		return ErrNoMatch
+	// 	}
+
+	// 	// if segment[0] != val[0] {
+	// 	// 	return ErrNoMatch
+	// 	// }
+	// 	// if segment[1] != val[1] {
+	// 	// 	return ErrNoMatch
+	// 	// }
+
+	// 	if segment == val {
+	// 		return nil
+	// 	}
+	// 	return ErrNoMatch
+	// }
+
+	// return fn
+	return pth(val).pis
+}
+
+type pth string
+
+func (val pth) pis(ctx *Context, segment string) error {
+	// if len(segment) != len(val) {
+	// 	return ErrNoMatch
+	// }
+
+	// if segment == string(val) {
+	// 	return nil
+	// }
+	return ErrNoMatch
 }
 
 /*
@@ -171,7 +231,7 @@ None matches nothing
 */
 func pathNone() pathArrow {
 	return func(*Context, string) error {
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 

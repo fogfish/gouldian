@@ -18,10 +18,6 @@
 
 package gouldian
 
-import (
-	"errors"
-)
-
 /*
 
 Endpoint is a composable function that abstract HTTP endpoint.
@@ -55,12 +51,105 @@ request processing.
 */
 type Endpoint func(*Context) error
 
+/*
+
+Server is any data structure convertable to Endpoint
+*/
+type Server interface {
+	Endpoint() Endpoint
+}
+
+type Builder func(*Node) *Node
+
+//
+func (n *Node) EvalRoot(http *Context) (err error) {
+	path := http.Request.URL.Path
+	i, node := RGet(n, path)
+
+	// fmt.Println("s > ", path, i, node)
+
+	// panic('x')
+
+	if len(path) == i && node.Endpoint != nil {
+		// fmt.Println("s > ", stack)
+		return node.Endpoint(http)
+	}
+
+	// fmt.Println(i, path, node)
+	// panic('x')
+
+	// for _, cn := range n.Children {
+	// 	switch v := cn.Eval(http).(type) {
+	// 	case NoMatch:
+	// 		continue
+	// 	case *NoMatch:
+	// 		continue
+	// 	default:
+	// 		return v
+	// 	}
+	// }
+	return ErrNoMatch
+}
+
+/*
+func (n *Node) Eval(http *Context) (err error) {
+	x := n.Endpoint(http)
+	if x == nil {
+		if len(n.Children) == 0 {
+			return nil
+		}
+
+		for _, cn := range n.Children {
+			x := cn.Eval(http)
+			if x == nil {
+				return x
+			}
+		}
+
+		return ErrNoMatch
+	}
+	return x
+
+	// switch err := x.(type) {
+	// case nil:
+	// 	if len(n.Children) == 0 {
+	// 		return nil
+	// 	}
+
+	// 	for _, cn := range n.Children {
+	// 		x := cn.Eval(http)
+	// 		if x == nil {
+	// 			return x
+	// 		}
+	// 		// switch v := cn.Eval(http).(type) {
+	// 		// case NoMatch:
+	// 		// 	continue
+	// 		// case *NoMatch:
+	// 		// 	continue
+	// 		// default:
+	// 		// 	return v
+	// 		// }
+	// 	}
+	// 	return ErrNoMatch
+	// case NoMatch:
+	// 	return err
+	// case *NoMatch:
+	// 	return err
+	// default:
+	// 	return err
+	// }
+}
+*/
+
 // NoMatch is returned by Endpoint if Context is not matched.
-type NoMatch struct{}
+type NoMatch int
 
 func (err NoMatch) Error() string {
 	return "No Match"
 }
+
+// ErrNoMatch constant
+var ErrNoMatch error = NoMatch(255) // &NoMatch{}
 
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
@@ -75,41 +164,107 @@ func (a Endpoint) Then(b Endpoint) Endpoint {
 // Or builds co-product Endpoint
 func (a Endpoint) Or(b Endpoint) Endpoint {
 	return func(http *Context) (err error) {
-		if err = a(http); !errors.Is(err, NoMatch{}) {
+		switch err := a(http).(type) {
+		case NoMatch:
+			return b(http)
+		case *NoMatch:
+			return b(http)
+		default:
 			return err
 		}
-		return b(http)
+		// if err = a(http); !errors.Is(err, NoMatch{}) {
+		// 	return err
+		// }
+		// return b(http)
+	}
+}
+
+func JoinN(seq ...Builder) Builder {
+	return func(n *Node) *Node {
+		a := n
+		for _, f := range seq {
+			a = f(a)
+		}
+
+		return n
 	}
 }
 
 // Join builds a product endpoint from sequence
 func Join(seq ...Endpoint) Endpoint {
-	if len(seq) == 1 {
-		return seq[0]
-	}
+	return tseq(seq).j
+	// if len(seq) == 1 {
+	// 	return seq[0]
+	// }
 
+	// return func(http *Context) (err error) {
+	// 	for _, f := range seq {
+	// 		if err = f(http); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// 	return nil
+	// }
+}
+
+func Join2(a, b Endpoint) Endpoint {
 	return func(http *Context) (err error) {
-		for _, f := range seq {
-			if err = f(http); err != nil {
-				return err
-			}
+		if err = a(http); err != nil {
+			return err
+		}
+		if err = b(http); err != nil {
+			return err
 		}
 		return nil
 	}
 }
 
+type tseq []Endpoint
+
+func (seq tseq) j(http *Context) (err error) {
+	for _, f := range seq {
+		err = f(http)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (seq tseq) r(http *Context) (err error) {
+	for _, f := range seq {
+		x := f(http)
+		switch err := x.(type) {
+		case NoMatch:
+			continue
+		case *NoMatch:
+			continue
+		default:
+			return err
+		}
+	}
+	return ErrNoMatch
+}
+
 // Or joins sequence of Endpoint(s) to co-product Endpoint.
 func Or(seq ...Endpoint) Endpoint {
-	if len(seq) == 1 {
-		return seq[0]
-	}
+	return tseq(seq).r
+	// if len(seq) == 1 {
+	// 	return seq[0]
+	// }
 
-	return func(http *Context) (err error) {
-		for _, f := range seq {
-			if err = f(http); !errors.Is(err, NoMatch{}) {
-				return err
-			}
-		}
-		return NoMatch{}
-	}
+	// return func(http *Context) (err error) {
+	// 	for _, f := range seq {
+	// 		x := f(http)
+	// 		switch err := x.(type) {
+	// 		case NoMatch:
+	// 			continue
+	// 		case *NoMatch:
+	// 			continue
+	// 		default:
+	// 			return err
+	// 		}
+	// 	}
+	// 	return ErrNoMatch
+	// }
 }
