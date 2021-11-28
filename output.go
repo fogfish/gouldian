@@ -22,9 +22,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/fogfish/guid"
 )
+
+//
+// Global pools
+var (
+	outputs sync.Pool
+	issues  sync.Pool
+)
+
+func init() {
+	outputs.New = func() interface{} {
+		return &Output{
+			Headers: make([]struct {
+				Header string
+				Value  string
+			}, 0, 20),
+		}
+	}
+}
 
 /*
 
@@ -32,7 +51,7 @@ Output is HTTP response
 */
 type Output struct {
 	Status  int
-	Headers map[string]string
+	Headers []struct{ Header, Value string }
 	Body    string
 	Failure error
 }
@@ -44,10 +63,17 @@ func (out Output) Error() string {
 
 // NewOutput creates HTTP response with given HTTP Status code
 func NewOutput(status int) *Output {
-	return &Output{
-		Status:  status,
-		Headers: map[string]string{},
-	}
+	out := outputs.Get().(*Output)
+	out.Status = status
+	return out
+}
+
+// Free releases output
+func (out *Output) Free() {
+	out.Failure = nil
+	out.Body = ""
+	out.Headers = out.Headers[:0]
+	outputs.Put(out)
 }
 
 /*
@@ -331,7 +357,12 @@ TODO:
 // WithHeader appends header to HTTP response
 func WithHeader(header, value string) Result {
 	return func(out *Output) error {
-		out.Headers[header] = value
+		out.Headers = append(out.Headers,
+			struct {
+				Header string
+				Value  string
+			}{header, value},
+		)
 		return nil
 	}
 }
@@ -342,13 +373,23 @@ func WithJSON(val interface{}) Result {
 		body, err := json.Marshal(val)
 		if err != nil {
 			out.Status = http.StatusInternalServerError
-			out.Headers["Content-Type"] = "text/plain"
+			out.Headers = append(out.Headers,
+				struct {
+					Header string
+					Value  string
+				}{"Content-Type", "text/plain"},
+			)
 			out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
 
 			return nil
 		}
 
-		out.Headers["Content-Type"] = "application/json"
+		out.Headers = append(out.Headers,
+			struct {
+				Header string
+				Value  string
+			}{"Content-Type", "application/json"},
+		)
 		out.Body = string(body)
 		return nil
 	}
@@ -383,13 +424,23 @@ func WithIssue(err error, title ...string) Result {
 		body, err := json.Marshal(issue)
 		if err != nil {
 			out.Status = http.StatusInternalServerError
-			out.Headers["Content-Type"] = "text/plain"
+			out.Headers = append(out.Headers,
+				struct {
+					Header string
+					Value  string
+				}{"Content-Type", "text/plain"},
+			)
 			out.Body = fmt.Sprintf("JSON serialization is failed for <Issue>")
 
 			return nil
 		}
 
-		out.Headers["Content-Type"] = "application/json"
+		out.Headers = append(out.Headers,
+			struct {
+				Header string
+				Value  string
+			}{"Content-Type", "application/json"},
+		)
 		out.Body = string(body)
 		out.Failure = err
 		return nil

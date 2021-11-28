@@ -36,8 +36,8 @@ DELETE composes product Endpoint match HTTP DELETE request.
   e(mock.Input(mock.Method("DELETE"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func DELETE(arrows ...Endpoint) Endpoint {
-	return Method("DELETE").Then(Join(arrows...))
+func DELETE(path Routable, arrows ...Endpoint) Route {
+	return Join(Method("DELETE"), path, arrows...)
 }
 
 /*
@@ -47,8 +47,8 @@ GET composes product Endpoint match HTTP GET request.
   e(mock.Input(mock.Method("GET"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func GET(arrows ...Endpoint) Endpoint {
-	return Method("GET").Then(Join(arrows...))
+func GET(path Routable, arrows ...Endpoint) Route {
+	return Join(Method("GET"), path, arrows...)
 }
 
 /*
@@ -58,8 +58,8 @@ PATCH composes product Endpoint match HTTP PATCH request.
   e(mock.Input(mock.Method("PATCH"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func PATCH(arrows ...Endpoint) Endpoint {
-	return Method("PATCH").Then(Join(arrows...))
+func PATCH(path Routable, arrows ...Endpoint) Route {
+	return Join(Method("PATCH"), path, arrows...)
 }
 
 /*
@@ -69,8 +69,8 @@ POST composes product Endpoint match HTTP POST request.
   e(mock.Input(mock.Method("POST"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func POST(arrows ...Endpoint) Endpoint {
-	return Method("POST").Then(Join(arrows...))
+func POST(path Routable, arrows ...Endpoint) Route {
+	return Join(Method("POST"), path, arrows...)
 }
 
 /*
@@ -80,8 +80,8 @@ PUT composes product Endpoint match HTTP PUT request.
   e(mock.Input(mock.Method("PUT"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func PUT(arrows ...Endpoint) Endpoint {
-	return Method("PUT").Then(Join(arrows...))
+func PUT(path Routable, arrows ...Endpoint) Route {
+	return Join(Method("PUT"), path, arrows...)
 }
 
 /*
@@ -91,8 +91,8 @@ ANY composes product Endpoint match HTTP PUT request.
   e(mock.Input(mock.Method("PUT"))) == nil
   e(mock.Input(mock.Method("OTHER"))) == nil
 */
-func ANY(arrows ...Endpoint) Endpoint {
-	return Method(Any).Then(Join(arrows...))
+func ANY(path Routable, arrows ...Endpoint) Route {
+	return Join(Method(Any), path, arrows...)
 }
 
 /*
@@ -100,157 +100,24 @@ func ANY(arrows ...Endpoint) Endpoint {
 Method is an endpoint to match HTTP verb request
 */
 func Method(verb string) Endpoint {
-	return v(verb).match
-	// if verb == Any {
-	// 	return func(ctx *Context) error {
-	// 		ctx.free()
-	// 		return nil
-	// 	}
-	// }
-
-	// return func(ctx *Context) error {
-	// 	if ctx.Request == nil {
-	// 		return ErrNoMatch
-	// 	}
-
-	// 	if ctx.Request.Method == verb {
-	// 		ctx.free()
-	// 		return nil
-	// 	}
-
-	// 	return ErrNoMatch
-	// }
-}
-
-type v string
-
-func (verb v) match(ctx *Context) error {
-	if ctx.Request.Method == string(verb) {
-		ctx.free()
-		return nil
+	if verb == Any {
+		return func(ctx *Context) error {
+			return nil
+		}
 	}
 
-	return ErrNoMatch
-}
+	return func(ctx *Context) error {
+		if ctx.Request == nil {
+			return ErrNoMatch
+		}
 
-// Method2 ...
-// func Method2(verb string) Builder {
-// 	return func(root *Node) *Node {
-// 		return root.mkByID(verb, func(ctx *Context) error {
-// 			if ctx.Request.Method == verb {
-// 				ctx.free()
-// 				return nil
-// 			}
+		if ctx.Request.Method == verb {
+			return nil
+		}
 
-// 			return ErrNoMatch
-// 		})
-// 	}
-// }
-
-// Path2 ...
-func Path2(path ...string) Builder {
-	return func(root *Node) (n *Node) {
-		root.appendEndpoint(path, func(c *Context) error { return nil })
-		// Put(root, path)
-		return root
-		// n = root
-		// for i, term := range seq {
-		// 	n = n.mkByID(term, func(c *Context) error {
-		// 		if len(c.segments) < i+1 {
-		// 			return ErrNoMatch
-		// 		}
-
-		// 		if len(c.segments[i]) != len(term) {
-		// 			return ErrNoMatch
-		// 		}
-
-		// 		if c.segments[i] == term {
-		// 			return nil
-		// 		}
-		// 		return ErrNoMatch
-		// 	})
-		// }
-		// return
+		return ErrNoMatch
 	}
 }
-
-/*
-TODO: How to make a node selector so that
-
-join takes root, but each next is hierarchical "node injection"
-
-GET -> "a" -> "b" -> "c" -> ...
-
-µ.Join(
-	µ.Method(...)
-	µ.Path(...)
-	µ....
-)
-
-*/
-
-// func Path22(path string) *Node {
-// 	return &Node{
-// 		Endpoint: p(path).match2,
-// 		Children: make([]*Node, 0),
-// 	}
-// }
-
-// func Path23(path string) *Node {
-// 	return &Node{
-// 		Endpoint: p(path).match3,
-// 		Children: make([]*Node, 0),
-// 	}
-// }
-
-// type p string
-
-// func (path p) match1(ctx *Context) error {
-// 	if ctx.segments[0] == string(path) {
-// 		return nil
-// 	}
-
-// 	// if strings.HasPrefix(ctx.Request.RequestURI, string(path)) {
-// 	// 	return nil
-// 	// }
-// 	// if ctx.Request.RequestURI == string(path) {
-// 	// 	return nil
-// 	// }
-
-// 	return ErrNoMatch
-// }
-
-// func (path p) match2(ctx *Context) error {
-// 	// fmt.Println(ctx.segments[1], string(path))
-// 	if ctx.segments[1] == string(path) {
-// 		return nil
-// 	}
-
-// 	// if strings.HasPrefix(ctx.Request.RequestURI, string(path)) {
-// 	// 	return nil
-// 	// }
-// 	// if ctx.Request.RequestURI == string(path) {
-// 	// 	return nil
-// 	// }
-
-// 	return ErrNoMatch
-// }
-
-// func (path p) match3(ctx *Context) error {
-// 	// fmt.Println(ctx.segments[1], string(path))
-// 	if ctx.segments[2] == string(path) {
-// 		return nil
-// 	}
-
-// 	// if strings.HasPrefix(ctx.Request.RequestURI, string(path)) {
-// 	// 	return nil
-// 	// }
-// 	// if ctx.Request.RequestURI == string(path) {
-// 	// 	return nil
-// 	// }
-
-// 	return ErrNoMatch
-// }
 
 /*
 

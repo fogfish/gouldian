@@ -61,26 +61,9 @@ func NewContext(ctx context.Context) *Context {
 Free the context
 */
 func (ctx *Context) free() {
-	// ctx.customSplit(ctx.Request.URL.Path)
-	// ctx.segments = strings.Split(ctx.Request.URL.Path, "/")[1:]
-	// ctx.values = ctx.values[:0]
+	ctx.values = ctx.values[:0]
 	ctx.morphism = ctx.morphism[:0]
 }
-
-// func (ctx *Context) customSplit(path string) {
-// 	// path := ctx.Request.URL.Path
-// 	last := len(path) - 1
-
-// 	/* */
-// 	if len(ctx.segments) == 0 {
-// 		// fmt.Println("building " + ctx.Request.RequestURI)
-// 		for hd := 0; hd < last; {
-// 			tl, segment := segment(path, hd)
-// 			ctx.segments = append(ctx.segments, segment)
-// 			hd = tl
-// 		}
-// 	}
-// }
 
 /*
 
@@ -91,8 +74,7 @@ func (ctx *Context) Free() {
 	ctx.params = nil
 	ctx.payload = nil
 	ctx.Request = nil
-	// ctx.method = 0
-	// ctx.values = ctx.segments[:0]
+	ctx.values = ctx.values[:0]
 	ctx.morphism = ctx.morphism[:0]
 }
 

@@ -23,8 +23,6 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/server/aws/apigateway"
 	"github.com/fogfish/it"
 )
@@ -90,15 +88,16 @@ func TestServeMatchUnescaped(t *testing.T) {
 
 func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	return apigateway.Serve(
-		µ.GET(
-			µ.Path(path),
-			µ.FMap(func(ctx *µ.Context) error {
-				return µ.Status.OK(
-					headers.ContentType.Value(headers.TextPlain),
-					headers.Server.Value("echo"),
-					µ.WithText("echo"),
-				)
-			}),
-		),
+	// TODO
+	// µ.GET(
+	// 	µ.Path(path),
+	// 	µ.FMap(func(ctx *µ.Context) error {
+	// 		return µ.Status.OK(
+	// 			headers.ContentType.Value(headers.TextPlain),
+	// 			headers.Server.Value("echo"),
+	// 			µ.WithText("echo"),
+	// 		)
+	// 	}),
+	// ),
 	)
 }

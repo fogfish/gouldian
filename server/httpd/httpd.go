@@ -32,10 +32,17 @@ Serve builds http.Handler for sequence of endpoints
 
   http.ListenAndServe(":8080", httpd.Server( ... ))
 */
-func Serve(endpoints ...µ.Endpoint) http.Handler {
-	routes := &routes{
-		endpoint: µ.Or(endpoints...),
+func Serve(endpoints ...µ.Route) http.Handler {
+	root := µ.NewRoutes()
+	for _, endpoint := range endpoints {
+		endpoint(root)
 	}
+
+	routes := &routes{
+		endpoint: root.Endpoint(),
+	}
+
+	// root.Println()
 	routes.pool.New = func() interface{} {
 		return µ.NewContext(context.Background())
 	}
@@ -67,12 +74,13 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (routes *routes) output(w http.ResponseWriter, out *µ.Output) {
-	for h, v := range out.Headers {
-		w.Header().Set(string(h), v)
+	for _, h := range out.Headers {
+		w.Header().Set(h.Header, h.Value)
 	}
 	w.WriteHeader(int(out.Status))
 
 	if len(out.Body) > 0 {
 		w.Write([]byte(out.Body))
 	}
+	out.Free()
 }

@@ -41,7 +41,7 @@ type reqEcho struct {
 
 var lensEcho = optics.ForProduct1(reqEcho{})
 
-func echo() µ.Endpoint {
+func echo() µ.Route {
 	return µ.GET(
 		µ.Path("echo", lensEcho),
 		µ.FMap(func(ctx *µ.Context) error {

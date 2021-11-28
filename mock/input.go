@@ -33,6 +33,13 @@ import (
 // Mock is an option type to customize mock event
 type Mock func(*µ.Context) *µ.Context
 
+// Endpoint mock Route
+func Endpoint(route µ.Route) µ.Endpoint {
+	root := µ.NewRoutes()
+	route(root)
+	return root.Endpoint()
+}
+
 // Input mocks HTTP request, takes mock options to customize event
 func Input(spec ...Mock) *µ.Context {
 	input := µ.NewContext(context.Background())

@@ -131,7 +131,12 @@ Value outputs header value as the result of HTTP response
 */
 func (header Header) Value(value string) Result {
 	return func(out *Output) error {
-		out.Headers[string(header)] = value
+		out.Headers = append(out.Headers,
+			struct {
+				Header string
+				Value  string
+			}{string(header), value},
+		)
 		return nil
 	}
 }

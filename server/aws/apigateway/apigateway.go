@@ -76,7 +76,9 @@ func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
 
 // Serve HTTP service
 func Serve(endpoints ...µ.Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	api := µ.Or(endpoints...)
+	// TODO
+	// api := µ.Or(endpoints...)
+	api := µ.Endpoints(endpoints).Or
 
 	return func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		req := Request(&r)
@@ -108,7 +110,8 @@ func output(out *µ.Output, req *µ.Context) (events.APIGatewayProxyResponse, er
 	return events.APIGatewayProxyResponse{
 		Body:       out.Body,
 		StatusCode: out.Status,
-		Headers:    joinHead(defaultCORS(req), out.Headers),
+		// TODO
+		// Headers:    joinHead(defaultCORS(req), out.Headers),
 	}, nil
 }
 

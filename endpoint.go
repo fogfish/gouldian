@@ -51,107 +51,6 @@ request processing.
 */
 type Endpoint func(*Context) error
 
-/*
-
-Server is any data structure convertable to Endpoint
-*/
-type Server interface {
-	Endpoint() Endpoint
-}
-
-type Builder func(*Node) *Node
-
-//
-func (n *Node) EvalRoot(http *Context) (err error) {
-	path := http.Request.URL.Path
-	http.values = http.values[:0]
-	i, node := n.lookup(path, &http.values)
-
-	// fmt.Println("s > ", path, i, node)
-
-	// panic('x')
-
-	if len(path) == i && node.Endpoint != nil {
-		// fmt.Println("s > ", http.values)
-		return node.Endpoint(http)
-	}
-
-	// fmt.Println(i, path, node)
-	// panic('x')
-
-	// for _, cn := range n.Children {
-	// 	switch v := cn.Eval(http).(type) {
-	// 	case NoMatch:
-	// 		continue
-	// 	case *NoMatch:
-	// 		continue
-	// 	default:
-	// 		return v
-	// 	}
-	// }
-	return ErrNoMatch
-}
-
-/*
-func (n *Node) Eval(http *Context) (err error) {
-	x := n.Endpoint(http)
-	if x == nil {
-		if len(n.Children) == 0 {
-			return nil
-		}
-
-		for _, cn := range n.Children {
-			x := cn.Eval(http)
-			if x == nil {
-				return x
-			}
-		}
-
-		return ErrNoMatch
-	}
-	return x
-
-	// switch err := x.(type) {
-	// case nil:
-	// 	if len(n.Children) == 0 {
-	// 		return nil
-	// 	}
-
-	// 	for _, cn := range n.Children {
-	// 		x := cn.Eval(http)
-	// 		if x == nil {
-	// 			return x
-	// 		}
-	// 		// switch v := cn.Eval(http).(type) {
-	// 		// case NoMatch:
-	// 		// 	continue
-	// 		// case *NoMatch:
-	// 		// 	continue
-	// 		// default:
-	// 		// 	return v
-	// 		// }
-	// 	}
-	// 	return ErrNoMatch
-	// case NoMatch:
-	// 	return err
-	// case *NoMatch:
-	// 	return err
-	// default:
-	// 	return err
-	// }
-}
-*/
-
-// NoMatch is returned by Endpoint if Context is not matched.
-type NoMatch int
-
-func (err NoMatch) Error() string {
-	return "No Match"
-}
-
-// ErrNoMatch constant
-var ErrNoMatch error = NoMatch(255) // &NoMatch{}
-
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
 	return func(http *Context) (err error) {
@@ -173,58 +72,53 @@ func (a Endpoint) Or(b Endpoint) Endpoint {
 		default:
 			return err
 		}
-		// if err = a(http); !errors.Is(err, NoMatch{}) {
-		// 	return err
-		// }
-		// return b(http)
 	}
 }
 
-func JoinN(seq ...Builder) Builder {
-	return func(n *Node) *Node {
-		a := n
-		for _, f := range seq {
-			a = f(a)
-		}
+/*
 
-		return n
-	}
+Routable is endpoint with routing metadata
+*/
+type Routable func() ([]string, Endpoint)
+
+/*
+
+Route ...
+*/
+type Route func(Router)
+
+/*
+
+Router is any data structure convertable to Endpoint
+*/
+type Router interface {
+	Append([]string, Endpoint)
+	Endpoint() Endpoint
 }
 
-// Join builds a product endpoint from sequence
-func Join(seq ...Endpoint) Endpoint {
-	return tseq(seq).j
-	// if len(seq) == 1 {
-	// 	return seq[0]
-	// }
+// NoMatch is returned by Endpoint if Context is not matched.
+type NoMatch int
 
-	// return func(http *Context) (err error) {
-	// 	for _, f := range seq {
-	// 		if err = f(http); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// 	return nil
-	// }
+func (err NoMatch) Error() string {
+	return "No Match"
 }
 
-func Join2(a, b Endpoint) Endpoint {
-	return func(http *Context) (err error) {
-		if err = a(http); err != nil {
-			return err
-		}
-		if err = b(http); err != nil {
-			return err
-		}
-		return nil
-	}
-}
+// ErrNoMatch constant
+var ErrNoMatch error = NoMatch(255)
 
-type tseq []Endpoint
+/*
 
-func (seq tseq) j(http *Context) (err error) {
+Endpoints is sequence of Endpoints
+*/
+type Endpoints []Endpoint
+
+/*
+
+Join builds product endpoint from sequence
+*/
+func (seq Endpoints) Join(ctx *Context) (err error) {
 	for _, f := range seq {
-		err = f(http)
+		err = f(ctx)
 		if err != nil {
 			return err
 		}
@@ -232,13 +126,15 @@ func (seq tseq) j(http *Context) (err error) {
 	return nil
 }
 
-func (seq tseq) r(http *Context) (err error) {
+/*
+
+Or builds co-product endpoint from sequence
+*/
+func (seq Endpoints) Or(ctx *Context) (err error) {
 	for _, f := range seq {
-		x := f(http)
+		x := f(ctx)
 		switch err := x.(type) {
 		case NoMatch:
-			continue
-		case *NoMatch:
 			continue
 		default:
 			return err
@@ -247,25 +143,18 @@ func (seq tseq) r(http *Context) (err error) {
 	return ErrNoMatch
 }
 
-// Or joins sequence of Endpoint(s) to co-product Endpoint.
-func Or(seq ...Endpoint) Endpoint {
-	return tseq(seq).r
-	// if len(seq) == 1 {
-	// 	return seq[0]
-	// }
+/*
 
-	// return func(http *Context) (err error) {
-	// 	for _, f := range seq {
-	// 		x := f(http)
-	// 		switch err := x.(type) {
-	// 		case NoMatch:
-	// 			continue
-	// 		case *NoMatch:
-	// 			continue
-	// 		default:
-	// 			return err
-	// 		}
-	// 	}
-	// 	return ErrNoMatch
-	// }
+Join builds Route from sequence
+*/
+func Join(
+	method Endpoint,
+	path Routable,
+	seq ...Endpoint,
+) Route {
+	return func(router Router) {
+		route, pathEndpoint := path()
+		endpoints := append(Endpoints{method, pathEndpoint}, seq...)
+		router.Append(route, endpoints.Join)
+	}
 }

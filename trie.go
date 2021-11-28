@@ -1,18 +1,35 @@
 package gouldian
 
+import (
+	"fmt"
+	"strings"
+)
+
 /*
 
 Node of trie
 */
 type Node struct {
-	Path     string   // substring from the route "owned" by the node
-	Heir     []*Node  // heir nodes
-	Endpoint Endpoint // end point associated with node
+	Path string   // substring from the route "owned" by the node
+	Heir []*Node  // heir nodes
+	Func Endpoint // end point associated with node
 	/*
 		TODO
 		- Wild     *Node    // special node that captures any path
 		- Type     int      // Node type
 	*/
+}
+
+// NewRoutes creates new routing table
+func NewRoutes() *Node {
+	return &Node{
+		Heir: []*Node{
+			{
+				Path: "/",
+				Heir: make([]*Node, 0),
+			},
+		},
+	}
 }
 
 /*
@@ -41,7 +58,15 @@ lookup:
 				continue
 			}
 
-			if len(heir.Path) == 2 && heir.Path[1] == ':' {
+			// the node consumers entire path
+			if len(heir.Path) == 2 && heir.Path[1] == '*' {
+				*values = append(*values, path[at+1:])
+				at = len(path)
+				node = heir
+				return
+			}
+
+			if len(heir.Path) == 2 && (heir.Path[1] == ':' || heir.Path[1] == '_' || heir.Path[1] == '*') {
 				// the node is a wild-card that matches any path segment
 				// let's skip the path until next segment and re-call the value
 				p := 1
@@ -49,7 +74,11 @@ lookup:
 				for p < max && path[at+p] != '/' {
 					p++
 				}
-				*values = append(*values, path[at+1:at+p])
+
+				if heir.Path[1] == ':' {
+					*values = append(*values, path[at+1:at+p])
+				}
+
 				at = at + p
 				node = heir
 				continue lookup
@@ -74,6 +103,17 @@ Input path is a collection of segments, each segment is either path literal or
 wildcard symbol `:` reserved for lenses
 */
 func (root *Node) appendEndpoint(path []string, endpoint Endpoint) {
+	if len(path) == 0 {
+		_, n := root.appendTo("/")
+
+		if n.Func == nil {
+			n.Func = endpoint
+		} else {
+			n.Func = n.Func.Or(endpoint)
+		}
+		return
+	}
+
 	at := 0
 	node := root
 	for i, segment := range path {
@@ -93,10 +133,10 @@ func (root *Node) appendEndpoint(path []string, endpoint Endpoint) {
 
 		// the last segment needs to be enhanced with endpoint
 		if i == len(path)-1 {
-			if node.Endpoint == nil {
-				node.Endpoint = endpoint
+			if node.Func == nil {
+				node.Func = endpoint
 			} else {
-				node.Endpoint = node.Endpoint.Or(endpoint)
+				node.Func = node.Func.Or(endpoint)
 			}
 		}
 	}
@@ -181,6 +221,41 @@ func walk(node *Node, level int, f func(int, *Node)) {
 	f(level, node)
 	for _, n := range node.Heir {
 		walk(n, level+1, f)
+	}
+}
+
+// Println outputs trie to console
+func (root *Node) Println() {
+	root.Walk(
+		func(i int, n *Node) {
+			fmt.Println(strings.Repeat(" ", i), n.Path)
+		},
+	)
+}
+
+// Append endpoint to trie
+func (root *Node) Append(path []string, endpoint Endpoint) {
+	root.appendEndpoint(path, endpoint)
+}
+
+// Endpoint converts trie to Endpoint
+func (root *Node) Endpoint() Endpoint {
+	return func(ctx *Context) (err error) {
+		if ctx.Request == nil {
+			return ErrNoMatch
+		}
+
+		path := ctx.Request.URL.Path
+		ctx.free()
+
+		ctx.values = ctx.values[:0]
+		i, node := root.lookup(path, &ctx.values)
+
+		if len(path) == i && node.Func != nil {
+			return node.Func(ctx)
+		}
+
+		return ErrNoMatch
 	}
 }
 

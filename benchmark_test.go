@@ -20,7 +20,6 @@ package gouldian_test
 
 import (
 	"context"
-	"fmt"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/mock"
@@ -32,132 +31,9 @@ import (
 	"testing"
 )
 
-type mockResponseWriter struct{}
-
-func (m *mockResponseWriter) Header() (h http.Header) {
-	return http.Header{}
-}
-
-func (m *mockResponseWriter) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
-func (m *mockResponseWriter) WriteString(s string) (n int, err error) {
-	return len(s), nil
-}
-
-func (m *mockResponseWriter) WriteHeader(int) {}
-
 //
 // Microbenchmark
 //
-
-/*
-
-Endpoints Or
-
-*/
-
-var (
-	pathA = µ.Path("resu", name)
-	pathB = µ.Path("user", name)
-	apiOr = µ.Or(
-		µ.GET(pathA),
-		µ.GET(pathA),
-		µ.GET(pathA),
-		µ.GET(pathA),
-		µ.GET(pathB),
-		// func(c *µ.Context) error { return µ.NoMatch{} },
-		// func(c *µ.Context) error { return µ.NoMatch{} },
-		// func(c *µ.Context) error { return µ.NoMatch{} },
-		// func(c *µ.Context) error { return µ.NoMatch{} },
-		// func(c *µ.Context) error { return nil },
-	)
-	reqOr = mock.Input(mock.URL("/user/123456"))
-)
-
-//go:noinline
-func aa() bool {
-	return false
-}
-
-//go:noinline
-func call() {
-	for i := 0; i < 3000; i++ {
-		aa()
-	}
-}
-
-func BenchmarkCall(mb *testing.B) {
-	for i := 0; i < mb.N; i++ {
-		call()
-	}
-}
-
-/*
-
-TODO
- - botleneck is O(n) function calls
- - convert issue to O(log(N)) using trie of method + path segments
-
-*/
-
-func BenchmarkOr(mb *testing.B) {
-	// root := &µ.Node{}
-
-	// µ.JoinN(
-	// 	µ.Method2("GET"),
-	// 	µ.Path2("a"),
-	// )(root)
-
-	// µ.JoinN(
-	// 	µ.Method2("GET"),
-	// 	µ.Path2("b"),
-	// )(root)
-
-	// µ.JoinN(
-	// 	µ.Method2("GET"),
-	// 	µ.Path2("c", "1"),
-	// )(root)
-
-	// µ.JoinN(
-	// 	µ.Method2("GET"),
-	// 	µ.Path2("c", "2"),
-	// )(root)
-
-	// µ.JoinN(
-	// 	µ.Method2("GET"),
-	// 	µ.Path2("c", "3", "d"),
-	// )(root)
-
-	// router := httpd.Serve(root.EvalRoot) // seq...,
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathA),
-	// µ.GET(pathB),
-
-	// w := new(mockResponseWriter)
-	// r, _ := http.NewRequest("GET", "/c/3/d", nil)
-
-	// mb.ReportAllocs()
-	// mb.ResetTimer()
-
-	// for i := 0; i < mb.N; i++ {
-	// 	router.ServeHTTP(w, r)
-	// }
-
-	// mb.ReportAllocs()
-	// mb.ResetTimer()
-
-	// for i := 0; i < mb.N; i++ {
-	// 	apiOr(reqOr)
-	// }
-}
 
 /*
 
@@ -166,14 +42,14 @@ Path Pattern with 1 param
 */
 
 type MyT1 struct {
-	Name string
+	Name *string
 }
 
 var (
-	name  = optics.ForProduct1(MyT1{})
-	path1 = µ.Path("user", name)
-	foo1  = µ.GET(path1)
-	req1  = mock.Input(mock.URL("/user/123456"))
+	name           = optics.ForProduct1(MyT1{})
+	pathWithParam1 = µ.Path("user", name)
+	foo1           = mock.Endpoint(µ.GET(pathWithParam1))
+	req1           = mock.Input(mock.URL("/user/123456"))
 )
 
 func BenchmarkPathParam1(mb *testing.B) {
@@ -181,15 +57,17 @@ func BenchmarkPathParam1(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		foo1(req1)
+		if err := foo1(req1); err != nil {
+			panic(err)
+		}
 	}
 }
 
 func BenchmarkServerParam1(mb *testing.B) {
 	w := new(mockResponseWriter)
 	router := httpd.Serve(
-		µ.Join(
-			foo1,
+		µ.GET(
+			pathWithParam1,
 			func(c *µ.Context) error { return nil },
 		),
 	)
@@ -211,10 +89,10 @@ Path Pattern with 5 param
 type MyT5 struct{ A, B, C, D, E string }
 
 var (
-	a, b, c, d, e = optics.ForProduct5(MyT5{})
-	path5         = µ.Path(a, b, c, d, e)
-	foo5          = µ.GET(path5)
-	req5          = mock.Input(mock.URL("/a/b/c/d/e"))
+	a, b, c, d, e  = optics.ForProduct5(MyT5{})
+	pathWithParam5 = µ.Path("bench", a, b, c, d, e)
+	foo5           = mock.Endpoint(µ.GET(pathWithParam5))
+	req5           = mock.Input(mock.URL("/bench/a/b/c/d/e"))
 )
 
 func BenchmarkPathParam5(mb *testing.B) {
@@ -222,19 +100,21 @@ func BenchmarkPathParam5(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		foo5(req5)
+		if err := foo5(req5); err != nil {
+			panic(err)
+		}
 	}
 }
 
 func BenchmarkServerParam5(mb *testing.B) {
 	w := new(mockResponseWriter)
 	router := httpd.Serve(
-		µ.Join(
-			foo5,
+		µ.GET(
+			pathWithParam5,
 			func(c *µ.Context) error { return nil },
 		),
 	)
-	r, _ := http.NewRequest("GET", "/a/b/c/d/e", nil)
+	r, _ := http.NewRequest("GET", "/bench/a/b/c/d/e", nil)
 
 	mb.ReportAllocs()
 	mb.ResetTimer()
@@ -293,20 +173,22 @@ Endpoint decode with 1 param
 
 */
 
-var endpoint1 = µ.GET(
-	path1,
-	µ.FMap(func(ctx *µ.Context) error {
-		var req MyT1
-		if err := ctx.Get(&req); err != nil {
-			return µ.Status.BadRequest(µ.WithIssue(err))
-		}
+var endpoint1 = mock.Endpoint(
+	µ.GET(
+		pathWithParam1,
+		func(ctx *µ.Context) error {
+			var req MyT1
+			if err := ctx.Get(&req); err != nil {
+				return µ.Status.BadRequest(µ.WithIssue(err))
+			}
 
-		return µ.Status.OK(
-			headers.ContentType.Value(headers.TextPlain),
-			headers.Server.Value("echo"),
-			µ.WithText(req.Name),
-		)
-	}),
+			return µ.Status.OK(
+				headers.ContentType.Value(headers.TextPlain),
+				headers.Server.Value("echo"),
+				µ.WithText(*req.Name),
+			)
+		},
+	),
 )
 
 func BenchmarkEndpoint1(mb *testing.B) {
@@ -314,7 +196,12 @@ func BenchmarkEndpoint1(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		endpoint1(req1)
+		switch v := endpoint1(req1).(type) {
+		case *µ.Output:
+			v.Free()
+		default:
+			panic(v)
+		}
 	}
 }
 
@@ -324,20 +211,22 @@ Endpoint decode with 5 param
 
 */
 
-var endpoint5 = µ.GET(
-	path5,
-	µ.FMap(func(ctx *µ.Context) error {
-		var req MyT5
-		if err := ctx.Get(&req); err != nil {
-			return µ.Status.BadRequest(µ.WithIssue(err))
-		}
+var endpoint5 = mock.Endpoint(
+	µ.GET(
+		pathWithParam5,
+		func(ctx *µ.Context) error {
+			var req MyT5
+			if err := ctx.Get(&req); err != nil {
+				return µ.Status.BadRequest(µ.WithIssue(err))
+			}
 
-		return µ.Status.OK(
-			headers.ContentType.Value(headers.TextPlain),
-			headers.Server.Value("echo"),
-			µ.WithText(filepath.Join(req.A, req.B, req.C, req.D, req.E)),
-		)
-	}),
+			return µ.Status.OK(
+				headers.ContentType.Value(headers.TextPlain),
+				headers.Server.Value("echo"),
+				µ.WithText(filepath.Join(req.A, req.B, req.C, req.D, req.E)),
+			)
+		},
+	),
 )
 
 func BenchmarkEndpoint5(mb *testing.B) {
@@ -630,56 +519,32 @@ var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = optics.ForProduct10(githubReq{})
 func githubHandle(c *µ.Context) error { return nil }
 
 func loadRouter(routes []struct{ method, path string }) http.Handler {
-	root := &µ.Node{}
-	// seq := make([]µ.Builder, 0, len(routes))
+	seq := make([]µ.Route, 0, len(routes))
 	for _, ep := range routes {
-		if ep.method != "GET" {
-			continue
-		}
-
-		// lens := []interface{}{v0, v1, v2, v3, v4, v5, v6, v7, v8, v9}
-		segs := []string{}
+		lens := []interface{}{v0, v1, v2, v3, v4, v5, v6, v7, v8, v9}
+		segs := []interface{}{}
 		path := strings.Split(ep.path, "/")[1:]
 		for _, seg := range path {
 			switch {
 			case len(seg) == 0:
 				break
 			case seg[0] == ':':
-				segs = append(segs, ":")
+				segs = append(segs, lens[0])
+				lens = lens[1:]
 			default:
 				segs = append(segs, seg)
-				// case seg[0] != ':':
-				// 	segs = append(segs, seg)
-				// 	continue
-				// default:
-				// 	segs = append(segs, lens[0])
-				// 	lens = lens[1:]
 			}
 		}
-		// seq = append(seq,
-		µ.JoinN(
-			// func(c *µ.Context) error { return µ.ErrNoMatch },
-			// func(c *µ.Context) error { return µ.ErrNoMatch },
-			// func(c *µ.Context) error { return nil },
-			//
-			// µ.Method2(ep.method),
-			// µ.Method(ep.method),
-			µ.Path2(segs...),
-			// githubHandle,
-		)(root)
-		// )
+		seq = append(seq,
+			µ.Join(
+				µ.Method(ep.method),
+				µ.Path(segs...),
+				githubHandle,
+			),
+		)
 	}
 
-	root.Walk(
-		func(i int, n *µ.Node) {
-			fmt.Println(strings.Repeat(" ", i), n.Path)
-		},
-	)
-
-	// root.Print(0)
-	// panic('x')
-
-	return httpd.Serve(root.EvalRoot)
+	return httpd.Serve(seq...)
 }
 
 func benchRoutes(b *testing.B, router http.Handler, routes []struct{ method, path string }) {
@@ -693,13 +558,11 @@ func benchRoutes(b *testing.B, router http.Handler, routes []struct{ method, pat
 
 	for i := 0; i < b.N; i++ {
 		for _, route := range routes {
-			if route.method == "GET" {
-				r.Method = route.method
-				r.RequestURI = route.path
-				u.Path = route.path
-				u.RawQuery = rq
-				router.ServeHTTP(w, r)
-			}
+			r.Method = route.method
+			r.RequestURI = route.path
+			u.Path = route.path
+			u.RawQuery = rq
+			router.ServeHTTP(w, r)
 		}
 	}
 }
@@ -707,3 +570,23 @@ func benchRoutes(b *testing.B, router http.Handler, routes []struct{ method, pat
 func BenchmarkGitHub(b *testing.B) {
 	benchRoutes(b, github, githubAPI)
 }
+
+//
+// Utility
+//
+
+type mockResponseWriter struct{}
+
+func (m *mockResponseWriter) Header() (h http.Header) {
+	return http.Header{}
+}
+
+func (m *mockResponseWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+func (m *mockResponseWriter) WriteString(s string) (n int, err error) {
+	return len(s), nil
+}
+
+func (m *mockResponseWriter) WriteHeader(int) {}
