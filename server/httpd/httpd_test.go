@@ -18,7 +18,6 @@
 
 package httpd_test
 
-/*
 import (
 	"io/ioutil"
 	"net/http"
@@ -86,4 +85,3 @@ func mock() *httptest.Server {
 		),
 	)
 }
-*/

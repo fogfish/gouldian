@@ -68,6 +68,11 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			µ.WithIssue(fmt.Errorf("NoMatch %s", r.URL.Path)),
 		).(*µ.Output)
 		routes.output(w, failure)
+	default:
+		failure := µ.Status.InternalServerError(
+			µ.WithIssue(fmt.Errorf("Unknown response %s", r.URL.Path)),
+		).(*µ.Output)
+		routes.output(w, failure)
 	}
 
 	routes.pool.Put(req)

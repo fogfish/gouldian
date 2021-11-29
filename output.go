@@ -31,7 +31,6 @@ import (
 // Global pools
 var (
 	outputs sync.Pool
-	issues  sync.Pool
 )
 
 func init() {
@@ -97,8 +96,8 @@ type Issue struct {
 }
 
 // NewIssue creates instance of Issue
-func NewIssue(status int) *Issue {
-	return &Issue{
+func NewIssue(status int) Issue {
+	return Issue{
 		ID:     guid.G.K(guid.Clock).String(),
 		Type:   fmt.Sprintf("https://httpstatuses.com/%d", status),
 		Status: status,
