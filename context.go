@@ -35,6 +35,7 @@ type Context struct {
 	context.Context
 
 	Request *http.Request
+	values  []string
 	params  Params
 	payload []byte
 
@@ -50,6 +51,7 @@ NewContext create a new context for HTTP request
 func NewContext(ctx context.Context) *Context {
 	return &Context{
 		Context:  ctx,
+		values:   make([]string, 0, 20),
 		morphism: make(optics.Morphism, 0, 20),
 	}
 }
@@ -59,6 +61,7 @@ func NewContext(ctx context.Context) *Context {
 Free the context
 */
 func (ctx *Context) free() {
+	ctx.values = ctx.values[:0]
 	ctx.morphism = ctx.morphism[:0]
 }
 
@@ -71,6 +74,7 @@ func (ctx *Context) Free() {
 	ctx.params = nil
 	ctx.payload = nil
 	ctx.Request = nil
+	ctx.values = ctx.values[:0]
 	ctx.morphism = ctx.morphism[:0]
 }
 
@@ -81,7 +85,7 @@ Put injects value to the context
 func (ctx *Context) Put(lens optics.Lens, str string) error {
 	val, err := lens.FromString(str)
 	if err != nil {
-		return NoMatch{}
+		return ErrNoMatch
 	}
 
 	ctx.morphism = append(ctx.morphism, optics.Setter{Lens: lens, Value: val})

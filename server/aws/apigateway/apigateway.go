@@ -75,8 +75,8 @@ func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
 }
 
 // Serve HTTP service
-func Serve(endpoints ...µ.Endpoint) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	api := µ.Or(endpoints...)
+func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	api := µ.NewRoutes(endpoints...).Endpoint()
 
 	return func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		req := Request(&r)
@@ -105,11 +105,14 @@ func Serve(endpoints ...µ.Endpoint) func(events.APIGatewayProxyRequest) (events
 }
 
 func output(out *µ.Output, req *µ.Context) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
+	evt := events.APIGatewayProxyResponse{
 		Body:       out.Body,
 		StatusCode: out.Status,
 		Headers:    joinHead(defaultCORS(req), out.Headers),
-	}, nil
+	}
+	out.Free()
+
+	return evt, nil
 }
 
 func defaultCORS(req *µ.Context) map[string]string {
@@ -133,11 +136,11 @@ func defaultOrigin(req *µ.Context) string {
 	return "*"
 }
 
-func joinHead(a, b map[string]string) map[string]string {
-	for keyA, valA := range a {
-		if _, ok := b[keyA]; !ok {
-			b[keyA] = valA
+func joinHead(a map[string]string, b []struct{ Header, Value string }) map[string]string {
+	for _, v := range b {
+		if _, ok := a[v.Header]; !ok {
+			a[v.Header] = v.Value
 		}
 	}
-	return b
+	return a
 }

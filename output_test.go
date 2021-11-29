@@ -116,7 +116,7 @@ func TestErrorOnJSON(t *testing.T) {
 
 func output(t *testing.T, a, b error) {
 	t.Helper()
-	foo := µ.GET(func(*µ.Context) error { return a })
+	foo := func(*µ.Context) error { return a }
 	req := mock.Input()
 
 	it.Ok(t).
@@ -125,7 +125,10 @@ func output(t *testing.T, a, b error) {
 			func(be interface{}) bool {
 				var out error
 				if errors.As(be.(error), &out) {
-					return reflect.DeepEqual(b, out)
+					eq := reflect.DeepEqual(b, out)
+					a.(*µ.Output).Free()
+					b.(*µ.Output).Free()
+					return eq
 				}
 				return false
 			},

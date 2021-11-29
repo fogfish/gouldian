@@ -19,6 +19,7 @@
 package httpd_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -67,6 +68,30 @@ func TestServeNoMatch(t *testing.T) {
 		If(out.StatusCode).Should().Equal(http.StatusNotImplemented).
 		If(out.Header.Get("Content-Type")).Should().Equal("application/json").
 		If(msg).ShouldNot().Equal([]byte{})
+}
+
+func TestServeUnknownError(t *testing.T) {
+	ts := httptest.NewServer(
+		httpd.Serve(
+			µ.GET(µ.Path(), func(c *µ.Context) error { return fmt.Errorf("Fail") }),
+		),
+	)
+	defer ts.Close()
+
+	req, err1 := http.NewRequest("GET", ts.URL+"/", nil)
+	it.Ok(t).If(err1).Must().Equal(nil)
+
+	out, err2 := http.DefaultClient.Do(req)
+	it.Ok(t).If(err2).Must().Equal(nil)
+
+	msg, err3 := ioutil.ReadAll(out.Body)
+	it.Ok(t).If(err3).Must().Equal(nil)
+
+	it.Ok(t).
+		If(out.StatusCode).Should().Equal(http.StatusInternalServerError).
+		If(out.Header.Get("Content-Type")).Should().Equal("application/json").
+		If(msg).ShouldNot().Equal([]byte{})
+
 }
 
 func mock() *httptest.Server {

@@ -63,7 +63,7 @@ func (key Param) Is(val string) Endpoint {
 		if exists && opt == val {
 			return nil
 		}
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 
@@ -86,7 +86,7 @@ func (key Param) Any(ctx *Context) error {
 	if exists {
 		return nil
 	}
-	return NoMatch{}
+	return ErrNoMatch
 }
 
 /*
@@ -113,7 +113,7 @@ func (key Param) To(lens optics.Lens) Endpoint {
 		if exists {
 			return ctx.Put(lens, opt)
 		}
-		return NoMatch{}
+		return ErrNoMatch
 	}
 }
 
@@ -158,12 +158,12 @@ func (key Param) JSON(lens optics.Lens) Endpoint {
 
 		opt, exists := ctx.params.Get(string(key))
 		if !exists {
-			return NoMatch{}
+			return ErrNoMatch
 		}
 
 		str, err := url.QueryUnescape(opt)
 		if err != nil {
-			return NoMatch{}
+			return ErrNoMatch
 		}
 
 		return ctx.Put(lens, str)

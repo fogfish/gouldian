@@ -37,10 +37,11 @@
 
 --- 
 
-The library is a thin layer of purely functional abstractions to build HTTP services. In the contrast with other HTTP routers, the library resolves a challenge of building simple and declarative api implementations in the absence of pattern matching at Golang. The library support opaque migration of HTTP service between traditional, containers and serverless environments.
+The library is a thin layer of purely functional abstractions to build HTTP services. In the contrast with other HTTP routers, the library resolves a challenge of building simple and declarative api implementations in the absence of pattern matching at Golang. The library also support opaque migration of HTTP service between traditional, containers and serverless environments.
 
 [User Guide](./doc/user-guide.md) |
-[Example](./example/echo/echo.go)
+[Hello World](./example/hw/hw.go) |
+[Other Examples](./example/)
 
 
 ## Inspiration
@@ -50,6 +51,7 @@ Microservices have become a design style to evolve system architecture in parall
 The library solves few practical problems of HTTP service development in Golang:
 * The library support opaque migration of HTTP service between traditional, containers and serverless environments. The api implementation remains source compatible regardless the execution environment;  
 * The library enforces a type safe, pattern-based approach for api definition.
+* Fast, zero allocation routing 
 
 
 ## Getting started
@@ -94,7 +96,7 @@ func main() {
   )
 }
 
-func hello() µ.Endpoint {
+func hello() µ.Routable {
   return µ.GET(
     µ.Path("hello"),
     µ.FMap(func(ctx µ.Context) error {

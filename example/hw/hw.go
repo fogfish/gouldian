@@ -30,7 +30,7 @@ func main() {
 	)
 }
 
-func hello() µ.Endpoint {
+func hello() µ.Routable {
 	return µ.GET(
 		µ.Path("hello"),
 		µ.FMap(func(ctx *µ.Context) error {

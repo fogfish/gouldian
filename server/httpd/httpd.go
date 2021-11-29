@@ -32,10 +32,12 @@ Serve builds http.Handler for sequence of endpoints
 
   http.ListenAndServe(":8080", httpd.Server( ... ))
 */
-func Serve(endpoints ...µ.Endpoint) http.Handler {
+func Serve(endpoints ...µ.Routable) http.Handler {
 	routes := &routes{
-		endpoint: µ.Or(endpoints...),
+		endpoint: µ.NewRoutes(endpoints...).Endpoint(),
 	}
+
+	// root.Println()
 	routes.pool.New = func() interface{} {
 		return µ.NewContext(context.Background())
 	}
@@ -54,11 +56,17 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req.Request = r
 
 	switch v := routes.endpoint(req).(type) {
+	case nil:
 	case *µ.Output:
 		routes.output(w, v)
 	case µ.NoMatch:
 		failure := µ.Status.NotImplemented(
 			µ.WithIssue(fmt.Errorf("NoMatch %s", r.URL.Path)),
+		).(*µ.Output)
+		routes.output(w, failure)
+	default:
+		failure := µ.Status.InternalServerError(
+			µ.WithIssue(fmt.Errorf("Unknown response %s", r.URL.Path)),
 		).(*µ.Output)
 		routes.output(w, failure)
 	}
@@ -67,12 +75,13 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (routes *routes) output(w http.ResponseWriter, out *µ.Output) {
-	for h, v := range out.Headers {
-		w.Header().Set(string(h), v)
+	for _, h := range out.Headers {
+		w.Header().Set(h.Header, h.Value)
 	}
 	w.WriteHeader(int(out.Status))
 
 	if len(out.Body) > 0 {
 		w.Write([]byte(out.Body))
 	}
+	out.Free()
 }

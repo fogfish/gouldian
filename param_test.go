@@ -28,7 +28,7 @@ import (
 )
 
 func TestParamIs(t *testing.T) {
-	foo := µ.GET(µ.Param("foo").Is("bar"))
+	foo := µ.Param("foo").Is("bar")
 	success := mock.Input(mock.URL("/?foo=bar"))
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
@@ -38,7 +38,7 @@ func TestParamIs(t *testing.T) {
 }
 
 func TestParamAny(t *testing.T) {
-	foo := µ.GET(µ.Param("foo").Any)
+	foo := µ.Param("foo").Any
 	success1 := mock.Input(mock.URL("/?foo"))
 	success2 := mock.Input(mock.URL("/?foo=bar"))
 	success3 := mock.Input(mock.URL("/?foo=baz"))
@@ -55,7 +55,7 @@ func TestParamString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").To(val))
+	foo := µ.Param("foo").To(val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -89,7 +89,7 @@ func TestParamMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").Maybe(val))
+	foo := µ.Param("foo").Maybe(val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -116,7 +116,7 @@ func TestParamInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").To(val))
+	foo := µ.Param("foo").To(val)
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=bar"))
@@ -147,7 +147,7 @@ func TestParamMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").Maybe(val))
+	foo := µ.Param("foo").Maybe(val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -184,7 +184,7 @@ func TestParamFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").To(val))
+	foo := µ.Param("foo").To(val)
 
 	t.Run("integer", func(t *testing.T) {
 		var val myT
@@ -225,7 +225,7 @@ func TestParamMaybeFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").Maybe(val))
+	foo := µ.Param("foo").Maybe(val)
 
 	t.Run("double", func(t *testing.T) {
 		var val myT
@@ -272,7 +272,7 @@ func TestParamJSON(t *testing.T) {
 	type myT struct{ Val MyS }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").JSON(val))
+	foo := µ.Param("foo").JSON(val)
 
 	t.Run("json", func(t *testing.T) {
 		var val myT
@@ -317,7 +317,7 @@ func TestParamMaybeJSON(t *testing.T) {
 	type myT struct{ Val MyS }
 
 	val := optics.ForProduct1(myT{})
-	foo := µ.GET(µ.Param("foo").MaybeJSON(val))
+	foo := µ.Param("foo").MaybeJSON(val)
 
 	t.Run("json", func(t *testing.T) {
 		var val myT

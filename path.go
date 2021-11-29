@@ -22,9 +22,6 @@ import (
 	"github.com/fogfish/gouldian/optics"
 )
 
-//
-type pathArrow func(*Context, string) error
-
 /*
 
 Path is an endpoint to match URL of HTTP request. The function takes a path
@@ -37,163 +34,62 @@ match to pattern
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) != nil
 */
-func Path(segments ...interface{}) Endpoint {
-	return mkPathEndpoint(mkPathMatcher(segments))
-}
-
-// segment is custom implementation of strings.Split
-func segment(path string, a int) (int, string) {
-	for i := a + 1; i < len(path); i++ {
-		if path[i] == '/' {
-			return i, path[a+1 : i]
-		}
-	}
-	return len(path) - 1, path[a+1:]
-}
-
-func mkPathEndpoint(segments []pathArrow) Endpoint {
-	return func(ctx *Context) error {
-		path := ctx.Request.URL.Path
-		last := len(path) - 1
-
-		hd := 0
-		for at, f := range segments {
-			tl, segment := segment(path, hd)
-			if hd == tl {
-				return NoMatch{}
-			}
-			if err := f(ctx, segment); err != nil {
-				return err
-			}
-			hd = tl
-
-			// url resource path is shorter than pattern
-			if hd == last && at != len(segments)-1 {
-				return NoMatch{}
-			}
-		}
-
-		// url resource path is not consumed by the pattern
-		if hd != last {
-			return NoMatch{}
-		}
-
-		return nil
+func Path(segments ...interface{}) Routable {
+	return func() ([]string, Endpoint) {
+		path, lens := segmentsToLens(segments, true)
+		return path, segmentsToEndpoint(path, lens)
 	}
 }
 
 /*
 
-PathSeq is like Path but last element in the pattern must be lens that lifts
-the tail of path.
-
-  e := µ.GET( µ.PathSeq("foo", suffix) )
-  e(mock.Input(mock.URL("/foo/bar"))) == nil
-  e(mock.Input(mock.URL("/bar"))) != nil
+PathSeq is an endpoint to match URL of HTTP request. The function takes a path
+pattern as arguments. The pattern is sequence of either literals or lenses,
+where each term corresponds to the path segment. The function do not match
+if length of path is not equal to the length of pattern or segment do not
+match to pattern
 */
-func PathSeq(arrows ...interface{}) Endpoint {
-	return mkPathSeqEndpoint(mkPathMatcher(arrows))
-}
-
-func mkPathSeqEndpoint(segments []pathArrow) Endpoint {
-	return func(ctx *Context) error {
-		path := ctx.Request.URL.Path
-		// last := len(path) - 1
-
-		hd := 0
-		last := len(segments) - 1
-		for at := 0; at < last; at++ {
-			tl, segment := segment(path, hd)
-			if hd == tl {
-				return NoMatch{}
-			}
-			if err := segments[at](ctx, segment); err != nil {
-				return err
-			}
-			hd = tl
-		}
-
-		// url resource path is not consumed by the pattern
-		if hd == len(path)-1 {
-			return NoMatch{}
-		}
-
-		// url resource path consume suffix
-		if err := segments[last](ctx, path[hd+1:]); err != nil {
-			return err
-		}
-
-		return nil
+func PathSeq(segments ...interface{}) Routable {
+	return func() ([]string, Endpoint) {
+		path, lens := segmentsToLens(segments, false)
+		return path, segmentsToEndpoint(path, lens)
 	}
 }
 
-func mkPathMatcher(arrows []interface{}) []pathArrow {
-	seq := make([]pathArrow, len(arrows))
-
-	for i, arrow := range arrows {
-		switch v := arrow.(type) {
+//
+func segmentsToLens(segments []interface{}, strict bool) ([]string, []optics.Lens) {
+	lens := make([]optics.Lens, 0)
+	path := make([]string, 0, len(segments))
+	for i, segment := range segments {
+		switch v := segment.(type) {
 		case string:
-			switch v {
-			case Any:
-				seq[i] = pathAny()
-			default:
-				seq[i] = pathIs(v)
-			}
+			path = append(path, v)
 		case optics.Lens:
-			seq[i] = pathTo(v)
-		default:
-			seq[i] = pathNone()
+			if i == len(segments)-1 && !strict {
+				path = append(path, "*")
+			} else {
+				path = append(path, ":")
+			}
+			lens = append(lens, v)
 		}
 	}
 
-	return seq
+	return path, lens
 }
 
-/*
-
-Is matches a path segment to defined literal
-  e := µ.GET( µ.Path("foo") )
-  e(mock.Input(mock.URL("/foo"))) == nil
-  e(mock.Input(mock.URL("/bar"))) != nil
-*/
-func pathIs(val string) pathArrow {
-	return func(ctx *Context, segment string) error {
-		if segment == val {
-			return nil
+//
+func segmentsToEndpoint(path []string, lens []optics.Lens) Endpoint {
+	return func(ctx *Context) error {
+		if len(ctx.values) != len(lens) {
+			return ErrNoMatch
 		}
-		return NoMatch{}
-	}
-}
 
-/*
+		for i, l := range lens {
+			if err := ctx.Put(l, ctx.values[i]); err != nil {
+				return err
+			}
+		}
 
-None matches nothing
-*/
-func pathNone() pathArrow {
-	return func(*Context, string) error {
-		return NoMatch{}
-	}
-}
-
-/*
-
-Any is a wildcard matcher of path segment
-  e := µ.GET( µ.Path(path.Any) )
-  e(mock.Input(mock.URL("/foo"))) == nil
-  e(mock.Input(mock.URL("/bar"))) == nil
-*/
-func pathAny() pathArrow {
-	return func(*Context, string) error {
 		return nil
-	}
-}
-
-/*
-
-Lifts the path segment to lens
-*/
-func pathTo(l optics.Lens) pathArrow {
-	return func(ctx *Context, segment string) error {
-		return ctx.Put(l, segment)
 	}
 }

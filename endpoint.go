@@ -18,10 +18,6 @@
 
 package gouldian
 
-import (
-	"errors"
-)
-
 /*
 
 Endpoint is a composable function that abstract HTTP endpoint.
@@ -55,13 +51,6 @@ request processing.
 */
 type Endpoint func(*Context) error
 
-// NoMatch is returned by Endpoint if Context is not matched.
-type NoMatch struct{}
-
-func (err NoMatch) Error() string {
-	return "No Match"
-}
-
 // Then builds product Endpoint
 func (a Endpoint) Then(b Endpoint) Endpoint {
 	return func(http *Context) (err error) {
@@ -75,41 +64,73 @@ func (a Endpoint) Then(b Endpoint) Endpoint {
 // Or builds co-product Endpoint
 func (a Endpoint) Or(b Endpoint) Endpoint {
 	return func(http *Context) (err error) {
-		if err = a(http); !errors.Is(err, NoMatch{}) {
+		switch err := a(http).(type) {
+		case NoMatch:
+			return b(http)
+		default:
 			return err
 		}
-		return b(http)
 	}
 }
 
-// Join builds a product endpoint from sequence
-func Join(seq ...Endpoint) Endpoint {
-	if len(seq) == 1 {
-		return seq[0]
-	}
+/*
 
-	return func(http *Context) (err error) {
-		for _, f := range seq {
-			if err = f(http); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+Routable is endpoint with routing metadata
+*/
+type Routable func() ([]string, Endpoint)
+
+/*
+
+Router is data structure that holds routing information,
+convertable to Endpoint
+*/
+type Router interface {
+	Endpoint() Endpoint
 }
 
-// Or joins sequence of Endpoint(s) to co-product Endpoint.
-func Or(seq ...Endpoint) Endpoint {
-	if len(seq) == 1 {
-		return seq[0]
-	}
+// NoMatch is returned by Endpoint if Context is not matched.
+type NoMatch int
 
-	return func(http *Context) (err error) {
-		for _, f := range seq {
-			if err = f(http); !errors.Is(err, NoMatch{}) {
-				return err
-			}
+func (err NoMatch) Error() string {
+	return "No Match"
+}
+
+// ErrNoMatch constant
+var ErrNoMatch error = NoMatch(255)
+
+/*
+
+Endpoints is sequence of Endpoints
+*/
+type Endpoints []Endpoint
+
+/*
+
+Join builds product endpoint from sequence
+*/
+func (seq Endpoints) Join(ctx *Context) (err error) {
+	for _, f := range seq {
+		err = f(ctx)
+		if err != nil {
+			return err
 		}
-		return NoMatch{}
 	}
+	return nil
+}
+
+/*
+
+Or builds co-product endpoint from sequence
+*/
+func (seq Endpoints) Or(ctx *Context) (err error) {
+	for _, f := range seq {
+		x := f(ctx)
+		switch err := x.(type) {
+		case NoMatch:
+			continue
+		default:
+			return err
+		}
+	}
+	return ErrNoMatch
 }
