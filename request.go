@@ -31,68 +31,107 @@ const (
 
 /*
 
-DELETE composes product Endpoint match HTTP DELETE request.
-  e := µ.DELETE()
+Route converts sequence ot Endpoints into Routable element
+*/
+func Route(
+	path Routable,
+	seq ...Endpoint,
+) Routable {
+	return func() ([]string, Endpoint) {
+		route, pathEndpoint := path()
+		endpoints := append(Endpoints{pathEndpoint}, seq...)
+		return route, endpoints.Join
+	}
+}
+
+/*
+
+DELETE composes Endpoints into Routable that matches HTTP DELETE request.
+  e := µ.DELETE(
+    µ.Path("foo", "bar"),
+    ...
+  )
   e(mock.Input(mock.Method("DELETE"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func DELETE(path Routable, arrows ...Endpoint) Route {
-	return Join(Method("DELETE"), path, arrows...)
+func DELETE(path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method("DELETE")}, arrows...)
+	return Route(path, seq...)
 }
 
 /*
 
-GET composes product Endpoint match HTTP GET request.
-  e := µ.GET()
+GET composes Endpoints into Routable that matches HTTP GET request.
+  e := µ.GET(
+    µ.Path("foo", "bar"),
+    ...
+  )
   e(mock.Input(mock.Method("GET"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func GET(path Routable, arrows ...Endpoint) Route {
-	return Join(Method("GET"), path, arrows...)
+func GET(path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method("GET")}, arrows...)
+	return Route(path, seq...)
 }
 
 /*
 
-PATCH composes product Endpoint match HTTP PATCH request.
-  e := µ.PATCH()
+PATCH composes Endpoints into Routable that matches HTTP PATCH request.
+  e := µ.PATCH(
+    µ.Path("foo", "bar"),
+    ...
+  )
   e(mock.Input(mock.Method("PATCH"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func PATCH(path Routable, arrows ...Endpoint) Route {
-	return Join(Method("PATCH"), path, arrows...)
+func PATCH(path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method("PATCH")}, arrows...)
+	return Route(path, seq...)
 }
 
 /*
 
-POST composes product Endpoint match HTTP POST request.
-  e := µ.POST()
+POST composes Endpoints into Routable that matches HTTP POST request.
+  e := µ.POST(
+    µ.Path("foo", "bar"),
+    ...
+  )
   e(mock.Input(mock.Method("POST"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func POST(path Routable, arrows ...Endpoint) Route {
-	return Join(Method("POST"), path, arrows...)
+func POST(path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method("POST")}, arrows...)
+	return Route(path, seq...)
 }
 
 /*
 
-PUT composes product Endpoint match HTTP PUT request.
-  e := µ.PUT()
+PUT composes Endpoints into Routable that matches HTTP PUT request.
+  e := µ.PUT(
+    µ.Path("foo", "bar"),
+    ...
+  )
   e(mock.Input(mock.Method("PUT"))) == nil
   e(mock.Input(mock.Method("OTHER"))) != nil
 */
-func PUT(path Routable, arrows ...Endpoint) Route {
-	return Join(Method("PUT"), path, arrows...)
+func PUT(path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method("PUT")}, arrows...)
+	return Route(path, seq...)
 }
 
 /*
 
-ANY composes product Endpoint match HTTP PUT request.
-  e := µ.ANY()
+ANY composes Endpoints into Routable that matches HTTP any request.
+  e := µ.ANY(
+    µ.Path("foo", "bar"),
+    ...
+  )
   e(mock.Input(mock.Method("PUT"))) == nil
   e(mock.Input(mock.Method("OTHER"))) == nil
 */
-func ANY(path Routable, arrows ...Endpoint) Route {
-	return Join(Method(Any), path, arrows...)
+func ANY(path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method(Any)}, arrows...)
+	return Route(path, seq...)
 }
 
 /*

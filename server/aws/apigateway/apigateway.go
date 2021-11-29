@@ -75,12 +75,8 @@ func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
 }
 
 // Serve HTTP service
-func Serve(endpoints ...µ.Route) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	root := µ.NewRoutes()
-	for _, endpoint := range endpoints {
-		endpoint(root)
-	}
-	api := root.Endpoint()
+func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	api := µ.NewRoutes(endpoints...).Endpoint()
 
 	return func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		req := Request(&r)

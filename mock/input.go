@@ -34,10 +34,8 @@ import (
 type Mock func(*µ.Context) *µ.Context
 
 // Endpoint mock Route
-func Endpoint(route µ.Route) µ.Endpoint {
-	root := µ.NewRoutes()
-	route(root)
-	return root.Endpoint()
+func Endpoint(route µ.Routable) µ.Endpoint {
+	return µ.NewRoutes(route).Endpoint()
 }
 
 // Input mocks HTTP request, takes mock options to customize event

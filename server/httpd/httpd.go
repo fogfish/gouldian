@@ -32,14 +32,9 @@ Serve builds http.Handler for sequence of endpoints
 
   http.ListenAndServe(":8080", httpd.Server( ... ))
 */
-func Serve(endpoints ...µ.Route) http.Handler {
-	root := µ.NewRoutes()
-	for _, endpoint := range endpoints {
-		endpoint(root)
-	}
-
+func Serve(endpoints ...µ.Routable) http.Handler {
 	routes := &routes{
-		endpoint: root.Endpoint(),
+		endpoint: µ.NewRoutes(endpoints...).Endpoint(),
 	}
 
 	// root.Println()

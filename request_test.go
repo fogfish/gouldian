@@ -428,7 +428,7 @@ func TestBodyLeak(t *testing.T) {
 	}
 	lens := optics.ForProduct1(request{})
 
-	endpoint := func() µ.Route {
+	endpoint := func() µ.Routable {
 		return µ.GET(
 			µ.Path(),
 			µ.Body(lens),

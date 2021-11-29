@@ -83,16 +83,10 @@ type Routable func() ([]string, Endpoint)
 
 /*
 
-Route ...
-*/
-type Route func(Router)
-
-/*
-
-Router is any data structure convertable to Endpoint
+Router is data structure that holds routing information,
+convertable to Endpoint
 */
 type Router interface {
-	Append([]string, Endpoint)
 	Endpoint() Endpoint
 }
 
@@ -141,20 +135,4 @@ func (seq Endpoints) Or(ctx *Context) (err error) {
 		}
 	}
 	return ErrNoMatch
-}
-
-/*
-
-Join builds Route from sequence
-*/
-func Join(
-	method Endpoint,
-	path Routable,
-	seq ...Endpoint,
-) Route {
-	return func(router Router) {
-		route, pathEndpoint := path()
-		endpoints := append(Endpoints{method, pathEndpoint}, seq...)
-		router.Append(route, endpoints.Join)
-	}
 }

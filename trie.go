@@ -21,8 +21,8 @@ type Node struct {
 }
 
 // NewRoutes creates new routing table
-func NewRoutes() *Node {
-	return &Node{
+func NewRoutes(seq ...Routable) *Node {
+	root := &Node{
 		Heir: []*Node{
 			{
 				Path: "/",
@@ -30,6 +30,12 @@ func NewRoutes() *Node {
 			},
 		},
 	}
+
+	for _, route := range seq {
+		root.appendEndpoint(route())
+	}
+
+	return root
 }
 
 /*
@@ -231,11 +237,6 @@ func (root *Node) Println() {
 			fmt.Println(strings.Repeat(" ", i), n.Path)
 		},
 	)
-}
-
-// Append endpoint to trie
-func (root *Node) Append(path []string, endpoint Endpoint) {
-	root.appendEndpoint(path, endpoint)
 }
 
 // Endpoint converts trie to Endpoint

@@ -519,7 +519,7 @@ var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = optics.ForProduct10(githubReq{})
 func githubHandle(c *µ.Context) error { return nil }
 
 func loadRouter(routes []struct{ method, path string }) http.Handler {
-	seq := make([]µ.Route, 0, len(routes))
+	seq := make([]µ.Routable, 0, len(routes))
 	for _, ep := range routes {
 		lens := []interface{}{v0, v1, v2, v3, v4, v5, v6, v7, v8, v9}
 		segs := []interface{}{}
@@ -536,9 +536,9 @@ func loadRouter(routes []struct{ method, path string }) http.Handler {
 			}
 		}
 		seq = append(seq,
-			µ.Join(
-				µ.Method(ep.method),
+			µ.Route(
 				µ.Path(segs...),
+				µ.Method(ep.method),
 				githubHandle,
 			),
 		)

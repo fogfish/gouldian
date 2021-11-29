@@ -127,6 +127,8 @@ func output(t *testing.T, a, b error) {
 				if errors.As(be.(error), &out) {
 					return reflect.DeepEqual(b, out)
 				}
+				a.(*µ.Output).Free()
+				b.(*µ.Output).Free()
 				return false
 			},
 		)
