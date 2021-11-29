@@ -56,6 +56,7 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req.Request = r
 
 	switch v := routes.endpoint(req).(type) {
+	case nil:
 	case *µ.Output:
 		routes.output(w, v)
 	case µ.NoMatch:

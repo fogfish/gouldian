@@ -125,10 +125,11 @@ func output(t *testing.T, a, b error) {
 			func(be interface{}) bool {
 				var out error
 				if errors.As(be.(error), &out) {
-					return reflect.DeepEqual(b, out)
+					eq := reflect.DeepEqual(b, out)
+					a.(*µ.Output).Free()
+					b.(*µ.Output).Free()
+					return eq
 				}
-				a.(*µ.Output).Free()
-				b.(*µ.Output).Free()
 				return false
 			},
 		)
