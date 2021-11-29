@@ -67,8 +67,6 @@ func (a Endpoint) Or(b Endpoint) Endpoint {
 		switch err := a(http).(type) {
 		case NoMatch:
 			return b(http)
-		case *NoMatch:
-			return b(http)
 		default:
 			return err
 		}

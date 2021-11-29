@@ -51,3 +51,7 @@ func TestAccessToken(t *testing.T) {
 		If(token.Username()).Equal("username").
 		If(token.ClientID()).Equal("client_id")
 }
+
+func TestErrNoMatch(t *testing.T) {
+	it.Ok(t).If(µ.ErrNoMatch.Error()).Should().Equal("No Match")
+}
