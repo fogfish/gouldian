@@ -535,7 +535,7 @@ func TestAccessMaybe(t *testing.T) {
 			If(val.Sub).Should().Equal("sub")
 	})
 
-	t.Run("none", func(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
 		var val MyT
 		req := mock.Input(mock.JWT(µ.JWT{}))
 
@@ -544,4 +544,12 @@ func TestAccessMaybe(t *testing.T) {
 			If(req.Get(&val)).Should().Equal(nil).
 			If(val.Sub).Should().Equal("")
 	})
+
+	t.Run("none", func(t *testing.T) {
+		req := mock.Input()
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
 }
