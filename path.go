@@ -36,17 +36,7 @@ match to pattern
 */
 func Path(segments ...interface{}) Routable {
 	return func() ([]string, Endpoint) {
-		lens := make([]optics.Lens, 0)
-		path := make([]string, 0, len(segments))
-		for _, segment := range segments {
-			switch v := segment.(type) {
-			case string:
-				path = append(path, v)
-			case optics.Lens:
-				path = append(path, ":")
-				lens = append(lens, v)
-			}
-		}
+		path, lens := segmentsTo(segments, true)
 
 		return path, func(ctx *Context) error {
 			if len(ctx.values) != len(lens) {
@@ -67,21 +57,7 @@ func Path(segments ...interface{}) Routable {
 //
 func PathSeq(segments ...interface{}) Routable {
 	return func() ([]string, Endpoint) {
-		lens := make([]optics.Lens, 0)
-		path := make([]string, 0, len(segments))
-		for i, segment := range segments {
-			switch v := segment.(type) {
-			case string:
-				path = append(path, v)
-			case optics.Lens:
-				if i == len(segments)-1 {
-					path = append(path, "*")
-				} else {
-					path = append(path, ":")
-				}
-				lens = append(lens, v)
-			}
-		}
+		path, lens := segmentsTo(segments, false)
 
 		return path, func(ctx *Context) error {
 			if len(ctx.values) != len(lens) {
@@ -97,4 +73,24 @@ func PathSeq(segments ...interface{}) Routable {
 			return nil
 		}
 	}
+}
+
+func segmentsTo(segments []interface{}, strict bool) ([]string, []optics.Lens) {
+	lens := make([]optics.Lens, 0)
+	path := make([]string, 0, len(segments))
+	for i, segment := range segments {
+		switch v := segment.(type) {
+		case string:
+			path = append(path, v)
+		case optics.Lens:
+			if i == len(segments)-1 && !strict {
+				path = append(path, "*")
+			} else {
+				path = append(path, ":")
+			}
+			lens = append(lens, v)
+		}
+	}
+
+	return path, lens
 }
