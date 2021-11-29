@@ -7,5 +7,4 @@ require (
 	github.com/aws/aws-lambda-go v1.23.0
 	github.com/fogfish/guid v1.0.0
 	github.com/fogfish/it v0.9.1
-	github.com/segmentio/fasthash v1.0.3
 )

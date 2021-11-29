@@ -36,46 +36,28 @@ match to pattern
 */
 func Path(segments ...interface{}) Routable {
 	return func() ([]string, Endpoint) {
-		path, lens := segmentsTo(segments, true)
+		path, lens := segmentsToLens(segments, true)
+		return path, segmentsToEndpoint(path, lens)
+	}
+}
 
-		return path, func(ctx *Context) error {
-			if len(ctx.values) != len(lens) {
-				return ErrNoMatch
-			}
+/*
 
-			for i, l := range lens {
-				if err := ctx.Put(l, ctx.values[i]); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		}
+PathSeq is an endpoint to match URL of HTTP request. The function takes a path
+pattern as arguments. The pattern is sequence of either literals or lenses,
+where each term corresponds to the path segment. The function do not match
+if length of path is not equal to the length of pattern or segment do not
+match to pattern
+*/
+func PathSeq(segments ...interface{}) Routable {
+	return func() ([]string, Endpoint) {
+		path, lens := segmentsToLens(segments, false)
+		return path, segmentsToEndpoint(path, lens)
 	}
 }
 
 //
-func PathSeq(segments ...interface{}) Routable {
-	return func() ([]string, Endpoint) {
-		path, lens := segmentsTo(segments, false)
-
-		return path, func(ctx *Context) error {
-			if len(ctx.values) != len(lens) {
-				return ErrNoMatch
-			}
-
-			for i, l := range lens {
-				if err := ctx.Put(l, ctx.values[i]); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		}
-	}
-}
-
-func segmentsTo(segments []interface{}, strict bool) ([]string, []optics.Lens) {
+func segmentsToLens(segments []interface{}, strict bool) ([]string, []optics.Lens) {
 	lens := make([]optics.Lens, 0)
 	path := make([]string, 0, len(segments))
 	for i, segment := range segments {
@@ -93,4 +75,21 @@ func segmentsTo(segments []interface{}, strict bool) ([]string, []optics.Lens) {
 	}
 
 	return path, lens
+}
+
+//
+func segmentsToEndpoint(path []string, lens []optics.Lens) Endpoint {
+	return func(ctx *Context) error {
+		if len(ctx.values) != len(lens) {
+			return ErrNoMatch
+		}
+
+		for i, l := range lens {
+			if err := ctx.Put(l, ctx.values[i]); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }

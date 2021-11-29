@@ -217,7 +217,7 @@ func (root *Node) heirByPath(path string) *Node {
 
 /*
 
-walk through trie, use for debug purposes only
+Walk through trie, use for debug purposes only
 */
 func (root *Node) Walk(f func(int, *Node)) {
 	walk(root, 0, f)
