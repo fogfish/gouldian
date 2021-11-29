@@ -348,7 +348,9 @@ func TestFMapSuccess(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.Path("foo"),
-			func(*µ.Context) error { return µ.Status.OK(µ.WithText("bar")) },
+			µ.FMap(func(*µ.Context) error {
+				return µ.Status.OK(µ.WithText("bar"))
+			}),
 		),
 	)
 	req := mock.Input(mock.URL("/foo"))
@@ -365,10 +367,10 @@ func TestFMap2Success(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.Path("foo"),
-			func(*µ.Context) error {
+			µ.FMap(func(*µ.Context) error {
 				return µ.Status.
 					OK(µ.WithText("bar"))
-			},
+			}),
 		),
 	)
 	bar := mock.Endpoint(
@@ -394,10 +396,10 @@ func TestFMapFailure(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.Path("foo"),
-			func(*µ.Context) error {
+			µ.FMap(func(*µ.Context) error {
 				return µ.Status.
 					Unauthorized(µ.WithIssue(fmt.Errorf("")))
-			},
+			}),
 		),
 	)
 	req := mock.Input(mock.URL("/foo"))
