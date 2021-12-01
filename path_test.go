@@ -159,7 +159,7 @@ func TestPathSeq(t *testing.T) {
 	type myT struct{ Val string }
 
 	val := optics.ForProduct1(myT{})
-	foo := mock.Endpoint(µ.GET(µ.PathSeq("foo", val)))
+	foo := mock.Endpoint(µ.GET(µ.PathAll("foo", val)))
 
 	t.Run("seq0", func(t *testing.T) {
 		req := mock.Input(mock.URL("/foo"))
