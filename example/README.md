@@ -18,6 +18,7 @@ Example of
 
 <!--
 TODO
+* Using re-usable Endpoint combinators
 * Using serverless / lambdas
 * Using authorization
 * Using middleware (e.g. logging, open tracing)
