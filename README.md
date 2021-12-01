@@ -41,7 +41,8 @@ The library is a thin layer of purely functional abstractions to build HTTP serv
 
 [User Guide](./doc/user-guide.md) |
 [Hello World](./example/hw/hw.go) |
-[Other Examples](./example/)
+[Other Examples](./example/) |
+[Benchmark](#benchmark)
 
 
 ## Inspiration
@@ -54,9 +55,7 @@ The library solves few practical problems of HTTP service development in Golang:
 * Fast, zero allocation routing 
 
 
-## Getting started
-
-### Installing
+## Installing
 
 The library requires **Go 1.13** or later due to usage of [new error interface](https://blog.golang.org/go1.13-errors).
 
@@ -105,6 +104,18 @@ func hello() µ.Routable {
   )
 }
 ```
+
+## Benchmark
+
+The library uses [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark) methodology for benchmarking, using structure of GitHub API as primary benchmark. The results are obtained on the reference hardware such as AWS m6i.large and a1.large instances.
+
+**m6i.large** 3.5 GHz 3rd generation Intel Xeon Scalable processors:
+* It takes **10.9M** routing decisions per second, taking about **110 ns/op** and consuming about **0 allocs/ops**.
+* It performs **7.4M** requests/responses for the single endpoint with one parameter, taking about **162 ns/op** and consuming **24 B/op** with **2 allocs/op**.
+
+**a1.large** AWS Graviton Processor with 64-bit Arm Neoverse cores:
+* It takes **2M** routing decisions per second, taking about **520 ns/op** and consuming about **0 allocs/ops**.
+* It performs **1.5M** requests/responses for the single endpoint with one parameter, taking about **763 ns/op** and consuming **24 B/op** with **2 allocs/op**.
 
 
 ## Next steps
