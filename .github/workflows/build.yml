@@ -24,7 +24,7 @@ jobs:
     
       - name: go test
         run: |
-          go test -coverpkg=./... -v -coverprofile=profile.cov $(go list ./... | grep -v /examples/)
+          go test -coverpkg=./... -v -coverprofile=profile.cov $(go list ./... | grep -v /example/)
       - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: profile.cov

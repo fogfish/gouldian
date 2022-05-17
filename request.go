@@ -254,7 +254,7 @@ func (key Access) OneOf(vals ...string) Endpoint {
 
 /*
 
-OneOf matches a key of JWT if it contains one of the tokens
+AllOf matches a key of JWT if it contains one of the tokens
 
   µ.GET( µ.Access(µ.JWT.Scope).AllOf("ro", "rw") )
 */
