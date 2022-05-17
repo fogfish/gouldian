@@ -19,6 +19,7 @@
 package gouldian
 
 import (
+	"strings"
 	"unsafe"
 
 	"github.com/fogfish/gouldian/optics"
@@ -222,6 +223,52 @@ func (key Access) Is(val string) Endpoint {
 
 		if key(ctx.JWT) != val {
 			return ErrNoMatch
+		}
+
+		return nil
+	}
+}
+
+/*
+
+OneOf matches a key of JWT if it contains one of the tokens
+
+  µ.GET( µ.Access(µ.JWT.Scope).OneOf("ro", "rw") )
+*/
+func (key Access) OneOf(vals ...string) Endpoint {
+	return func(ctx *Context) error {
+		if ctx.JWT == nil {
+			return ErrNoMatch
+		}
+
+		val := key(ctx.JWT)
+		for _, x := range vals {
+			if strings.Index(val, x) != -1 {
+				return nil
+			}
+		}
+
+		return ErrNoMatch
+	}
+}
+
+/*
+
+OneOf matches a key of JWT if it contains one of the tokens
+
+  µ.GET( µ.Access(µ.JWT.Scope).AllOf("ro", "rw") )
+*/
+func (key Access) AllOf(vals ...string) Endpoint {
+	return func(ctx *Context) error {
+		if ctx.JWT == nil {
+			return ErrNoMatch
+		}
+
+		val := key(ctx.JWT)
+		for _, x := range vals {
+			if strings.Index(val, x) == -1 {
+				return ErrNoMatch
+			}
 		}
 
 		return nil
