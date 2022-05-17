@@ -485,6 +485,42 @@ func TestAccessIs(t *testing.T) {
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
+func TestAccessOneOf(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.Path(),
+			µ.Access(µ.JWT.Scope).OneOf("a", "b", "c"),
+		),
+	)
+
+	success := mock.Input(mock.JWT(µ.JWT{"scope": "x y c"}))
+	failure1 := mock.Input(mock.JWT(µ.JWT{"scope": "x y"}))
+	failure2 := mock.Input()
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
+}
+
+func TestAccessAllOf(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.Path(),
+			µ.Access(µ.JWT.Scope).AllOf("a", "b", "c"),
+		),
+	)
+
+	success := mock.Input(mock.JWT(µ.JWT{"scope": "a b c"}))
+	failure1 := mock.Input(mock.JWT(µ.JWT{"scope": "a b"}))
+	failure2 := mock.Input()
+
+	it.Ok(t).
+		If(foo(success)).Should().Equal(nil).
+		If(foo(failure1)).ShouldNot().Equal(nil).
+		If(foo(failure2)).ShouldNot().Equal(nil)
+}
+
 func TestAccessTo(t *testing.T) {
 	type MyT struct{ Sub string }
 	sub := optics.ForProduct1(MyT{})
