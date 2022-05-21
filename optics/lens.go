@@ -40,11 +40,11 @@ Value is co-product types matchable by patterns
 Note: do not extend the structure, optimal size for performance
 See https://goinbigdata.com/golang-pass-by-pointer-vs-pass-by-value/
 */
-// type Value struct {
-// 	String string
-// 	Number int
-// 	Double float64
-// }
+type Value struct {
+	String string
+	Number int
+	Double float64
+}
 
 /*
 
@@ -59,8 +59,8 @@ type Codec[A any] interface {
 Lens is composable setter of Value to "some" struct
 */
 type Lens interface {
-	FromString(string) (any, error)
-	Put(reflect.Value, any) error
+	FromString(string) (Value, error)
+	Put(reflect.Value, Value) error
 }
 
 /*
@@ -69,7 +69,7 @@ Setter is product of Lens and Value
 */
 type Morphism struct {
 	Lens
-	Value any
+	Value
 }
 
 /*
@@ -101,17 +101,18 @@ func (m Morphisms) Apply(a interface{}) error {
 
 ...
 */
-type lens[S, A any] struct {
-	lens  optics.Lens[S, A]
-	codec Codec[A]
+type lensString[S any] struct {
+	lens  optics.Lens[S, string]
+	codec Codec[string]
 }
 
-func (l lens[S, A]) Put(s reflect.Value, a any) error {
-	return l.lens.Put((*S)(s.UnsafePointer()), a.(A))
+func (l lensString[S]) Put(s reflect.Value, a Value) error {
+	return l.lens.Put((*S)(s.UnsafePointer()), a.String)
 }
 
-func (l lens[S, A]) FromString(a string) (any, error) {
-	return l.codec.FromString(a)
+func (l lensString[S]) FromString(a string) (Value, error) {
+	v, err := l.codec.FromString(a)
+	return Value{String: v}, err
 }
 
 /*
@@ -408,20 +409,25 @@ newLensStruct creates lens
 
 func mkLens[S, A any](l optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
-		ln := lens[S, A]{lens: l, codec: newCodec[S, A](t)}
+		// switch t.Type.Kind() {
+		// case reflect.String:
+
+		// }
+
+		ln := lensString[S]{lens: l.(optics.Lens[S, string]), codec: newCodec[S, string](t)}
 
 		if t.Type.Kind() == reflect.Struct {
 			switch t.Tag.Get("content") {
 			case "form":
-				ln.lens = newLensStructForm(l).(optics.Lens[S, A])
+				ln.lens = newLensStructForm(l) //.(optics.Lens[S, A])
 			case "application/x-www-form-urlencoded":
-				ln.lens = newLensStructForm(l).(optics.Lens[S, A])
+				ln.lens = newLensStructForm(l) //.(optics.Lens[S, A])
 			case "json":
-				ln.lens = newLensStructJSON(l).(optics.Lens[S, A])
+				ln.lens = newLensStructJSON(l) //.(optics.Lens[S, A])
 			case "application/json":
-				ln.lens = newLensStructJSON(l).(optics.Lens[S, A])
+				ln.lens = newLensStructJSON(l) //.(optics.Lens[S, A])
 			default:
-				ln.lens = newLensStructJSON(l).(optics.Lens[S, A])
+				ln.lens = newLensStructJSON(l) //.(optics.Lens[S, A])
 			}
 		}
 		return ln

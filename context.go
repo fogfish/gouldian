@@ -83,7 +83,6 @@ func (ctx *Context) Free() {
 Put injects value to the context
 */
 func (ctx *Context) Put(lens optics.Lens, str string) error {
-	// Decode at Put is a key feature for matching
 	val, err := lens.FromString(str)
 	if err != nil {
 		return ErrNoMatch
