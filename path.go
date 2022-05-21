@@ -19,7 +19,7 @@
 package gouldian
 
 import (
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 )
 
 /*

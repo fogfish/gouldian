@@ -21,7 +21,7 @@ package gouldian
 import (
 	"net/url"
 
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 )
 
 /*

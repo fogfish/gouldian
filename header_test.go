@@ -24,8 +24,8 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
+	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/optics"
 
 	"github.com/fogfish/it"
 )

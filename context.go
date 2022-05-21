@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 )
 
 /*
@@ -89,7 +89,14 @@ func (ctx *Context) Put(lens optics.Lens, str string) error {
 	}
 
 	ctx.morphism = append(ctx.morphism, optics.Morphism{Lens: lens, Value: val})
-	// optics.Setter{Lens: lens, Value: val})
+	return nil
+}
+
+func ContextGet[S any](ctx *Context, val *S) error {
+	if err := optics.Morph(ctx.morphism, val); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -98,9 +105,9 @@ func (ctx *Context) Put(lens optics.Lens, str string) error {
 Get decodes context into structure
 */
 func (ctx *Context) Get(val interface{}) error {
-	if err := ctx.morphism.Apply(val); err != nil {
-		return err
-	}
+	// if err := ctx.morphism.Apply(val); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }

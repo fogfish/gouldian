@@ -27,8 +27,8 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
+	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/gouldian/server/httpd"
 )
 
@@ -164,7 +164,8 @@ func BenchmarkLensForProduct5(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		ctx.Get(&val)
+		µ.ContextGet(ctx, &val)
+		// ctx.Get(&val)
 	}
 }
 

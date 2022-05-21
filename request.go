@@ -22,7 +22,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 )
 
 const (

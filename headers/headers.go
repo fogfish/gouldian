@@ -21,7 +21,7 @@ package headers
 import (
 	"fmt"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 	"strings"
 )
 
