@@ -41,7 +41,7 @@ type Context struct {
 
 	JWT JWT
 
-	morphism optics.Morphism
+	morphism optics.Morphisms
 }
 
 /*
@@ -52,7 +52,7 @@ func NewContext(ctx context.Context) *Context {
 	return &Context{
 		Context:  ctx,
 		values:   make([]string, 0, 20),
-		morphism: make(optics.Morphism, 0, 20),
+		morphism: make(optics.Morphisms, 0, 20),
 	}
 }
 
@@ -83,12 +83,14 @@ func (ctx *Context) Free() {
 Put injects value to the context
 */
 func (ctx *Context) Put(lens optics.Lens, str string) error {
+	// Decode at Put is a key feature for matching
 	val, err := lens.FromString(str)
 	if err != nil {
 		return ErrNoMatch
 	}
 
-	ctx.morphism = append(ctx.morphism, optics.Setter{Lens: lens, Value: val})
+	ctx.morphism = append(ctx.morphism, optics.Morphism{Lens: lens, Value: val})
+	// optics.Setter{Lens: lens, Value: val})
 	return nil
 }
 

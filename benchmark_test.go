@@ -20,15 +20,16 @@ package gouldian_test
 
 import (
 	"context"
+	"net/http"
+	"path/filepath"
+	"strings"
+	"testing"
+
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/gouldian/server/httpd"
-	"net/http"
-	"path/filepath"
-	"strings"
-	"testing"
 )
 
 //
@@ -42,11 +43,11 @@ Path Pattern with 1 param
 */
 
 type MyT1 struct {
-	Name *string
+	Name string
 }
 
 var (
-	name           = optics.ForProduct1(MyT1{})
+	name           = optics.ForProduct1[MyT1, string]()
 	pathWithParam1 = µ.Path("user", name)
 	foo1           = mock.Endpoint(µ.GET(pathWithParam1))
 	req1           = mock.Input(mock.URL("/user/123456"))
@@ -89,7 +90,7 @@ Path Pattern with 5 param
 type MyT5 struct{ A, B, C, D, E string }
 
 var (
-	a, b, c, d, e  = optics.ForProduct5(MyT5{})
+	a, b, c, d, e  = optics.ForProduct5[MyT5, string, string, string, string, string]()
 	pathWithParam5 = µ.Path("bench", a, b, c, d, e)
 	foo5           = mock.Endpoint(µ.GET(pathWithParam5))
 	req5           = mock.Input(mock.URL("/bench/a/b/c/d/e"))
@@ -185,7 +186,7 @@ var endpoint1 = mock.Endpoint(
 			return µ.Status.OK(
 				headers.ContentType.Value(headers.TextPlain),
 				headers.Server.Value("echo"),
-				µ.WithText(*req.Name),
+				µ.WithText(req.Name),
 			)
 		},
 	),
@@ -514,7 +515,7 @@ type githubReq struct {
 	V0, V1, V2, V3, V4, V5, V6, V7, V8, V9 string
 }
 
-var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = optics.ForProduct10(githubReq{})
+var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = optics.ForProduct10[githubReq, string, string, string, string, string, string, string, string, string, string]()
 
 func githubHandle(c *µ.Context) error { return nil }
 

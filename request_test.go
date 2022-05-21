@@ -239,7 +239,7 @@ func TestBodyJSON(t *testing.T) {
 	type request struct {
 		FooBar foobar
 	}
-	var lens = optics.ForProduct1(request{})
+	var lens = optics.ForProduct1[request, foobar]()
 
 	var value request
 	foo := mock.Endpoint(µ.GET(µ.Path(), µ.Body(lens)))
@@ -279,7 +279,7 @@ func TestBodyForm(t *testing.T) {
 	type request struct {
 		FooBar foobar `content:"form"`
 	}
-	var lens = optics.ForProduct1(request{})
+	var lens = optics.ForProduct1[request, foobar]()
 
 	var value request
 	foo := mock.Endpoint(µ.GET(µ.Path(), µ.Body(lens)))
@@ -317,7 +317,7 @@ func TestText(t *testing.T) {
 	type request struct {
 		FooBar string
 	}
-	var lens = optics.ForProduct1(request{})
+	var lens = optics.ForProduct1[request, string]()
 
 	var value request
 	foo := mock.Endpoint(µ.GET(µ.Path(), µ.Body(lens)))
@@ -428,7 +428,7 @@ func TestBodyLeak(t *testing.T) {
 	type request struct {
 		Item Item
 	}
-	lens := optics.ForProduct1(request{})
+	lens := optics.ForProduct1[request, Item]()
 
 	endpoint := func() µ.Routable {
 		return µ.GET(
@@ -523,7 +523,7 @@ func TestAccessAllOf(t *testing.T) {
 
 func TestAccessTo(t *testing.T) {
 	type MyT struct{ Sub string }
-	sub := optics.ForProduct1(MyT{})
+	sub := optics.ForProduct1[myT, string]()
 
 	foo := mock.Endpoint(
 		µ.GET(
@@ -552,7 +552,7 @@ func TestAccessTo(t *testing.T) {
 
 func TestAccessMaybe(t *testing.T) {
 	type MyT struct{ Sub string }
-	sub := optics.ForProduct1(MyT{})
+	sub := optics.ForProduct1[MyT, string]()
 
 	foo := mock.Endpoint(
 		µ.GET(

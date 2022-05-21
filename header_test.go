@@ -156,7 +156,7 @@ func TestHeaderAny(t *testing.T) {
 func TestHeaderString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1(myT{})
+	val := optics.ForProduct1[myT, string]()
 	foo := µ.Header("X-Value").To(val)
 
 	t.Run("string", func(t *testing.T) {
@@ -190,7 +190,7 @@ func TestHeaderString(t *testing.T) {
 func TestHeaderMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1(myT{})
+	val := optics.ForProduct1[myT, string]()
 	foo := µ.Header("X-Value").Maybe(val)
 
 	t.Run("string", func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestHeaderMaybeString(t *testing.T) {
 func TestHeaderInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1(myT{})
+	val := optics.ForProduct1[myT, string]()
 	foo := µ.Header("X-Value").To(val)
 
 	t.Run("string", func(t *testing.T) {
@@ -248,7 +248,7 @@ func TestHeaderInt(t *testing.T) {
 func TestHeaderMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1(myT{})
+	val := optics.ForProduct1[myT, string]()
 	foo := µ.Header("X-Value").Maybe(val)
 
 	t.Run("string", func(t *testing.T) {

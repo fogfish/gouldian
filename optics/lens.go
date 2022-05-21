@@ -24,13 +24,14 @@ Package optics ...
 package optics
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
 
 	"github.com/ajg/form"
+	"github.com/fogfish/golem/optics"
+	"github.com/fogfish/golem/pure/hseq"
 )
 
 /*
@@ -39,18 +40,18 @@ Value is co-product types matchable by patterns
 Note: do not extend the structure, optimal size for performance
 See https://goinbigdata.com/golang-pass-by-pointer-vs-pass-by-value/
 */
-type Value struct {
-	String string
-	Number int
-	Double float64
-}
+// type Value struct {
+// 	String string
+// 	Number int
+// 	Double float64
+// }
 
 /*
 
 Codec transforms string ⟼ Value
 */
-type Codec interface {
-	FromString(string) (Value, error)
+type Codec[A any] interface {
+	FromString(string) (A, error)
 }
 
 /*
@@ -58,30 +59,30 @@ type Codec interface {
 Lens is composable setter of Value to "some" struct
 */
 type Lens interface {
-	Codec
-	Put(a reflect.Value, s Value) error
+	FromString(string) (any, error)
+	Put(reflect.Value, any) error
 }
 
 /*
 
 Setter is product of Lens and Value
 */
-type Setter struct {
+type Morphism struct {
 	Lens
-	Value
+	Value any
 }
 
 /*
 
-Morphism is collection of lenses and values to be applied for object
+Morphisms is collection of lenses and values to be applied for object
 */
-type Morphism []Setter
+type Morphisms []Morphism
 
 /*
 
 Apply Morphism to "some" struct
 */
-func (m Morphism) Apply(a interface{}) error {
+func (m Morphisms) Apply(a interface{}) error {
 	g := reflect.ValueOf(a)
 	if g.Kind() != reflect.Ptr {
 		return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
@@ -98,6 +99,66 @@ func (m Morphism) Apply(a interface{}) error {
 
 /*
 
+...
+*/
+type lens[S, A any] struct {
+	lens  optics.Lens[S, A]
+	codec Codec[A]
+}
+
+func (l lens[S, A]) Put(s reflect.Value, a any) error {
+	return l.lens.Put((*S)(s.UnsafePointer()), a.(A))
+}
+
+func (l lens[S, A]) FromString(a string) (any, error) {
+	return l.codec.FromString(a)
+}
+
+/*
+
+...
+*/
+func newCodec[T, A any](t hseq.Type[T]) Codec[A] {
+	switch t.Type.Kind() {
+	case reflect.String:
+		return codecForString().(Codec[A])
+	case reflect.Int:
+		return codecForInt().(Codec[A])
+	case reflect.Float64:
+		return codecForFloat64().(Codec[A])
+	}
+	return nil
+}
+
+//
+type codecString string
+
+func codecForString() Codec[string] { return codecString("codec.string") }
+
+func (codecString) FromString(a string) (string, error) {
+	return a, nil
+}
+
+//
+type codecInt string
+
+func codecForInt() Codec[int] { return codecInt("codec.int") }
+
+func (codecInt) FromString(a string) (int, error) {
+	return strconv.Atoi(a)
+}
+
+//
+type codecFloat64 string
+
+func codecForFloat64() Codec[float64] { return codecFloat64("codec.float64") }
+
+func (codecFloat64) FromString(a string) (float64, error) {
+	return strconv.ParseFloat(a, 64)
+}
+
+/*
+
 lensStruct is a type for any lens
 */
 type lensStruct struct {
@@ -109,120 +170,171 @@ type lensStruct struct {
 
 lensStructString implements lens for string type
 */
-type lensStructString struct{ lensStruct }
+// type lensStructString struct{ lensStruct }
 
-// FromString transforms string ⟼ Value[string]
-func (lens lensStructString) FromString(s string) (Value, error) {
-	return Value{String: s}, nil
-}
+// // FromString transforms string ⟼ Value[string]
+// func (lens lensStructString) FromString(s string) (Value, error) {
+// 	return Value{String: s}, nil
+// }
 
-// Put Value[string] to struct
-func (lens lensStructString) Put(a reflect.Value, s Value) error {
-	f := a.Elem().Field(int(lens.field))
+// // Put Value[string] to struct
+// func (lens lensStructString) Put(a reflect.Value, s Value) error {
+// 	f := a.Elem().Field(int(lens.field))
 
-	if f.Kind() == reflect.Ptr {
-		p := reflect.New(lens.typeof.Elem())
-		p.Elem().SetString(s.String)
-		f.Set(p)
-		return nil
-	}
+// 	if f.Kind() == reflect.Ptr {
+// 		p := reflect.New(lens.typeof.Elem())
+// 		p.Elem().SetString(s.String)
+// 		f.Set(p)
+// 		return nil
+// 	}
 
-	f.SetString(s.String)
-	return nil
-}
+// 	f.SetString(s.String)
+// 	return nil
+// }
 
 /*
 
 lensStructInt implements lens for int type
 */
-type lensStructInt struct{ lensStruct }
+// type lensStructInt struct{ lensStruct }
 
-// FromString transforms string ⟼ Value[int]
-func (lens lensStructInt) FromString(s string) (Value, error) {
-	val, err := strconv.Atoi(s)
-	if err != nil {
-		return Value{}, err
-	}
+// // FromString transforms string ⟼ Value[int]
+// func (lens lensStructInt) FromString(s string) (Value, error) {
+// 	val, err := strconv.Atoi(s)
+// 	if err != nil {
+// 		return Value{}, err
+// 	}
 
-	return Value{Number: val}, nil
-}
+// 	return Value{Number: val}, nil
+// }
 
-// Put Value[int] to struct
-func (lens lensStructInt) Put(a reflect.Value, s Value) error {
-	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
-	return nil
-}
+// // Put Value[int] to struct
+// func (lens lensStructInt) Put(a reflect.Value, s Value) error {
+// 	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
+// 	return nil
+// }
 
 /*
 
 lensStructFloat implements lens for float type
 */
-type lensStructFloat struct{ lensStruct }
+// type lensStructFloat struct{ lensStruct }
 
-// FromString transforms string ⟼ Value[float64]
-func (lens lensStructFloat) FromString(s string) (Value, error) {
-	val, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return Value{}, err
-	}
+// // FromString transforms string ⟼ Value[float64]
+// func (lens lensStructFloat) FromString(s string) (Value, error) {
+// 	val, err := strconv.ParseFloat(s, 64)
+// 	if err != nil {
+// 		return Value{}, err
+// 	}
 
-	return Value{Double: val}, nil
-}
+// 	return Value{Double: val}, nil
+// }
 
-// Put Value[float64] to struct
-func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
-	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
-	return nil
-}
+// // Put Value[float64] to struct
+// func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
+// 	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
+// 	return nil
+// }
 
 /*
 
 lensStructJSON implements lens for complex "product" type
 */
-type lensStructJSON struct{ lensStruct }
+type lensStructJSON[S, A any] struct{ optics.Lens[S, A] }
 
-// FromString transforms string ⟼ Value[string]
-func (lens lensStructJSON) FromString(s string) (Value, error) {
-	return Value{String: s}, nil
+func newLensStructJSON[S, A any](l optics.Lens[S, A]) optics.Lens[S, string] {
+	return lensStructJSON[S, A]{l}
 }
 
-// Put Value[string] to struct
-func (lens lensStructJSON) Put(a reflect.Value, s Value) error {
-	c := reflect.New(lens.typeof)
-	o := c.Interface()
+func (lens lensStructJSON[S, A]) Put(s *S, a string) error {
+	var o A
 
-	if err := json.Unmarshal([]byte(s.String), &o); err != nil {
+	if err := json.Unmarshal([]byte(a), &o); err != nil {
 		return err
 	}
-
-	a.Elem().Field(int(lens.field)).Set(c.Elem())
-	return nil
+	return lens.Lens.Put(s, o)
 }
+
+func (lens lensStructJSON[S, A]) Get(s *S) string {
+	v, err := json.Marshal(lens.Lens.Get(s))
+	if err != nil {
+		panic(err)
+	}
+
+	return string(v)
+}
+
+// // FromString transforms string ⟼ Value[string]
+// func (lens lensStructJSON) FromString(s string) (Value, error) {
+// 	return Value{String: s}, nil
+// }
+
+// // Put Value[string] to struct
+// func (lens lensStructJSON) Put(a reflect.Value, s Value) error {
+// 	c := reflect.New(lens.typeof)
+// 	o := c.Interface()
+
+// 	if err := json.Unmarshal([]byte(s.String), &o); err != nil {
+// 		return err
+// 	}
+
+// 	a.Elem().Field(int(lens.field)).Set(c.Elem())
+// 	return nil
+// }
 
 /*
 
 lensStructForm implements lens for complex "product" type
 */
-type lensStructForm struct{ lensStruct }
+type lensStructForm[S, A any] struct{ optics.Lens[S, A] }
 
-// FromString transforms string ⟼ Value[string]
-func (lens lensStructForm) FromString(s string) (Value, error) {
-	return Value{String: s}, nil
+func newLensStructForm[S, A any](l optics.Lens[S, A]) optics.Lens[S, string] {
+	return lensStructForm[S, A]{l}
 }
 
-// Put Value[string] to struct
-func (lens lensStructForm) Put(a reflect.Value, s Value) error {
-	c := reflect.New(lens.typeof)
-	o := c.Interface()
+func (lens lensStructForm[S, A]) Put(s *S, a string) error {
+	var o A
 
-	buf := bytes.NewBuffer([]byte(s.String))
-	if err := form.NewDecoder(buf).Decode(&o); err != nil {
+	if err := form.DecodeString(&o, a); err != nil {
 		return err
 	}
+	// buf := bytes.NewBuffer([]byte(a))
+	// if err := form.NewDecoder(buf).Decode(&o); err != nil {
+	// 	return err
+	// }
 
-	a.Elem().Field(int(lens.field)).Set(c.Elem())
-	return nil
+	return lens.Lens.Put(s, o)
 }
+
+func (lens lensStructForm[S, A]) Get(s *S) string {
+	v, err := form.EncodeToString(lens.Lens.Get(s))
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+// type lensStructForm struct{ lensStruct }
+
+// FromString transforms string ⟼ Value[string]
+// func (lens lensStructForm) FromString(s string) (Value, error) {
+// 	return Value{String: s}, nil
+// }
+
+// // Put Value[string] to struct
+// func (lens lensStructForm) Put(a reflect.Value, s Value) error {
+// 	c := reflect.New(lens.typeof)
+// 	o := c.Interface()
+
+// 	buf := bytes.NewBuffer([]byte(s.String))
+// 	if err := form.NewDecoder(buf).Decode(&o); err != nil {
+// 		return err
+// 	}
+
+// 	a.Elem().Field(int(lens.field)).Set(c.Elem())
+// 	return nil
+// }
 
 /*
 
@@ -252,219 +364,276 @@ func (lens lensStructSeq) Put(a reflect.Value, s Value) error {
 
 newLensStruct creates lens
 */
-func newLensStruct(id int, field reflect.StructField) Lens {
-	typeof := field.Type.Kind()
-	if typeof == reflect.Ptr {
-		typeof = field.Type.Elem().Kind()
-	}
+// func newLensStruct(id int, field reflect.StructField) Lens {
+// 	typeof := field.Type.Kind()
+// 	if typeof == reflect.Ptr {
+// 		typeof = field.Type.Elem().Kind()
+// 	}
 
-	switch typeof {
-	case reflect.String:
-		return &lensStructString{lensStruct{id, field.Type}}
-	case reflect.Int:
-		return &lensStructInt{lensStruct{id, field.Type}}
-	case reflect.Float64:
-		return &lensStructFloat{lensStruct{id, field.Type}}
-	case reflect.Struct:
-		switch field.Tag.Get("content") {
-		case "form":
-			return &lensStructForm{lensStruct{id, field.Type}}
-		case "application/x-www-form-urlencoded":
-			return &lensStructForm{lensStruct{id, field.Type}}
-		case "json":
-			return &lensStructJSON{lensStruct{id, field.Type}}
-		case "application/json":
-			return &lensStructJSON{lensStruct{id, field.Type}}
-		default:
-			return &lensStructJSON{lensStruct{id, field.Type}}
+// 	switch typeof {
+// 	case reflect.String:
+// 		return &lensStructString{lensStruct{id, field.Type}}
+// 	case reflect.Int:
+// 		return &lensStructInt{lensStruct{id, field.Type}}
+// 	case reflect.Float64:
+// 		return &lensStructFloat{lensStruct{id, field.Type}}
+// 	case reflect.Struct:
+// 		switch field.Tag.Get("content") {
+// 		case "form":
+// 			return &lensStructForm{lensStruct{id, field.Type}}
+// 		case "application/x-www-form-urlencoded":
+// 			return &lensStructForm{lensStruct{id, field.Type}}
+// 		case "json":
+// 			return &lensStructJSON{lensStruct{id, field.Type}}
+// 		case "application/json":
+// 			return &lensStructJSON{lensStruct{id, field.Type}}
+// 		default:
+// 			return &lensStructJSON{lensStruct{id, field.Type}}
+// 		}
+// 	// case reflect.Slice:
+// 	// 	return &lensStructSeq{lensStruct{id, field.Type}}
+// 	default:
+// 		panic(fmt.Errorf("Unknown lens type %v", field.Type))
+// 	}
+// }
+
+// func typeOf(t interface{}) reflect.Type {
+// 	typeof := reflect.TypeOf(t)
+// 	if typeof.Kind() == reflect.Ptr {
+// 		typeof = typeof.Elem()
+// 	}
+
+// 	return typeof
+// }
+
+func mkLens[S, A any](l optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
+	return func(t hseq.Type[S]) Lens {
+		ln := lens[S, A]{lens: l, codec: newCodec[S, A](t)}
+
+		if t.Type.Kind() == reflect.Struct {
+			switch t.Tag.Get("content") {
+			case "form":
+				ln.lens = newLensStructForm(l).(optics.Lens[S, A])
+			case "application/x-www-form-urlencoded":
+				ln.lens = newLensStructForm(l).(optics.Lens[S, A])
+			case "json":
+				ln.lens = newLensStructJSON(l).(optics.Lens[S, A])
+			case "application/json":
+				ln.lens = newLensStructJSON(l).(optics.Lens[S, A])
+			default:
+				ln.lens = newLensStructJSON(l).(optics.Lens[S, A])
+			}
 		}
-	// case reflect.Slice:
-	// 	return &lensStructSeq{lensStruct{id, field.Type}}
-	default:
-		panic(fmt.Errorf("Unknown lens type %v", field.Type))
+		return ln
 	}
-}
-
-func typeOf(t interface{}) reflect.Type {
-	typeof := reflect.TypeOf(t)
-	if typeof.Kind() == reflect.Ptr {
-		typeof = typeof.Elem()
-	}
-
-	return typeof
 }
 
 /*
 
 ForProduct1 split structure with 1 field to set of lenses
 */
-func ForProduct1(t interface{}) Lens {
-	tc := typeOf(t)
-	if tc.NumField() != 1 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 1", tc.Name(), tc.NumField()))
-	}
-
-	return newLensStruct(0, tc.Field(0))
+func ForProduct1[T, A any]() Lens {
+	a := optics.ForProduct1[T, A]()
+	return hseq.FMap1(
+		hseq.Generic[T](),
+		mkLens(a),
+	)
 }
+
+// func ForProduct1(t interface{}) Lens {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 1 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 1", tc.Name(), tc.NumField()))
+// 	}
+
+// 	return newLensStruct(0, tc.Field(0))
+// }
 
 /*
 
 ForProduct2 split structure with 2 fields to set of lenses
 */
-func ForProduct2(t interface{}) (Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 2 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 2", tc.Name(), tc.NumField()))
-	}
+// func ForProduct2(t interface{}) (Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 2 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 2", tc.Name(), tc.NumField()))
+// 	}
 
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1))
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1))
+// }
+
+// /*
+
+// ForProduct3 split structure with 3 fields to set of lenses
+// */
+// func ForProduct3(t interface{}) (Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 3 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 3", tc.Name(), tc.NumField()))
+// 	}
+
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2))
+// }
+
+// /*
+
+// ForProduct4 split structure with 4 fields to set of lenses
+// */
+// func ForProduct4(t interface{}) (Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 4 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 4", tc.Name(), tc.NumField()))
+// 	}
+
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3))
+// }
+
+// /*
+
+// ForProduct5 split structure with 5 fields to set of lenses
+// */
+// func ForProduct5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 5 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 5", tc.Name(), tc.NumField()))
+// 	}
+func ForProduct5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
+	a, b, c, d, e := optics.ForProduct5[T, A, B, C, D, E]()
+	return hseq.FMap5(
+		hseq.Generic[T](),
+		mkLens(a),
+		mkLens(b),
+		mkLens(c),
+		mkLens(d),
+		mkLens(e),
+	)
 }
 
-/*
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3)),
+// 		newLensStruct(4, tc.Field(4))
+// }
 
-ForProduct3 split structure with 3 fields to set of lenses
-*/
-func ForProduct3(t interface{}) (Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 3 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 3", tc.Name(), tc.NumField()))
-	}
+// /*
 
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2))
-}
+// ForProduct6 split structure with 6 fields to set of lenses
+// */
+// func ForProduct6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 6 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 6", tc.Name(), tc.NumField()))
+// 	}
 
-/*
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3)),
+// 		newLensStruct(4, tc.Field(4)),
+// 		newLensStruct(5, tc.Field(5))
+// }
 
-ForProduct4 split structure with 4 fields to set of lenses
-*/
-func ForProduct4(t interface{}) (Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 4 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 4", tc.Name(), tc.NumField()))
-	}
+// /*
 
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3))
-}
+// ForProduct7 split structure with 7 fields to set of lenses
+// */
+// func ForProduct7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 7 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 7", tc.Name(), tc.NumField()))
+// 	}
 
-/*
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3)),
+// 		newLensStruct(4, tc.Field(4)),
+// 		newLensStruct(5, tc.Field(5)),
+// 		newLensStruct(6, tc.Field(6))
+// }
 
-ForProduct5 split structure with 5 fields to set of lenses
-*/
-func ForProduct5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 5 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 5", tc.Name(), tc.NumField()))
-	}
+// /*
 
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3)),
-		newLensStruct(4, tc.Field(4))
-}
+// ForProduct8 split structure with 8 fields to set of lenses
+// */
+// func ForProduct8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 8 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 8", tc.Name(), tc.NumField()))
+// 	}
 
-/*
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3)),
+// 		newLensStruct(4, tc.Field(4)),
+// 		newLensStruct(5, tc.Field(5)),
+// 		newLensStruct(6, tc.Field(6)),
+// 		newLensStruct(7, tc.Field(7))
+// }
 
-ForProduct6 split structure with 6 fields to set of lenses
-*/
-func ForProduct6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 6 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 6", tc.Name(), tc.NumField()))
-	}
+// /*
 
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3)),
-		newLensStruct(4, tc.Field(4)),
-		newLensStruct(5, tc.Field(5))
-}
+// ForProduct9 split structure with 9 fields to set of lenses
+// */
+// func ForProduct9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 9 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 9", tc.Name(), tc.NumField()))
+// 	}
 
-/*
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3)),
+// 		newLensStruct(4, tc.Field(4)),
+// 		newLensStruct(5, tc.Field(5)),
+// 		newLensStruct(6, tc.Field(6)),
+// 		newLensStruct(7, tc.Field(7)),
+// 		newLensStruct(8, tc.Field(8))
+// }
 
-ForProduct7 split structure with 7 fields to set of lenses
-*/
-func ForProduct7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 7 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 7", tc.Name(), tc.NumField()))
-	}
+// /*
 
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3)),
-		newLensStruct(4, tc.Field(4)),
-		newLensStruct(5, tc.Field(5)),
-		newLensStruct(6, tc.Field(6))
-}
+// ForProduct10 split structure with 10 fields to set of lenses
+// */
+// func ForProduct10(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	tc := typeOf(t)
+// 	if tc.NumField() != 10 {
+// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 10 lens", tc.Name(), tc.NumField()))
+// 	}
 
-/*
-
-ForProduct8 split structure with 8 fields to set of lenses
-*/
-func ForProduct8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 8 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 8", tc.Name(), tc.NumField()))
-	}
-
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3)),
-		newLensStruct(4, tc.Field(4)),
-		newLensStruct(5, tc.Field(5)),
-		newLensStruct(6, tc.Field(6)),
-		newLensStruct(7, tc.Field(7))
-}
-
-/*
-
-ForProduct9 split structure with 9 fields to set of lenses
-*/
-func ForProduct9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 9 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 9", tc.Name(), tc.NumField()))
-	}
-
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3)),
-		newLensStruct(4, tc.Field(4)),
-		newLensStruct(5, tc.Field(5)),
-		newLensStruct(6, tc.Field(6)),
-		newLensStruct(7, tc.Field(7)),
-		newLensStruct(8, tc.Field(8))
-}
-
-/*
-
-ForProduct10 split structure with 10 fields to set of lenses
-*/
-func ForProduct10(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	tc := typeOf(t)
-	if tc.NumField() != 10 {
-		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 10 lens", tc.Name(), tc.NumField()))
-	}
-
-	return newLensStruct(0, tc.Field(0)),
-		newLensStruct(1, tc.Field(1)),
-		newLensStruct(2, tc.Field(2)),
-		newLensStruct(3, tc.Field(3)),
-		newLensStruct(4, tc.Field(4)),
-		newLensStruct(5, tc.Field(5)),
-		newLensStruct(6, tc.Field(6)),
-		newLensStruct(7, tc.Field(7)),
-		newLensStruct(8, tc.Field(8)),
-		newLensStruct(9, tc.Field(9))
+// 	return newLensStruct(0, tc.Field(0)),
+// 		newLensStruct(1, tc.Field(1)),
+// 		newLensStruct(2, tc.Field(2)),
+// 		newLensStruct(3, tc.Field(3)),
+// 		newLensStruct(4, tc.Field(4)),
+// 		newLensStruct(5, tc.Field(5)),
+// 		newLensStruct(6, tc.Field(6)),
+// 		newLensStruct(7, tc.Field(7)),
+// 		newLensStruct(8, tc.Field(8)),
+// 		newLensStruct(9, tc.Field(9))
+// }
+func ForProduct10[T, A, B, C, D, E, F, G, H, I, J any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	a, b, c, d, e, f, g, h, i, j := optics.ForProduct10[T, A, B, C, D, E, F, G, H, I, J]()
+	return hseq.FMap10(
+		hseq.Generic[T](),
+		mkLens(a),
+		mkLens(b),
+		mkLens(c),
+		mkLens(d),
+		mkLens(e),
+		mkLens(f),
+		mkLens(g),
+		mkLens(h),
+		mkLens(i),
+		mkLens(j),
+	)
 }
