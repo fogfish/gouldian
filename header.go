@@ -142,14 +142,14 @@ func (header header) To(lens Lens) Endpoint {
 
 Value outputs header value as the result of HTTP response
 */
-func HeaderValue(header string, value string) Result {
-	return func(out *Output) error {
-		out.Headers = append(out.Headers,
-			struct {
-				Header string
-				Value  string
-			}{header, value},
-		)
-		return nil
-	}
-}
+// func HeaderValue(header string, value string) Result {
+// 	return func(out *Output) error {
+// 		out.Headers = append(out.Headers,
+// 			struct {
+// 				Header string
+// 				Value  string
+// 			}{header, value},
+// 		)
+// 		return nil
+// 	}
+// }

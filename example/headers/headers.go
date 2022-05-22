@@ -43,11 +43,11 @@ curl -v http://localhost:8080/echo -H "Accept: application/json"
 
 func text() µ.Routable {
 	return µ.GET(
-		µ.Path("echo"),
-		headers.Accept.Is(headers.TextPlain),
+		µ.URI(µ.Path("echo")),
+		µ.Header(headers.Accept, headers.TextPlain),
 		func(ctx *µ.Context) error {
 			return µ.Status.OK(
-				headers.ContentType.Value(headers.TextPlain),
+				µ.WithHeader(headers.ContentType, headers.TextPlain),
 				µ.WithText("hello world."),
 			)
 		},
@@ -56,11 +56,11 @@ func text() µ.Routable {
 
 func json() µ.Routable {
 	return µ.GET(
-		µ.Path("echo"),
-		headers.Accept.Is(headers.ApplicationJSON),
+		µ.URI(µ.Path("echo")),
+		µ.Header(headers.Accept, headers.ApplicationJSON),
 		func(ctx *µ.Context) error {
 			return µ.Status.OK(
-				headers.ContentType.Value(headers.ApplicationJSON),
+				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
 				µ.WithText(`{"text": "hellow world."}`),
 			)
 		},

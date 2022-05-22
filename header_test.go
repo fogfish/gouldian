@@ -331,7 +331,7 @@ func TestHeaderContentJSON(t *testing.T) {
 
 func TestHeaderOutput(t *testing.T) {
 	out := µ.Status.OK(
-		µ.HeaderValue("foo", "bar"),
+		µ.WithHeader("foo", "bar"),
 	).(*µ.Output)
 
 	it.Ok(t).

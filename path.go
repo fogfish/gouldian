@@ -44,6 +44,14 @@ func PathAny() Segment {
 	return Segment{path: "_"}
 }
 
+/*
+
+PathAll is an endpoint to match URL of HTTP request. The function takes a path
+pattern as arguments. The pattern is sequence of either literals or lenses,
+where each term corresponds to the path segment. The function do not match
+if length of path is not equal to the length of pattern or segment do not
+match to pattern
+*/
 func PathAll(segment Lens) Segment {
 	return Segment{optics: &segment, path: "*"}
 }
@@ -67,20 +75,12 @@ func URI(segments ...Segment) Routable {
 	}
 }
 
-/*
-
-PathAll is an endpoint to match URL of HTTP request. The function takes a path
-pattern as arguments. The pattern is sequence of either literals or lenses,
-where each term corresponds to the path segment. The function do not match
-if length of path is not equal to the length of pattern or segment do not
-match to pattern
-*/
-func URIs(segments ...Segment) Routable {
-	return func() ([]string, Endpoint) {
-		path, lens := segmentsToLens(segments, false)
-		return path, segmentsToEndpoint(path, lens)
-	}
-}
+// func URIs(segments ...Segment) Routable {
+// 	return func() ([]string, Endpoint) {
+// 		path, lens := segmentsToLens(segments, false)
+// 		return path, segmentsToEndpoint(path, lens)
+// 	}
+// }
 
 //
 func segmentsToLens(segments []Segment, strict bool) ([]string, []optics.Lens) {

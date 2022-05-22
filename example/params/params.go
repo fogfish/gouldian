@@ -21,7 +21,6 @@ package main
 import (
 	"fmt"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/gouldian/server/httpd"
 	"net/http"
 )
@@ -50,15 +49,15 @@ type paramString struct {
 	Value string
 }
 
-var lensString = optics.ForProduct1(paramString{})
+var lensString = µ.Optics1[paramString, string]()
 
 func qString() µ.Routable {
 	return µ.GET(
-		µ.Path("echo"),
-		µ.Param("q").To(lensString),
+		µ.URI(µ.Path("echo")),
+		µ.Param("q", lensString),
 		func(ctx *µ.Context) error {
 			var req paramString
-			if err := ctx.Get(&req); err != nil {
+			if err := µ.FromContext(ctx, &req); err != nil {
 				return µ.Status.BadRequest(µ.WithIssue(err))
 			}
 
@@ -77,15 +76,15 @@ type paramInt struct {
 	Value int
 }
 
-var lensInt = optics.ForProduct1(paramInt{})
+var lensInt = µ.Optics1[paramInt, int]()
 
 func qInt() µ.Routable {
 	return µ.GET(
-		µ.Path("echo"),
-		µ.Param("v").To(lensInt),
+		µ.URI(µ.Path("echo")),
+		µ.Param("v", lensInt),
 		func(ctx *µ.Context) error {
 			var req paramInt
-			if err := ctx.Get(&req); err != nil {
+			if err := µ.FromContext(ctx, &req); err != nil {
 				return µ.Status.BadRequest(µ.WithIssue(err))
 			}
 

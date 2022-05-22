@@ -73,7 +73,7 @@ func TestServeNoMatch(t *testing.T) {
 func TestServeUnknownError(t *testing.T) {
 	ts := httptest.NewServer(
 		httpd.Serve(
-			µ.GET(µ.Path(), func(c *µ.Context) error { return fmt.Errorf("Fail") }),
+			µ.GET(µ.URI(), func(c *µ.Context) error { return fmt.Errorf("Fail") }),
 		),
 	)
 	defer ts.Close()
@@ -98,11 +98,11 @@ func mock() *httptest.Server {
 	return httptest.NewServer(
 		httpd.Serve(
 			µ.GET(
-				µ.Path("echo"),
+				µ.URI(µ.Path("echo")),
 				µ.FMap(func(ctx *µ.Context) error {
 					return µ.Status.OK(
-						headers.ContentType.Value(headers.TextPlain),
-						headers.Server.Value("echo"),
+						µ.WithHeader(headers.ContentType, headers.TextPlain),
+						µ.WithHeader(headers.Server, "echo"),
 						µ.WithText("echo"),
 					)
 				}),

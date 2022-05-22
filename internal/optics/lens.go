@@ -82,26 +82,26 @@ func Morph[S any](m Morphisms, s *S) error {
 	return nil
 }
 
-/*
+// /*
 
-Apply Morphism to "some" struct
-@deprecated
-*/
-func (m Morphisms) Apply(s interface{}) error {
-	g := reflect.ValueOf(s)
-	// if g.Kind() != reflect.Ptr {
-	// 	return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
-	// }
+// Apply Morphism to "some" struct
+// @deprecated
+// */
+// func (m Morphisms) Apply(s interface{}) error {
+// 	g := reflect.ValueOf(s)
+// 	// if g.Kind() != reflect.Ptr {
+// 	// 	return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
+// 	// }
 
-	// p := unsafe.Pointer(&a)
-	for _, arrow := range m {
-		if err := arrow.Lens.Put(g, arrow.Value); err != nil {
-			return err
-		}
-	}
+// 	// p := unsafe.Pointer(&a)
+// 	for _, arrow := range m {
+// 		if err := arrow.Lens.Put(g, arrow.Value); err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 /*
 
@@ -154,49 +154,6 @@ func (l *lensDouble[S]) FromString(a string) (Value, error) {
 
 	return Value{Double: val}, nil
 }
-
-/*
-
-...
-*/
-// func newCodec[T, A any](t hseq.Type[T]) Codec[A] {
-// 	switch t.Type.Kind() {
-// 	case reflect.String:
-// 		return codecForString().(Codec[A])
-// 	case reflect.Int:
-// 		return codecForInt().(Codec[A])
-// 	case reflect.Float64:
-// 		return codecForFloat64().(Codec[A])
-// 	}
-// 	return nil
-// }
-
-// //
-// type codecString string
-
-// func codecForString() Codec[string] { return codecString("codec.string") }
-
-// func (codecString) FromString(a string) (string, error) {
-// 	return a, nil
-// }
-
-// //
-// type codecInt string
-
-// func codecForInt() Codec[int] { return codecInt("codec.int") }
-
-// func (codecInt) FromString(a string) (int, error) {
-// 	return strconv.Atoi(a)
-// }
-
-// //
-// type codecFloat64 string
-
-// func codecForFloat64() Codec[float64] { return codecFloat64("codec.float64") }
-
-// func (codecFloat64) FromString(a string) (float64, error) {
-// 	return strconv.ParseFloat(a, 64)
-// }
 
 /*
 
@@ -446,7 +403,12 @@ newLensStruct creates lens
 
 func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
-		switch t.Type.Kind() {
+		typeof := t.Type
+		if typeof.Kind() == reflect.Ptr {
+			typeof = typeof.Elem()
+		}
+
+		switch typeof.Kind() {
 		case reflect.String:
 			return &lensString[S]{ln.(optics.Reflector[string])}
 		case reflect.Int:
@@ -484,69 +446,52 @@ func ForProduct1[T, A any]() Lens {
 	)
 }
 
-// func ForProduct1(t interface{}) Lens {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 1 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 1", tc.Name(), tc.NumField()))
-// 	}
-
-// 	return newLensStruct(0, tc.Field(0))
-// }
-
 /*
 
 ForProduct2 split structure with 2 fields to set of lenses
 */
-// func ForProduct2(t interface{}) (Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 2 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 2", tc.Name(), tc.NumField()))
-// 	}
+func ForProduct2[T, A, B any]() (Lens, Lens) {
+	a, b := optics.ForProduct2[T, A, B]()
+	return hseq.FMap2(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+	)
+}
 
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1))
-// }
+/*
 
-// /*
+ForProduct3 split structure with 3 fields to set of lenses
+*/
+func ForProduct3[T, A, B, C any]() (Lens, Lens, Lens) {
+	a, b, c := optics.ForProduct3[T, A, B, C]()
+	return hseq.FMap3(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+	)
+}
 
-// ForProduct3 split structure with 3 fields to set of lenses
-// */
-// func ForProduct3(t interface{}) (Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 3 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 3", tc.Name(), tc.NumField()))
-// 	}
+/*
 
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2))
-// }
+ForProduct4 split structure with 4 fields to set of lenses
+*/
+func ForProduct4[T, A, B, C, D any]() (Lens, Lens, Lens, Lens) {
+	a, b, c, d := optics.ForProduct4[T, A, B, C, D]()
+	return hseq.FMap4(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+	)
+}
 
-// /*
+/*
 
-// ForProduct4 split structure with 4 fields to set of lenses
-// */
-// func ForProduct4(t interface{}) (Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 4 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 4", tc.Name(), tc.NumField()))
-// 	}
-
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3))
-// }
-
-// /*
-
-// ForProduct5 split structure with 5 fields to set of lenses
-// */
-// func ForProduct5(t interface{}) (Lens, Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 5 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 5", tc.Name(), tc.NumField()))
-// 	}
+ForProduct5 split structure with 5 fields to set of lenses
+*/
 func ForProduct5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
 	a, b, c, d, e := optics.ForProduct5[T, A, B, C, D, E]()
 	return hseq.FMap5(
@@ -559,112 +504,84 @@ func ForProduct5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
 	)
 }
 
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3)),
-// 		newLensStruct(4, tc.Field(4))
-// }
+/*
 
-// /*
+ForProduct6 split structure with 6 fields to set of lenses
+*/
+func ForProduct6[T, A, B, C, D, E, F any]() (Lens, Lens, Lens, Lens, Lens, Lens) {
+	a, b, c, d, e, f := optics.ForProduct6[T, A, B, C, D, E, F]()
+	return hseq.FMap6(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+		NewLens(e),
+		NewLens(f),
+	)
+}
 
-// ForProduct6 split structure with 6 fields to set of lenses
-// */
-// func ForProduct6(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 6 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 6", tc.Name(), tc.NumField()))
-// 	}
+/*
 
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3)),
-// 		newLensStruct(4, tc.Field(4)),
-// 		newLensStruct(5, tc.Field(5))
-// }
+ForProduct7 split structure with 7 fields to set of lenses
+*/
+func ForProduct7[T, A, B, C, D, E, F, G any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	a, b, c, d, e, f, g := optics.ForProduct7[T, A, B, C, D, E, F, G]()
+	return hseq.FMap7(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+		NewLens(e),
+		NewLens(f),
+		NewLens(g),
+	)
+}
 
-// /*
+/*
 
-// ForProduct7 split structure with 7 fields to set of lenses
-// */
-// func ForProduct7(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 7 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 7", tc.Name(), tc.NumField()))
-// 	}
+ForProduct8 split structure with 8 fields to set of lenses
+*/
+func ForProduct8[T, A, B, C, D, E, F, G, H any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	a, b, c, d, e, f, g, h := optics.ForProduct8[T, A, B, C, D, E, F, G, H]()
+	return hseq.FMap8(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+		NewLens(e),
+		NewLens(f),
+		NewLens(g),
+		NewLens(h),
+	)
+}
 
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3)),
-// 		newLensStruct(4, tc.Field(4)),
-// 		newLensStruct(5, tc.Field(5)),
-// 		newLensStruct(6, tc.Field(6))
-// }
+/*
 
-// /*
+ForProduct9 split structure with 9 fields to set of lenses
+*/
+func ForProduct9[T, A, B, C, D, E, F, G, H, I any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	a, b, c, d, e, f, g, h, i := optics.ForProduct9[T, A, B, C, D, E, F, G, H, I]()
+	return hseq.FMap9(
+		hseq.Generic[T](),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+		NewLens(e),
+		NewLens(f),
+		NewLens(g),
+		NewLens(h),
+		NewLens(i),
+	)
+}
 
-// ForProduct8 split structure with 8 fields to set of lenses
-// */
-// func ForProduct8(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 8 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 8", tc.Name(), tc.NumField()))
-// 	}
+/*
 
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3)),
-// 		newLensStruct(4, tc.Field(4)),
-// 		newLensStruct(5, tc.Field(5)),
-// 		newLensStruct(6, tc.Field(6)),
-// 		newLensStruct(7, tc.Field(7))
-// }
-
-// /*
-
-// ForProduct9 split structure with 9 fields to set of lenses
-// */
-// func ForProduct9(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 9 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to lens of 9", tc.Name(), tc.NumField()))
-// 	}
-
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3)),
-// 		newLensStruct(4, tc.Field(4)),
-// 		newLensStruct(5, tc.Field(5)),
-// 		newLensStruct(6, tc.Field(6)),
-// 		newLensStruct(7, tc.Field(7)),
-// 		newLensStruct(8, tc.Field(8))
-// }
-
-// /*
-
-// ForProduct10 split structure with 10 fields to set of lenses
-// */
-// func ForProduct10(t interface{}) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-// 	tc := typeOf(t)
-// 	if tc.NumField() != 10 {
-// 		panic(fmt.Errorf("Unable to unapply type |%s| = %d to 10 lens", tc.Name(), tc.NumField()))
-// 	}
-
-// 	return newLensStruct(0, tc.Field(0)),
-// 		newLensStruct(1, tc.Field(1)),
-// 		newLensStruct(2, tc.Field(2)),
-// 		newLensStruct(3, tc.Field(3)),
-// 		newLensStruct(4, tc.Field(4)),
-// 		newLensStruct(5, tc.Field(5)),
-// 		newLensStruct(6, tc.Field(6)),
-// 		newLensStruct(7, tc.Field(7)),
-// 		newLensStruct(8, tc.Field(8)),
-// 		newLensStruct(9, tc.Field(9))
-// }
+ForProduct10 split structure with 10 fields to set of lenses
+*/
 func ForProduct10[T, A, B, C, D, E, F, G, H, I, J any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
 	a, b, c, d, e, f, g, h, i, j := optics.ForProduct10[T, A, B, C, D, E, F, G, H, I, J]()
 	return hseq.FMap10(
