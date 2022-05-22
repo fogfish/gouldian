@@ -20,8 +20,6 @@ package gouldian
 
 import (
 	"strings"
-
-	"github.com/fogfish/gouldian/internal/optics"
 )
 
 /*
@@ -41,7 +39,44 @@ Header type defines primitives to match Headers of HTTP requests.
   ) == nil
 
 */
-type Header string
+func Header[T Pattern](hdr string, val T) Endpoint {
+	switch v := any(val).(type) {
+	case string:
+		return header(hdr).Is(v)
+	case Lens:
+		return header(hdr).To(v)
+	default:
+		panic("")
+	}
+}
+
+func HeaderAny(hdr string) Endpoint {
+	return header(hdr).Any
+}
+
+/*
+
+Maybe matches header value to the request context. It uses lens abstraction to
+decode HTTP header into Golang type. The Endpoint does not cause no-match
+if header value cannot be decoded to the target type. See optics.Lens type for details.
+
+  type myT struct{ Val string }
+
+  x := optics.Lenses1(myT{})
+  e := µ.GET(µ.Header("X-Foo").To(x))
+  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
+
+*/
+func HeaderMaybe(header string, lens Lens) Endpoint {
+	return func(ctx *Context) error {
+		if opt := ctx.Request.Header.Get(string(header)); opt != "" {
+			ctx.Put(lens, opt)
+		}
+		return nil
+	}
+}
+
+type header string
 
 /*
 
@@ -51,7 +86,7 @@ Is matches a header to defined literal value.
   e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
   e(mock.Input(mock.Header("X-Foo", "Baz"))) != nil
 */
-func (header Header) Is(val string) Endpoint {
+func (header header) Is(val string) Endpoint {
 	if val == Any {
 		return header.Any
 	}
@@ -74,7 +109,7 @@ Any is a wildcard matcher of header. It fails if header is not defined.
   e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
   e(mock.Input()) != nil
 */
-func (header Header) Any(ctx *Context) error {
+func (header header) Any(ctx *Context) error {
 	opt := ctx.Request.Header.Get(string(header))
 	if opt != "" {
 		return nil
@@ -94,7 +129,7 @@ value cannot be decoded to the target type. See optics.Lens type for details.
   e := µ.GET(µ.Header("X-Foo").To(x))
   e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
 */
-func (header Header) To(lens optics.Lens) Endpoint {
+func (header header) To(lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if opt := ctx.Request.Header.Get(string(header)); opt != "" {
 			return ctx.Put(lens, opt)
@@ -105,37 +140,15 @@ func (header Header) To(lens optics.Lens) Endpoint {
 
 /*
 
-Maybe matches header value to the request context. It uses lens abstraction to
-decode HTTP header into Golang type. The Endpoint does not cause no-match
-if header value cannot be decoded to the target type. See optics.Lens type for details.
-
-  type myT struct{ Val string }
-
-  x := optics.Lenses1(myT{})
-  e := µ.GET(µ.Header("X-Foo").To(x))
-  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
-
-*/
-func (header Header) Maybe(lens optics.Lens) Endpoint {
-	return func(ctx *Context) error {
-		if opt := ctx.Request.Header.Get(string(header)); opt != "" {
-			ctx.Put(lens, opt)
-		}
-		return nil
-	}
-}
-
-/*
-
 Value outputs header value as the result of HTTP response
 */
-func (header Header) Value(value string) Result {
+func HeaderValue(header string, value string) Result {
 	return func(out *Output) error {
 		out.Headers = append(out.Headers,
 			struct {
 				Header string
 				Value  string
-			}{string(header), value},
+			}{header, value},
 		)
 		return nil
 	}

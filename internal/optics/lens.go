@@ -140,6 +140,25 @@ func (l *lensNumber[S]) FromString(a string) (Value, error) {
 
 ...
 */
+type lensDouble[S any] struct{ optics.Reflector[float64] }
+
+func (l *lensDouble[S]) Put(s reflect.Value, a Value) error {
+	return l.Reflector.PutValue(s, a.Double)
+}
+
+func (l *lensDouble[S]) FromString(a string) (Value, error) {
+	val, err := strconv.ParseFloat(a, 64)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return Value{Double: val}, nil
+}
+
+/*
+
+...
+*/
 // func newCodec[T, A any](t hseq.Type[T]) Codec[A] {
 // 	switch t.Type.Kind() {
 // 	case reflect.String:
@@ -309,33 +328,29 @@ func (lens *lensStructJSON[A]) GetValue(s reflect.Value) string {
 
 lensStructForm implements lens for complex "product" type
 */
-type lensStructForm[S, A any] struct{ optics.Lens[S, A] }
+type lensStructForm[A any] struct{ optics.Reflector[A] }
 
-func newLensStructForm[S, A any](l optics.Lens[S, A]) optics.Lens[S, string] {
-	return lensStructForm[S, A]{l}
+func newLensStructForm[A any](r optics.Reflector[A]) optics.Reflector[string] {
+	return &lensStructForm[A]{r}
 }
 
-func (lens lensStructForm[S, A]) Put(s *S, a string) error {
+func (lens *lensStructForm[A]) PutValue(s reflect.Value, a string) error {
 	var o A
 
 	if err := form.DecodeString(&o, a); err != nil {
 		return err
 	}
-	// buf := bytes.NewBuffer([]byte(a))
-	// if err := form.NewDecoder(buf).Decode(&o); err != nil {
-	// 	return err
-	// }
 
-	return lens.Lens.Put(s, o)
+	return lens.Reflector.PutValue(s, o)
 }
 
-func (lens lensStructForm[S, A]) Get(s *S) string {
-	v, err := form.EncodeToString(lens.Lens.Get(s))
+func (lens *lensStructForm[A]) GetValue(s reflect.Value) string {
+	v, err := form.EncodeToString(lens.Reflector.GetValue(s))
 	if err != nil {
 		panic(err)
 	}
 
-	return v
+	return string(v)
 }
 
 // type lensStructForm struct{ lensStruct }
@@ -429,32 +444,31 @@ newLensStruct creates lens
 // 	return typeof
 // }
 
-func mkLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
+func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
 		switch t.Type.Kind() {
 		case reflect.String:
 			return &lensString[S]{ln.(optics.Reflector[string])}
 		case reflect.Int:
 			return &lensNumber[S]{ln.(optics.Reflector[int])}
+		case reflect.Float64:
+			return &lensDouble[S]{ln.(optics.Reflector[float64])}
+		case reflect.Struct:
+			switch t.Tag.Get("content") {
+			case "form":
+				return &lensString[S]{newLensStructForm(ln.(optics.Reflector[A]))}
+			case "application/x-www-form-urlencoded":
+				return &lensString[S]{newLensStructForm(ln.(optics.Reflector[A]))}
+			case "json":
+				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
+			case "application/json":
+				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
+			default:
+				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
+			}
 		default:
 			panic(fmt.Errorf("Type %v is not supported", t.Type))
 		}
-
-		// if t.Type.Kind() == reflect.Struct {
-		// 	switch t.Tag.Get("content") {
-		// 	// 	case "form":
-		// 	// 		ln.lens = newLensStructForm(l) //.(optics.Lens[S, A])
-		// 	// 	case "application/x-www-form-urlencoded":
-		// 	// 		ln.lens = newLensStructForm(l) //.(optics.Lens[S, A])
-		// 	// 	case "json":
-		// 	// 		ln.lens = newLensStructJSON(l) //.(optics.Lens[S, A])
-		// 	// 	case "application/json":
-		// 	// 		ln.lens = newLensStructJSON(l) //.(optics.Lens[S, A])
-		// 	default:
-		// 		ln.lens = newLensStructJSON(refl) //.(optics.Reflector[A])
-		// 	}
-		// }
-		// return ln
 	}
 }
 
@@ -466,7 +480,7 @@ func ForProduct1[T, A any]() Lens {
 	a := optics.ForProduct1[T, A]()
 	return hseq.FMap1(
 		hseq.Generic[T](),
-		mkLens(a),
+		NewLens(a),
 	)
 }
 
@@ -537,11 +551,11 @@ func ForProduct5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
 	a, b, c, d, e := optics.ForProduct5[T, A, B, C, D, E]()
 	return hseq.FMap5(
 		hseq.Generic[T](),
-		mkLens(a),
-		mkLens(b),
-		mkLens(c),
-		mkLens(d),
-		mkLens(e),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+		NewLens(e),
 	)
 }
 
@@ -655,15 +669,15 @@ func ForProduct10[T, A, B, C, D, E, F, G, H, I, J any]() (Lens, Lens, Lens, Lens
 	a, b, c, d, e, f, g, h, i, j := optics.ForProduct10[T, A, B, C, D, E, F, G, H, I, J]()
 	return hseq.FMap10(
 		hseq.Generic[T](),
-		mkLens(a),
-		mkLens(b),
-		mkLens(c),
-		mkLens(d),
-		mkLens(e),
-		mkLens(f),
-		mkLens(g),
-		mkLens(h),
-		mkLens(i),
-		mkLens(j),
+		NewLens(a),
+		NewLens(b),
+		NewLens(c),
+		NewLens(d),
+		NewLens(e),
+		NewLens(f),
+		NewLens(g),
+		NewLens(h),
+		NewLens(i),
+		NewLens(j),
 	)
 }

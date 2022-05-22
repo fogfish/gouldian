@@ -92,22 +92,14 @@ func (ctx *Context) Put(lens optics.Lens, str string) error {
 	return nil
 }
 
-func ContextGet[S any](ctx *Context, val *S) error {
-	if err := optics.Morph(ctx.morphism, val); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 /*
 
 Get decodes context into structure
 */
-func (ctx *Context) Get(val interface{}) error {
-	// if err := ctx.morphism.Apply(val); err != nil {
-	// 	return err
-	// }
+func FromContext[S any](ctx *Context, val *S) error {
+	if err := optics.Morph(ctx.morphism, val); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -22,6 +22,32 @@ import (
 	"github.com/fogfish/gouldian/internal/optics"
 )
 
+type Pattern interface{ string | Lens }
+
+type Segment struct {
+	optics *Lens
+	path   string
+}
+
+func Path[T Pattern](segment T) Segment {
+	switch v := any(segment).(type) {
+	case string:
+		return Segment{path: v}
+	case Lens:
+		return Segment{optics: &v, path: ":"}
+	default:
+		panic("")
+	}
+}
+
+func PathAny() Segment {
+	return Segment{path: "_"}
+}
+
+func PathAll(segment Lens) Segment {
+	return Segment{optics: &segment, path: "*"}
+}
+
 /*
 
 Path is an endpoint to match URL of HTTP request. The function takes a path
@@ -34,7 +60,7 @@ match to pattern
   e(mock.Input(mock.URL("/foo"))) == nil
   e(mock.Input(mock.URL("/bar"))) != nil
 */
-func Path(segments ...interface{}) Routable {
+func URI(segments ...Segment) Routable {
 	return func() ([]string, Endpoint) {
 		path, lens := segmentsToLens(segments, true)
 		return path, segmentsToEndpoint(path, lens)
@@ -49,7 +75,7 @@ where each term corresponds to the path segment. The function do not match
 if length of path is not equal to the length of pattern or segment do not
 match to pattern
 */
-func PathAll(segments ...interface{}) Routable {
+func URIs(segments ...Segment) Routable {
 	return func() ([]string, Endpoint) {
 		path, lens := segmentsToLens(segments, false)
 		return path, segmentsToEndpoint(path, lens)
@@ -57,21 +83,31 @@ func PathAll(segments ...interface{}) Routable {
 }
 
 //
-func segmentsToLens(segments []interface{}, strict bool) ([]string, []optics.Lens) {
+func segmentsToLens(segments []Segment, strict bool) ([]string, []optics.Lens) {
 	lens := make([]optics.Lens, 0)
 	path := make([]string, 0, len(segments))
 	for i, segment := range segments {
-		switch v := segment.(type) {
-		case string:
-			path = append(path, v)
-		case optics.Lens:
-			if i == len(segments)-1 && !strict {
+		if segment.optics == nil {
+			path = append(path, segment.path)
+		} else {
+			if i == len(segments)-1 && segment.path == "*" {
 				path = append(path, "*")
 			} else {
 				path = append(path, ":")
 			}
-			lens = append(lens, v)
+			lens = append(lens, segment.optics.Lens)
 		}
+		// switch v := segment.(type) {
+		// case string:
+		// 	path = append(path, v)
+		// case optics.Lens:
+		// 	if i == len(segments)-1 && !strict {
+		// 		path = append(path, "*")
+		// 	} else {
+		// 		path = append(path, ":")
+		// 	}
+		// 	lens = append(lens, v)
+		// }
 	}
 
 	return path, lens

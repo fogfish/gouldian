@@ -21,7 +21,6 @@ package headers
 import (
 	"fmt"
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/internal/optics"
 	"strings"
 )
 
@@ -32,43 +31,43 @@ List of supported HTTP header constants, use them instead of explicit definition
 const (
 	// Common HTTP headers
 	// https://en.wikipedia.org/wiki/List_of_HTTP_header_fields
-	CacheControl     = µ.Header("Cache-Control")
-	Connection       = µ.Header("Connection")
-	ContentEncoding  = µ.Header("Content-Encoding")
-	ContentLength    = µ.Header("Content-Length")
-	ContentType      = µ.Header("Content-Type")
-	Date             = µ.Header("Date")
-	TransferEncoding = µ.Header("Transfer-Encoding")
+	CacheControl     = "Cache-Control"
+	Connection       = "Connection"
+	ContentEncoding  = "Content-Encoding"
+	ContentLength    = "Content-Length"
+	ContentType      = "Content-Type"
+	Date             = "Date"
+	TransferEncoding = "Transfer-Encoding"
 
 	//
 	// https://en.wikipedia.org/wiki/List_of_HTTP_header_fields#Request_fields
-	Accept             = µ.Header("Accept")
-	AcceptCharset      = µ.Header("Accept-Charset")
-	AcceptEncoding     = µ.Header("Accept-Encoding")
-	AcceptLanguage     = µ.Header("Accept-Language")
-	Authorization      = Authorize("Authorization")
-	Cookie             = µ.Header("Cookie")
-	Host               = µ.Header("Host")
-	IfMatch            = µ.Header("If-Match")
-	IfModifiedSince    = µ.Header("If-Modified-Since")
-	IfNoneMatch        = µ.Header("If-None-Match")
-	IfRange            = µ.Header("If-Range")
-	IfUnmodifiedSince  = µ.Header("If-Unmodified-Since")
-	Origin             = µ.Header("Origin")
-	ProxyAuthorization = µ.Header("Proxy-Authorization")
-	Range              = µ.Header("Range")
-	UserAgent          = µ.Header("User-Agent")
+	Accept             = "Accept"
+	AcceptCharset      = "Accept-Charset"
+	AcceptEncoding     = "Accept-Encoding"
+	AcceptLanguage     = "Accept-Language"
+	Cookie             = "Cookie"
+	Host               = "Host"
+	IfMatch            = "If-Match"
+	IfModifiedSince    = "If-Modified-Since"
+	IfNoneMatch        = "If-None-Match"
+	IfRange            = "If-Range"
+	IfUnmodifiedSince  = "If-Unmodified-Since"
+	Origin             = "Origin"
+	ProxyAuthorization = "Proxy-Authorization"
+	Range              = "Range"
+	UserAgent          = "User-Agent"
+	// Authorization      = "Authorization"
 
 	//
 	// https://en.wikipedia.org/wiki/List_of_HTTP_header_fields#Response_fields
-	ContentLanguage = µ.Header("Content-Language")
-	ETag            = µ.Header("ETag")
-	Expires         = µ.Header("Expires")
-	LastModified    = µ.Header("Last-Modified")
-	Link            = µ.Header("Link")
-	Location        = µ.Header("Location")
-	Server          = µ.Header("Server")
-	SetCookie       = µ.Header("Set-Cookie")
+	ContentLanguage = "Content-Language"
+	ETag            = "ETag"
+	Expires         = "Expires"
+	LastModified    = "Last-Modified"
+	Link            = "Link"
+	Location        = "Location"
+	Server          = "Server"
+	SetCookie       = "Set-Cookie"
 )
 
 //
@@ -89,20 +88,16 @@ validation of credentials/tokens supplied within the request
   e(mock.Input(mock.Header("Authorization", "Basic bar"))) != nil
 
 */
-type Authorize µ.Header
-
-// To implements matcher for Content type (see Header.To)
-func (h Authorize) To(lens optics.Lens) µ.Endpoint {
-	return µ.Header(h).To(lens)
+func Authorization(header string, val µ.Lens) µ.Endpoint {
+	return µ.Header("Authorization", val)
 }
 
-// Maybe implements matcher for Content type (see Header.Maybe)
-func (h Authorize) Maybe(lens optics.Lens) µ.Endpoint {
-	return µ.Header(h).Maybe(lens)
+func AuthorizationMaybe(header string, val µ.Lens) µ.Endpoint {
+	return µ.HeaderMaybe("Authorization", val)
 }
 
 // With validates content of HTTP Authorization header
-func (h Authorize) With(f func(string, string) error) µ.Endpoint {
+func AuthorizationWith(f func(string, string) error) µ.Endpoint {
 	return func(ctx *µ.Context) error {
 		auth := ctx.Request.Header.Get("Authorization")
 		if auth == "" {

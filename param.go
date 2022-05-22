@@ -39,7 +39,22 @@ Param type defines primitives to match query param in the HTTP requests.
   ) == nil
 
 */
-type Param string
+func Param[T Pattern](key string, val T) Endpoint {
+	switch v := any(val).(type) {
+	case string:
+		return param(key).Is(v)
+	case Lens:
+		return param(key).To(v)
+	default:
+		panic("")
+	}
+}
+
+func ParamAny(key string) Endpoint {
+	return param(key).Any
+}
+
+type param string
 
 /*
 
@@ -49,7 +64,7 @@ Is matches a param key to defined literal value
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
   e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
-func (key Param) Is(val string) Endpoint {
+func (key param) Is(val string) Endpoint {
 	if val == Any {
 		return key.Any
 	}
@@ -77,7 +92,7 @@ Any is a wildcard matcher of param key. It fails if key is not defined.
   e(mock.Input(mock.URL("/?foo=baz"))) == nil
   e(mock.Input()) != nil
 */
-func (key Param) Any(ctx *Context) error {
+func (key param) Any(ctx *Context) error {
 	if ctx.params == nil {
 		ctx.params = Params(ctx.Request.URL.Query())
 	}
@@ -103,7 +118,7 @@ value cannot be decoded to the target type. See optics.Lens type for details.
 	e(mock.Input(mock.URL("/?foo"))) != nil
 	e(mock.Input(mock.URL("/?bar=foo"))) != nil
 */
-func (key Param) To(lens optics.Lens) Endpoint {
+func (key param) To(lens optics.Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
 			ctx.params = Params(ctx.Request.URL.Query())
@@ -132,7 +147,7 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 	e(mock.Input(mock.URL("/"))) == nil
 
 */
-func (key Param) Maybe(lens optics.Lens) Endpoint {
+func ParamMaybe(key string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
 			ctx.params = Params(ctx.Request.URL.Query())
@@ -150,7 +165,7 @@ func (key Param) Maybe(lens optics.Lens) Endpoint {
 JSON matches a param key to struct.
 It assumes that key holds JSON value as url encoded string
 */
-func (key Param) JSON(lens optics.Lens) Endpoint {
+func ParamJSON(key string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
 			ctx.params = Params(ctx.Request.URL.Query())
@@ -176,7 +191,7 @@ MaybeJSON matches a param key to closed struct.
 It assumes that key holds JSON value as url encoded string.
 It does not fail if key is not defined.
 */
-func (key Param) MaybeJSON(lens optics.Lens) Endpoint {
+func ParamMaybeJSON(key string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
 			ctx.params = Params(ctx.Request.URL.Query())

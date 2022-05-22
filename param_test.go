@@ -22,13 +22,12 @@ import (
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/it"
 )
 
 func TestParamIs(t *testing.T) {
-	foo := µ.Param("foo").Is("bar")
+	foo := µ.Param("foo", "bar")
 	success := mock.Input(mock.URL("/?foo=bar"))
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
@@ -38,7 +37,7 @@ func TestParamIs(t *testing.T) {
 }
 
 func TestParamAny(t *testing.T) {
-	foo := µ.Param("foo").Any
+	foo := µ.ParamAny("foo")
 	success1 := mock.Input(mock.URL("/?foo"))
 	success2 := mock.Input(mock.URL("/?foo=bar"))
 	success3 := mock.Input(mock.URL("/?foo=baz"))
@@ -54,8 +53,8 @@ func TestParamAny(t *testing.T) {
 func TestParamString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").To(val)
+	val := µ.Optics1[myT, string]()
+	foo := µ.Param("foo", val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -63,7 +62,7 @@ func TestParamString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -73,7 +72,7 @@ func TestParamString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 
@@ -88,8 +87,8 @@ func TestParamString(t *testing.T) {
 func TestParamMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").Maybe(val)
+	val := µ.Optics1[myT, string]()
+	foo := µ.ParamMaybe("foo", val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -97,7 +96,7 @@ func TestParamMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -107,7 +106,7 @@ func TestParamMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("")
 	})
 }
@@ -115,8 +114,8 @@ func TestParamMaybeString(t *testing.T) {
 func TestParamInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").To(val)
+	val := µ.Optics1[myT, int]()
+	foo := µ.Param("foo", val)
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=bar"))
@@ -131,7 +130,7 @@ func TestParamInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 
@@ -146,8 +145,8 @@ func TestParamInt(t *testing.T) {
 func TestParamMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").Maybe(val)
+	val := µ.Optics1[myT, int]()
+	foo := µ.ParamMaybe("foo", val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -155,7 +154,7 @@ func TestParamMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 
@@ -165,7 +164,7 @@ func TestParamMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 
@@ -175,7 +174,7 @@ func TestParamMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 }
@@ -183,8 +182,8 @@ func TestParamMaybeInt(t *testing.T) {
 func TestParamFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").To(val)
+	val := µ.Optics1[myT, float64]()
+	foo := µ.Param("foo", val)
 
 	t.Run("integer", func(t *testing.T) {
 		var val myT
@@ -192,7 +191,7 @@ func TestParamFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1.0)
 	})
 
@@ -202,7 +201,7 @@ func TestParamFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1.1)
 	})
 
@@ -224,8 +223,8 @@ func TestParamFloat(t *testing.T) {
 func TestParamMaybeFloat(t *testing.T) {
 	type myT struct{ Val float64 }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").Maybe(val)
+	val := µ.Optics1[myT, float64]()
+	foo := µ.ParamMaybe("foo", val)
 
 	t.Run("double", func(t *testing.T) {
 		var val myT
@@ -233,7 +232,7 @@ func TestParamMaybeFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1.1)
 	})
 
@@ -243,7 +242,7 @@ func TestParamMaybeFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0.0)
 	})
 
@@ -253,7 +252,7 @@ func TestParamMaybeFloat(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0.0)
 	})
 }
@@ -271,8 +270,8 @@ func TestParamJSON(t *testing.T) {
 
 	type myT struct{ Val MyS }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").JSON(val)
+	val := µ.Optics1[myT, MyS]()
+	foo := µ.ParamJSON("foo", val)
 
 	t.Run("json", func(t *testing.T) {
 		var val myT
@@ -280,7 +279,7 @@ func TestParamJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
 	})
 
@@ -290,7 +289,7 @@ func TestParamJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).ShouldNot().Equal(nil)
+			If(µ.FromContext(req, &val)).ShouldNot().Equal(nil)
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
@@ -316,8 +315,8 @@ func TestParamMaybeJSON(t *testing.T) {
 
 	type myT struct{ Val MyS }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Param("foo").MaybeJSON(val)
+	val := µ.Optics1[myT, MyS]()
+	foo := µ.ParamMaybeJSON("foo", val)
 
 	t.Run("json", func(t *testing.T) {
 		var val myT
@@ -325,7 +324,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
 	})
 
@@ -335,7 +334,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{})
 
 	})
@@ -346,7 +345,7 @@ func TestParamMaybeJSON(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(MyS{})
 	})
 }

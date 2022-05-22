@@ -24,14 +24,13 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/gouldian/mock"
 
 	"github.com/fogfish/it"
 )
 
 func TestHeaderIs(t *testing.T) {
-	foo := µ.Header("X-Value").Is("some")
+	foo := µ.Header("X-Value", "some")
 	success := mock.Input(mock.Header("X-Value", "some"))
 	failure := mock.Input(mock.Header("X-Value", "none"))
 
@@ -42,8 +41,8 @@ func TestHeaderIs(t *testing.T) {
 
 func TestHeaderProduct(t *testing.T) {
 	foo := µ.Endpoints{
-		µ.Header("X-Foo").Is("Bar"),
-		µ.Header("X-Bar").Is("Foo"),
+		µ.Header("X-Foo", "Bar"),
+		µ.Header("X-Bar", "Foo"),
 	}.Join
 
 	t.Run("success", func(t *testing.T) {
@@ -85,8 +84,8 @@ func TestHeaderProduct(t *testing.T) {
 
 func TestHeaderCoProduct(t *testing.T) {
 	foo := µ.Endpoints{
-		µ.Header("X-Foo").Is("Bar"),
-		µ.Header("X-Bar").Is("Foo"),
+		µ.Header("X-Foo", "Bar"),
+		µ.Header("X-Bar", "Foo"),
 	}.Or
 
 	t.Run("success", func(t *testing.T) {
@@ -127,7 +126,7 @@ func TestHeaderCoProduct(t *testing.T) {
 }
 
 func TestHeaderIsLowerCase(t *testing.T) {
-	foo := µ.Header("X-Value").Is("bar")
+	foo := µ.Header("X-Value", "bar")
 	success := mock.Input(mock.Header("x-value", "bar"))
 	failure := mock.Input(mock.Header("x-value", "baz"))
 
@@ -137,8 +136,8 @@ func TestHeaderIsLowerCase(t *testing.T) {
 }
 
 func TestHeaderAny(t *testing.T) {
-	foo := µ.Header("X-Value").Any
-	bar := µ.Header("X-Value").Is("_")
+	foo := µ.HeaderAny("X-Value")
+	bar := µ.Header("X-Value", "_")
 
 	success1 := mock.Input(mock.Header("X-Value", "bar"))
 	success2 := mock.Input(mock.Header("X-Value", "baz"))
@@ -156,8 +155,8 @@ func TestHeaderAny(t *testing.T) {
 func TestHeaderString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Header("X-Value").To(val)
+	val := µ.Optics1[myT, string]()
+	foo := µ.Header("X-Value", val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -165,7 +164,7 @@ func TestHeaderString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -175,7 +174,7 @@ func TestHeaderString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 
@@ -190,8 +189,8 @@ func TestHeaderString(t *testing.T) {
 func TestHeaderMaybeString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Header("X-Value").Maybe(val)
+	val := µ.Optics1[myT, string]()
+	foo := µ.HeaderMaybe("X-Value", val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -199,7 +198,7 @@ func TestHeaderMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -209,7 +208,7 @@ func TestHeaderMaybeString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("")
 	})
 }
@@ -217,8 +216,8 @@ func TestHeaderMaybeString(t *testing.T) {
 func TestHeaderInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Header("X-Value").To(val)
+	val := µ.Optics1[myT, int]()
+	foo := µ.Header("X-Value", val)
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.Header("X-Value", "bar"))
@@ -233,7 +232,7 @@ func TestHeaderInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1024)
 	})
 
@@ -248,8 +247,8 @@ func TestHeaderInt(t *testing.T) {
 func TestHeaderMaybeInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1[myT, string]()
-	foo := µ.Header("X-Value").Maybe(val)
+	val := µ.Optics1[myT, int]()
+	foo := µ.HeaderMaybe("X-Value", val)
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -257,7 +256,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 
@@ -267,7 +266,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1024)
 	})
 
@@ -277,7 +276,7 @@ func TestHeaderMaybeInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(0)
 	})
 }
@@ -289,7 +288,7 @@ func TestHeaderAuthorize(t *testing.T) {
 		}
 		return errors.New("unauthorized")
 	}
-	foo := headers.Authorization.With(auth)
+	foo := headers.AuthorizationWith(auth)
 
 	t.Run("bearer", func(t *testing.T) {
 		req := mock.Input(mock.Header("Authorization", "Bearer foo"))
@@ -320,7 +319,7 @@ func TestHeaderContentJSON(t *testing.T) {
 		"text/plain",
 		"text/html",
 	} {
-		foo := headers.ContentType.Is(header)
+		foo := µ.Header(headers.ContentType, header)
 		success := mock.Input(mock.Header("Content-Type", header))
 		failure := mock.Input(mock.Header("Content-Type", "some/value"))
 
@@ -332,7 +331,7 @@ func TestHeaderContentJSON(t *testing.T) {
 
 func TestHeaderOutput(t *testing.T) {
 	out := µ.Status.OK(
-		µ.Header("foo").Value("bar"),
+		µ.HeaderValue("foo", "bar"),
 	).(*µ.Output)
 
 	it.Ok(t).
