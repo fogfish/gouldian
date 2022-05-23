@@ -19,7 +19,6 @@
 package main
 
 import (
-	"fmt"
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
 
@@ -52,7 +51,6 @@ func echo() µ.Routable {
 			if err := µ.FromContext(ctx, &req); err != nil {
 				return µ.Status.BadRequest(µ.WithIssue(err))
 			}
-			fmt.Println(req)
 
 			return µ.Status.OK(
 				µ.WithHeader(headers.ContentType, headers.TextPlain),

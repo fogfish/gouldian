@@ -344,13 +344,13 @@ func TestContextFree(t *testing.T) {
 		If(foo(req)).ShouldNot().Equal(nil)
 }
 
-func TestFMapSuccess(t *testing.T) {
+func TestHandlerSuccess(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(µ.Path("foo")),
-			µ.FMap(func(*µ.Context) error {
+			func(*µ.Context) error {
 				return µ.Status.OK(µ.WithText("bar"))
-			}),
+			},
 		),
 	)
 	req := mock.Input(mock.URL("/foo"))
@@ -363,14 +363,36 @@ func TestFMapSuccess(t *testing.T) {
 	)
 }
 
-func TestFMap2Success(t *testing.T) {
+func TestFMapSuccess(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.FMap(func(ctx *µ.Context, t *T) error {
+				return µ.Status.OK(µ.WithText(t.A))
+			}),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "bar"
+		},
+	)
+}
+
+func TestHandler2Success(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(µ.Path("foo")),
-			µ.FMap(func(*µ.Context) error {
+			func(*µ.Context) error {
 				return µ.Status.
 					OK(µ.WithText("bar"))
-			}),
+			},
 		),
 	)
 	bar := mock.Endpoint(
@@ -392,14 +414,42 @@ func TestFMap2Success(t *testing.T) {
 	)
 }
 
+func TestHandlerFailure(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.FMap(func(*µ.Context, *T) error {
+				return µ.Status.
+					Unauthorized(µ.WithIssue(fmt.Errorf("")))
+			}),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			switch v := be.(type) {
+			case *µ.Output:
+				return v.Status == http.StatusUnauthorized
+			default:
+				return false
+			}
+		},
+	)
+}
+
 func TestFMapFailure(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(µ.Path("foo")),
-			µ.FMap(func(*µ.Context) error {
+			func(*µ.Context) error {
 				return µ.Status.
 					Unauthorized(µ.WithIssue(fmt.Errorf("")))
-			}),
+			},
 		),
 	)
 	req := mock.Input(mock.URL("/foo"))

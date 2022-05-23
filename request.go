@@ -186,8 +186,40 @@ func Body(lens optics.Lens) Endpoint {
 FMap applies clojure to matched HTTP request,
 taking the execution context as the input to closure
 */
-func FMap(f func(*Context) error) Endpoint {
-	return func(req *Context) error { return f(req) }
+func FMap[A any](f func(*Context, *A) error) Endpoint {
+	return func(req *Context) error {
+		var a A
+		if err := FromContext(req, &a); err != nil {
+			return Status.BadRequest(WithIssue(err))
+		}
+
+		return f(req, &a)
+	}
+}
+
+/*
+
+Map applies clojure to matched HTTP request,
+taking the execution context and matched parameters as the input to closure.
+The output is always returned as JSON.
+*/
+func Map[A, B any](f func(*Context, *A) (*B, error)) Endpoint {
+	return func(req *Context) error {
+		var a A
+		if err := FromContext(req, &a); err != nil {
+			return Status.BadRequest(WithIssue(err))
+		}
+
+		b, err := f(req, &a)
+		if err != nil {
+			return err
+		}
+
+		return Status.OK(
+			WithHeader("Content-Type", "application/json"),
+			WithJSON(b),
+		)
+	}
 }
 
 /*
