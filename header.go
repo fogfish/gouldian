@@ -19,17 +19,16 @@
 package gouldian
 
 import (
+	"fmt"
 	"strings"
 )
 
 /*
 
-Header type defines primitives to match Headers of HTTP requests.
-
-  import "github.com/fogfish/gouldian/header"
+Header combinator defines primitives to match Headers of HTTP requests.
 
   endpoint := µ.GET(
-    µ.Header("X-Foo").Is("Bar"),
+    µ.Header("X-Foo", "Bar"),
   )
 
   endpoint(
@@ -46,24 +45,33 @@ func Header[T Pattern](hdr string, val T) Endpoint {
 	case Lens:
 		return header(hdr).To(v)
 	default:
-		panic("")
+		panic("type system failure")
 	}
 }
 
+/*
+
+HeaderAny is a wildcard matcher of header. It fails if header is not defined.
+
+  e := µ.GET( µ.HeaderAny("X-Foo") )
+  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
+  e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
+  e(mock.Input()) != nil
+*/
 func HeaderAny(hdr string) Endpoint {
 	return header(hdr).Any
 }
 
 /*
 
-Maybe matches header value to the request context. It uses lens abstraction to
+HeaderMaybe matches header value to the request context. It uses lens abstraction to
 decode HTTP header into Golang type. The Endpoint does not cause no-match
 if header value cannot be decoded to the target type. See optics.Lens type for details.
 
   type myT struct{ Val string }
 
-  x := optics.Lenses1(myT{})
-  e := µ.GET(µ.Header("X-Foo").To(x))
+  x := µ.Optics1[myT, string]()
+  e := µ.GET(µ.HeaderMaybe("X-Foo", x))
   e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
 
 */
@@ -76,15 +84,12 @@ func HeaderMaybe(header string, lens Lens) Endpoint {
 	}
 }
 
+// Internal type
 type header string
 
 /*
 
 Is matches a header to defined literal value.
-
-  e := µ.GET( µ.Header("X-Foo").Is("Bar") )
-  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
-  e(mock.Input(mock.Header("X-Foo", "Baz"))) != nil
 */
 func (header header) Is(val string) Endpoint {
 	if val == Any {
@@ -103,11 +108,6 @@ func (header header) Is(val string) Endpoint {
 /*
 
 Any is a wildcard matcher of header. It fails if header is not defined.
-
-  e := µ.GET( µ.Header("X-Foo").Any )
-  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
-  e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
-  e(mock.Input()) != nil
 */
 func (header header) Any(ctx *Context) error {
 	opt := ctx.Request.Header.Get(string(header))
@@ -122,12 +122,6 @@ func (header header) Any(ctx *Context) error {
 To matches header value to the request context. It uses lens abstraction to
 decode HTTP header into Golang type. The Endpoint causes no-match if header
 value cannot be decoded to the target type. See optics.Lens type for details.
-
-  type myT struct{ Val string }
-
-  x := optics.Lenses1(myT{})
-  e := µ.GET(µ.Header("X-Foo").To(x))
-  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
 */
 func (header header) To(lens Lens) Endpoint {
 	return func(ctx *Context) error {
@@ -140,16 +134,37 @@ func (header header) To(lens Lens) Endpoint {
 
 /*
 
-Value outputs header value as the result of HTTP response
+Authorization defines Endpoints that simplify validation of credentials/tokens
+supplied within the request
+
+  e := µ.GET( µ.Authorization(func(string, string) error { ... }) )
+  e(mock.Input(mock.Header("Authorization", "Basic foo"))) == nil
+  e(mock.Input(mock.Header("Authorization", "Basic bar"))) != nil
 */
-// func HeaderValue(header string, value string) Result {
-// 	return func(out *Output) error {
-// 		out.Headers = append(out.Headers,
-// 			struct {
-// 				Header string
-// 				Value  string
-// 			}{header, value},
-// 		)
-// 		return nil
-// 	}
-// }
+func Authorization(f func(string, string) error) Endpoint {
+	return func(ctx *Context) error {
+		auth := ctx.Request.Header.Get("Authorization")
+		if auth == "" {
+			return Status.Unauthorized(
+				WithIssue(
+					fmt.Errorf("Unauthorized %s", ctx.Request.URL.Path),
+				),
+			)
+		}
+
+		cred := strings.Split(auth, " ")
+		if len(cred) != 2 {
+			return Status.Unauthorized(
+				WithIssue(
+					fmt.Errorf("Unauthorized %v", ctx.Request.URL.Path),
+				),
+			)
+		}
+
+		if err := f(cred[0], cred[1]); err != nil {
+			return Status.Unauthorized(WithIssue(err))
+		}
+
+		return nil
+	}
+}

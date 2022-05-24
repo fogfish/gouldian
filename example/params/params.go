@@ -55,16 +55,11 @@ func qString() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo")),
 		µ.Param("q", lensString),
-		func(ctx *µ.Context) error {
-			var req paramString
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *paramString) error {
 			return µ.Status.OK(
 				µ.WithText(fmt.Sprintf("query string (%s)", req.Value)),
 			)
-		},
+		}),
 	)
 }
 
@@ -82,15 +77,10 @@ func qInt() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo")),
 		µ.Param("v", lensInt),
-		func(ctx *µ.Context) error {
-			var req paramInt
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *paramInt) error {
 			return µ.Status.OK(
 				µ.WithText(fmt.Sprintf("query number (%d)", req.Value)),
 			)
-		},
+		}),
 	)
 }

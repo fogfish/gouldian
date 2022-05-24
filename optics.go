@@ -6,6 +6,7 @@ import (
 	"github.com/fogfish/gouldian/internal/optics"
 )
 
+// Lens type
 type Lens struct{ optics.Lens }
 
 func newLens[S, A any](ln lenses.Lens[S, A]) func(hseq.Type[S]) Lens {

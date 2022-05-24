@@ -18,12 +18,6 @@
 
 package headers
 
-import (
-	"fmt"
-	µ "github.com/fogfish/gouldian"
-	"strings"
-)
-
 /*
 
 List of supported HTTP header constants, use them instead of explicit definition
@@ -77,50 +71,3 @@ const (
 	TextPlain       = "text/plain"
 	TextHTML        = "text/html"
 )
-
-/*
-
-Authorize is "synonym" to Header type. It defines a few Endpoints that simplify
-validation of credentials/tokens supplied within the request
-
-  e := µ.GET( µ.Authorization.With(func(string, string) error { ... }) )
-  e(mock.Input(mock.Header("Authorization", "Basic foo"))) == nil
-  e(mock.Input(mock.Header("Authorization", "Basic bar"))) != nil
-
-*/
-func Authorization(header string, val µ.Lens) µ.Endpoint {
-	return µ.Header("Authorization", val)
-}
-
-func AuthorizationMaybe(header string, val µ.Lens) µ.Endpoint {
-	return µ.HeaderMaybe("Authorization", val)
-}
-
-// With validates content of HTTP Authorization header
-func AuthorizationWith(f func(string, string) error) µ.Endpoint {
-	return func(ctx *µ.Context) error {
-		auth := ctx.Request.Header.Get("Authorization")
-		if auth == "" {
-			return µ.Status.Unauthorized(
-				µ.WithIssue(
-					fmt.Errorf("Unauthorized %s", ctx.Request.URL.Path),
-				),
-			)
-		}
-
-		cred := strings.Split(auth, " ")
-		if len(cred) != 2 {
-			return µ.Status.Unauthorized(
-				µ.WithIssue(
-					fmt.Errorf("Unauthorized %v", ctx.Request.URL.Path),
-				),
-			)
-		}
-
-		if err := f(cred[0], cred[1]); err != nil {
-			return µ.Status.Unauthorized(µ.WithIssue(err))
-		}
-
-		return nil
-	}
-}

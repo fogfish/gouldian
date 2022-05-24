@@ -24,7 +24,6 @@ import (
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/it"
 )
@@ -239,7 +238,7 @@ func TestBodyJSON(t *testing.T) {
 	type request struct {
 		FooBar foobar
 	}
-	var lens = optics.ForProduct1[request, foobar]()
+	var lens = µ.Optics1[request, foobar]()
 
 	var value request
 	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
@@ -279,7 +278,7 @@ func TestBodyForm(t *testing.T) {
 	type request struct {
 		FooBar foobar `content:"form"`
 	}
-	var lens = optics.ForProduct1[request, foobar]()
+	var lens = µ.Optics1[request, foobar]()
 
 	var value request
 	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
@@ -317,7 +316,7 @@ func TestText(t *testing.T) {
 	type request struct {
 		FooBar string
 	}
-	var lens = optics.ForProduct1[request, string]()
+	var lens = µ.Optics1[request, string]()
 
 	var value request
 	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
@@ -478,7 +477,7 @@ func TestBodyLeak(t *testing.T) {
 	type request struct {
 		Item Item
 	}
-	lens := optics.ForProduct1[request, Item]()
+	lens := µ.Optics1[request, Item]()
 
 	endpoint := func() µ.Routable {
 		return µ.GET(
@@ -522,11 +521,11 @@ func TestAccessIs(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(),
-			µ.Access(µ.JWT.Sub).Is("sub"),
+			µ.JWT(µ.Token.Sub, "sub"),
 		),
 	)
-	success := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
-	failure1 := mock.Input(mock.JWT(µ.JWT{"sub": "foo"}))
+	success := mock.Input(mock.JWT(µ.Token{"sub": "sub"}))
+	failure1 := mock.Input(mock.JWT(µ.Token{"sub": "foo"}))
 	failure2 := mock.Input()
 
 	it.Ok(t).
@@ -539,12 +538,12 @@ func TestAccessOneOf(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(),
-			µ.Access(µ.JWT.Scope).OneOf("a", "b", "c"),
+			µ.JWTOneOf(µ.Token.Scope, "a", "b", "c"),
 		),
 	)
 
-	success := mock.Input(mock.JWT(µ.JWT{"scope": "x y c"}))
-	failure1 := mock.Input(mock.JWT(µ.JWT{"scope": "x y"}))
+	success := mock.Input(mock.JWT(µ.Token{"scope": "x y c"}))
+	failure1 := mock.Input(mock.JWT(µ.Token{"scope": "x y"}))
 	failure2 := mock.Input()
 
 	it.Ok(t).
@@ -557,12 +556,12 @@ func TestAccessAllOf(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(),
-			µ.Access(µ.JWT.Scope).AllOf("a", "b", "c"),
+			µ.JWTAllOf(µ.Token.Scope, "a", "b", "c"),
 		),
 	)
 
-	success := mock.Input(mock.JWT(µ.JWT{"scope": "a b c"}))
-	failure1 := mock.Input(mock.JWT(µ.JWT{"scope": "a b"}))
+	success := mock.Input(mock.JWT(µ.Token{"scope": "a b c"}))
+	failure1 := mock.Input(mock.JWT(µ.Token{"scope": "a b"}))
 	failure2 := mock.Input()
 
 	it.Ok(t).
@@ -573,18 +572,18 @@ func TestAccessAllOf(t *testing.T) {
 
 func TestAccessTo(t *testing.T) {
 	type MyT struct{ Sub string }
-	sub := optics.ForProduct1[myT, string]()
+	sub := µ.Optics1[myT, string]()
 
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(),
-			µ.Access(µ.JWT.Sub).To(sub),
+			µ.JWT(µ.Token.Sub, sub),
 		),
 	)
 
 	t.Run("some", func(t *testing.T) {
 		var val MyT
-		req := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
+		req := mock.Input(mock.JWT(µ.Token{"sub": "sub"}))
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
@@ -602,18 +601,18 @@ func TestAccessTo(t *testing.T) {
 
 func TestAccessMaybe(t *testing.T) {
 	type MyT struct{ Sub string }
-	sub := optics.ForProduct1[MyT, string]()
+	sub := µ.Optics1[MyT, string]()
 
 	foo := mock.Endpoint(
 		µ.GET(
 			µ.URI(),
-			µ.Access(µ.JWT.Sub).Maybe(sub),
+			µ.JWTMaybe(µ.Token.Sub, sub),
 		),
 	)
 
 	t.Run("some", func(t *testing.T) {
 		var val MyT
-		req := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
+		req := mock.Input(mock.JWT(µ.Token{"sub": "sub"}))
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
@@ -623,7 +622,7 @@ func TestAccessMaybe(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		var val MyT
-		req := mock.Input(mock.JWT(µ.JWT{}))
+		req := mock.Input(mock.JWT(µ.Token{}))
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).

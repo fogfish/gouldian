@@ -22,13 +22,41 @@ import (
 	"github.com/fogfish/gouldian/internal/optics"
 )
 
-type Pattern interface{ string | Lens }
-
+// Segment union type, make URI type safe
 type Segment struct {
 	optics *Lens
 	path   string
 }
 
+/*
+
+URI is an endpoint to match URL of HTTP request. The function takes a sequence
+of segment patterns as input. These patterns are either literals or lenses,
+where each term corresponds to the path segment. The function do not match
+if length of path is not equal to the length of pattern or segment do not
+match to pattern
+
+  e := µ.GET( µ.URI(µ.Path("foo")) )
+  e(mock.Input(mock.URL("/foo"))) == nil
+  e(mock.Input(mock.URL("/bar"))) != nil
+*/
+func URI(segments ...Segment) Routable {
+	return func() ([]string, Endpoint) {
+		path, lens := segmentsToLens(segments, true)
+		return path, segmentsToEndpoint(path, lens)
+	}
+}
+
+/*
+
+Path is an endpoint to match a single URL segment of HTTP request.
+The function takes a path pattern as arguments. The pattern is either literal
+or lens. The function do not match if segment do not match to pattern
+
+  e := µ.GET( µ.URI(µ.Path("foo")) )
+  e(mock.Input(mock.URL("/foo"))) == nil
+  e(mock.Input(mock.URL("/bar"))) != nil
+*/
 func Path[T Pattern](segment T) Segment {
 	switch v := any(segment).(type) {
 	case string:
@@ -40,47 +68,21 @@ func Path[T Pattern](segment T) Segment {
 	}
 }
 
+/*
+
+PathAny is a synonym of µ.Path("_"), it matches any segments
+*/
 func PathAny() Segment {
 	return Segment{path: "_"}
 }
 
 /*
 
-PathAll is an endpoint to match URL of HTTP request. The function takes a path
-pattern as arguments. The pattern is sequence of either literals or lenses,
-where each term corresponds to the path segment. The function do not match
-if length of path is not equal to the length of pattern or segment do not
-match to pattern
+PathAll is an endpoint to match entire remaining path of URI
 */
 func PathAll(segment Lens) Segment {
 	return Segment{optics: &segment, path: "*"}
 }
-
-/*
-
-Path is an endpoint to match URL of HTTP request. The function takes a path
-pattern as arguments. The pattern is sequence of either literals or lenses,
-where each term corresponds to the path segment. The function do not match
-if length of path is not equal to the length of pattern or segment do not
-match to pattern
-
-  e := µ.GET( µ.Path("foo") )
-  e(mock.Input(mock.URL("/foo"))) == nil
-  e(mock.Input(mock.URL("/bar"))) != nil
-*/
-func URI(segments ...Segment) Routable {
-	return func() ([]string, Endpoint) {
-		path, lens := segmentsToLens(segments, true)
-		return path, segmentsToEndpoint(path, lens)
-	}
-}
-
-// func URIs(segments ...Segment) Routable {
-// 	return func() ([]string, Endpoint) {
-// 		path, lens := segmentsToLens(segments, false)
-// 		return path, segmentsToEndpoint(path, lens)
-// 	}
-// }
 
 //
 func segmentsToLens(segments []Segment, strict bool) ([]string, []optics.Lens) {
@@ -97,17 +99,6 @@ func segmentsToLens(segments []Segment, strict bool) ([]string, []optics.Lens) {
 			}
 			lens = append(lens, segment.optics.Lens)
 		}
-		// switch v := segment.(type) {
-		// case string:
-		// 	path = append(path, v)
-		// case optics.Lens:
-		// 	if i == len(segments)-1 && !strict {
-		// 		path = append(path, "*")
-		// 	} else {
-		// 		path = append(path, ":")
-		// 	}
-		// 	lens = append(lens, v)
-		// }
 	}
 
 	return path, lens

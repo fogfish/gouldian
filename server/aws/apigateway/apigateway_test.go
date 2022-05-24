@@ -92,13 +92,13 @@ func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayPro
 	return apigateway.Serve(
 		µ.GET(
 			µ.URI(µ.Path(path)),
-			µ.FMap(func(ctx *µ.Context) error {
+			func(ctx *µ.Context) error {
 				return µ.Status.OK(
 					µ.WithHeader(headers.ContentType, headers.TextPlain),
 					µ.WithHeader(headers.Server, "echo"),
 					µ.WithText("echo"),
 				)
-			}),
+			},
 		),
 	)
 }

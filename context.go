@@ -39,7 +39,7 @@ type Context struct {
 	params  Params
 	payload []byte
 
-	JWT JWT
+	JWT Token
 
 	morphism optics.Morphisms
 }

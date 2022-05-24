@@ -288,7 +288,7 @@ func TestHeaderAuthorize(t *testing.T) {
 		}
 		return errors.New("unauthorized")
 	}
-	foo := headers.AuthorizationWith(auth)
+	foo := µ.Authorization(auth)
 
 	t.Run("bearer", func(t *testing.T) {
 		req := mock.Input(mock.Header("Authorization", "Bearer foo"))

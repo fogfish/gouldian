@@ -233,7 +233,7 @@ e(mock.Input(mock.URL("/foo/bar")))
 
 **Params**
 
-The library defines a combinator `Param` that builds the `Endpoint` to match URL query string from HTTP request. The function takes either literal value or lens to extract value.
+The library defines a combinator `Param` to build the `Endpoint`. The combinator matches URL query string from HTTP request. It either matches literal value or uses lens to extract value.
 
 ```go
 e := µ.Param("foo", "bar")
@@ -252,7 +252,8 @@ There are built-in Param matching endpoints:
 
 **Headers**
 
-The library defines a combinator `Header` that builds the `Endpoint` to match HTTP header from the request. The function takes either literal value or lens to extract value. See the package `headers` that defines HTTP header constants.
+The library defines a combinator `Header` to build the `Endpoint`. The combinator matches HTTP header from the request. It either matches literal value or uses lens to extract value. See the package `headers` that defines HTTP header constants.
+
 
 ```go
 
@@ -271,7 +272,7 @@ There are built-in Header matching endpoints:
 
 **Body**
 
-The library defines `Body` function build `Endpoint` to extract value. The value is then decoded by lens into the application type. The following example decodes body into struct. 
+The library defines a combinator`Body` to build `Endpoint`. The combinator consumes payload from HTTP request and decodes the value into the type associated with lens. The following example decodes body into the application specific data structure. 
 
 ```go
 // application type that captures application payload
@@ -283,7 +284,7 @@ type User struct {
 type A struct {
   User User
 }
-var user := optics.ForProduct1(A{})
+var user := µ.Optics1[A, User]()
 
 e := µ.Body(user)
 e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
@@ -292,17 +293,23 @@ e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
 
 **Authentication with AWS Cognito**
 
-The library defines a types `µ.JWT`, `µ.Access` that builds the `Endpoint` to extract JWT access token. The type defines a functions `Is` matches fields of JWT token; `To` and `Maybe` to extracts values. The serverless factory of support automatic decoding of JWT access token, which is provided by AWS Cognito service.
+The library defines a types `µ.Token` and combinator `µ.JWT` to build the `Endpoint`. The combinator matches JWT claims from HTTP request. The library supports automatic decoding of JWT access token into instance of `µ.Token` container. 
 
 ```go
+/*
+
+Endpoint matches if HTTP request contains JWT with scopes
+*/
+e := µ.GET( µ.JWT(µ.Token.Scope, "rw") )
+
 /*
 
 Endpoint matches if HTTP request contains JWT created by AWS Cognito for user
 */ 
 type A struct{ User string }
 
-user := optics.Lenses1(MyT{})
-e := µ.GET( µ.Access(µ.JWT.Username).To(user) )
+user := µ.Optics1[A, string]
+e := µ.GET( µ.JWT(µ.Token.Username, user) )
 
 /*
 
@@ -310,9 +317,15 @@ Endpoint matches if HTTP request contains JWT created by AWS Cognito for trusted
 */ 
 type A struct{ Client string }
 
-client := optics.Lenses1(MyT{})
-e := µ.GET( µ.Access(µ.JWT.ClientID).To(client) )
+client := µ.Optics1[A, string]
+e := µ.GET( µ.JWT(µ.Token.Username, client) )
 ```
+
+There are built-in JWT claims matching endpoints:
+* `µ.JWT ⟼ Endpoint`
+* `µ.JWTMaybe ⟼ Endpoint`
+* `µ.JWTOneOf ⟼ Endpoint`
+* `µ.JWTAllOf ⟼ Endpoint`
 
 
 ## High-order Endpoints
@@ -325,17 +338,19 @@ Use the product combinator to declare *conjunctive conditions*.
 
 ```go
 // High Order Product Endpoint
-//  /search?q=:text
-func search(text optics.Lens) µ.Endpoint {
+func search(text µ.Lens) µ.Endpoint {
   return µ.Join(
-    µ.Path("search"),
-    µ.Param("q").To(text))
+    µ.Param("q", text),
+    µ.Header("Accept", "application/json"),
   )
 }
 
 // Use HoC
-var text = optics.FromProduct1(A{})
-µ.GET( search(text) )
+var text = µ.Optics1[A, string]
+µ.GET(
+  µ.URI(µ.Path("search")),
+  search(text),
+)
 ```
 
 **Coproduct endpoint**
@@ -344,31 +359,88 @@ A co-product represents either-or endpoint evaluation.
 
 ```go
 // High Order CoProduct Endpoint
-//  /search?q=:text
-//  /search/:text
 func search(text optics.Lens) µ.Endpoint {
   return µ.Or(
-    µ.Path("search", text),
-    µ.Join(
-      µ.Path("search"),
-      µ.Param("q").To(text)),
-    ),
+    µ.Param("query", text),
+    µ.Param("q", text),
   )
 }
 
 // Use HoC
 var text = optics.FromProduct1(A{})
-µ.GET( search(text) )
+µ.GET(
+  µ.URI(µ.Path("search")),
+  search(text),
+)
 ```
+
+The library automatically creates co-product endpoint if few HoC shares same path.
+
+```go
+func create() µ.Routable {
+  return µ.POST(µ.URI(µ.Path("user")), /* ... */)
+}
+
+func lookup() µ.Routable {
+  return µ.GET(µ.URI(µ.Path("user")), /* ... */)
+}
+
+// Internally co-product endpoint is created at /user
+httpd.Serve(create(), lookup())
+```
+
 
 ## Mapping Endpoints
 
-A business logic is defined as Endpoint mapper with help of closure functions `Context ⟼ Output`. The library provides `func FMap(f func(µ.Context) error) µ.Endpoint` function. It lifts a transformer into Endpoint so that it is composable with other Endpoints.
+A business logic is defined as `Endpoint` type as well. It is a transformer function that maps `Context` to `Output`.
 
 ```go
 µ.GET(
-  µ.Path("foo"),
-  µ.FMap(func(*µ.Context) error { µ.Status.OK() }),
+  µ.URI(µ.Path("foo")),
+  func(*µ.Context) error { return µ.Status.OK() },
+)
+```
+
+The library provides a few helper function that simplify extraction of matched parameters from the request context:
+
+```go
+// application type that captures application payload
+type User struct {
+  Username string `json:"username"` 
+}
+
+// type of the request
+type A struct {
+  Space string
+  User  User
+}
+var space, user := µ.Optics2[A, string, User]()
+
+/*
+
+µ.FMap: (µ.Context, A) ⟼ Output 
+Just simplify encoding of matched parameters into the parameters of
+the function. It expects Output type as result.   
+*/ 
+µ.POST(
+  µ.URI(µ.Path("spaces"), µ.Path(space)),
+  µ.Body(user),
+  µ.FMap(func(ctx *µ.Context, a *A) error {
+    return µ.Status.OK(µ.WithJSON(a))
+  }),
+)
+
+/*
+
+µ.Map: (µ.Context, A) ⟼ (B, error)
+This is a classical A ⟼ B map function that produces JSON as output. 
+*/ 
+µ.POST(
+  µ.URI(µ.Path("spaces"), µ.Path(space)),
+  µ.Body(user),
+  µ.Map(func(ctx *µ.Context, a *A) (*A, error) {
+    return a, nil
+  }),
 )
 ```
 
@@ -380,7 +452,7 @@ The library provides factory functions named after HTTP status codes. Use them t
 
 ```go
 µ.GET(
-  µ.Path(path.Is("foo")),
+  µ.URI(µ.Path("foo")),
   µ.FMap(
     func(*µ.Context) error {
       return µ.Status.Ok(

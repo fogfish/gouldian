@@ -18,7 +18,7 @@
 
 /*
 
-Package optics ...
+Package optics is an internal, see golem.optics for public api
 
 */
 package optics
@@ -82,30 +82,9 @@ func Morph[S any](m Morphisms, s *S) error {
 	return nil
 }
 
-// /*
-
-// Apply Morphism to "some" struct
-// @deprecated
-// */
-// func (m Morphisms) Apply(s interface{}) error {
-// 	g := reflect.ValueOf(s)
-// 	// if g.Kind() != reflect.Ptr {
-// 	// 	return fmt.Errorf("Morphism requires pointer type, %s given", g.Kind().String())
-// 	// }
-
-// 	// p := unsafe.Pointer(&a)
-// 	for _, arrow := range m {
-// 		if err := arrow.Lens.Put(g, arrow.Value); err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 /*
 
-...
+Lens to deal with string type
 */
 type lensString[S any] struct{ optics.Reflector[string] }
 
@@ -119,7 +98,7 @@ func (l *lensString[S]) FromString(a string) (Value, error) {
 
 /*
 
-...
+Lens to deal with number type
 */
 type lensNumber[S any] struct{ optics.Reflector[int] }
 
@@ -138,7 +117,7 @@ func (l *lensNumber[S]) FromString(a string) (Value, error) {
 
 /*
 
-...
+Lens to deal with double type
 */
 type lensDouble[S any] struct{ optics.Reflector[float64] }
 
@@ -154,85 +133,6 @@ func (l *lensDouble[S]) FromString(a string) (Value, error) {
 
 	return Value{Double: val}, nil
 }
-
-/*
-
-lensStruct is a type for any lens
-*/
-type lensStruct struct {
-	field  int
-	typeof reflect.Type
-}
-
-/*
-
-lensStructString implements lens for string type
-*/
-// type lensStructString struct{ lensStruct }
-
-// // FromString transforms string ⟼ Value[string]
-// func (lens lensStructString) FromString(s string) (Value, error) {
-// 	return Value{String: s}, nil
-// }
-
-// // Put Value[string] to struct
-// func (lens lensStructString) Put(a reflect.Value, s Value) error {
-// 	f := a.Elem().Field(int(lens.field))
-
-// 	if f.Kind() == reflect.Ptr {
-// 		p := reflect.New(lens.typeof.Elem())
-// 		p.Elem().SetString(s.String)
-// 		f.Set(p)
-// 		return nil
-// 	}
-
-// 	f.SetString(s.String)
-// 	return nil
-// }
-
-/*
-
-lensStructInt implements lens for int type
-*/
-// type lensStructInt struct{ lensStruct }
-
-// // FromString transforms string ⟼ Value[int]
-// func (lens lensStructInt) FromString(s string) (Value, error) {
-// 	val, err := strconv.Atoi(s)
-// 	if err != nil {
-// 		return Value{}, err
-// 	}
-
-// 	return Value{Number: val}, nil
-// }
-
-// // Put Value[int] to struct
-// func (lens lensStructInt) Put(a reflect.Value, s Value) error {
-// 	a.Elem().Field(int(lens.field)).SetInt(int64(s.Number))
-// 	return nil
-// }
-
-/*
-
-lensStructFloat implements lens for float type
-*/
-// type lensStructFloat struct{ lensStruct }
-
-// // FromString transforms string ⟼ Value[float64]
-// func (lens lensStructFloat) FromString(s string) (Value, error) {
-// 	val, err := strconv.ParseFloat(s, 64)
-// 	if err != nil {
-// 		return Value{}, err
-// 	}
-
-// 	return Value{Double: val}, nil
-// }
-
-// // Put Value[float64] to struct
-// func (lens lensStructFloat) Put(a reflect.Value, s Value) error {
-// 	a.Elem().Field(int(lens.field)).SetFloat(s.Double)
-// 	return nil
-// }
 
 /*
 
@@ -263,24 +163,6 @@ func (lens *lensStructJSON[A]) GetValue(s reflect.Value) string {
 	return string(v)
 }
 
-// // FromString transforms string ⟼ Value[string]
-// func (lens lensStructJSON) FromString(s string) (Value, error) {
-// 	return Value{String: s}, nil
-// }
-
-// // Put Value[string] to struct
-// func (lens lensStructJSON) Put(a reflect.Value, s Value) error {
-// 	c := reflect.New(lens.typeof)
-// 	o := c.Interface()
-
-// 	if err := json.Unmarshal([]byte(s.String), &o); err != nil {
-// 		return err
-// 	}
-
-// 	a.Elem().Field(int(lens.field)).Set(c.Elem())
-// 	return nil
-// }
-
 /*
 
 lensStructForm implements lens for complex "product" type
@@ -310,105 +192,13 @@ func (lens *lensStructForm[A]) GetValue(s reflect.Value) string {
 	return string(v)
 }
 
-// type lensStructForm struct{ lensStruct }
-
-// FromString transforms string ⟼ Value[string]
-// func (lens lensStructForm) FromString(s string) (Value, error) {
-// 	return Value{String: s}, nil
-// }
-
-// // Put Value[string] to struct
-// func (lens lensStructForm) Put(a reflect.Value, s Value) error {
-// 	c := reflect.New(lens.typeof)
-// 	o := c.Interface()
-
-// 	buf := bytes.NewBuffer([]byte(s.String))
-// 	if err := form.NewDecoder(buf).Decode(&o); err != nil {
-// 		return err
-// 	}
-
-// 	a.Elem().Field(int(lens.field)).Set(c.Elem())
-// 	return nil
-// }
-
 /*
 
-lensStructSeq ...
+NewLens creates lense instance
 */
-/*
-type lensStructSeq struct{ lensStruct }
-
-func (lensStructSeq) FromString(s []string) (Value, error) {
-	return Value{String: s[0]}, nil
-}
-
-func (lens lensStructSeq) Put(a reflect.Value, s Value) error {
-	v := reflect.ValueOf(s.String)
-	switch v.Type().Kind() {
-	case reflect.Slice:
-		a.Elem().Field(int(lens.field)).Set(v)
-	default:
-		return fmt.Errorf("Cannot cast %T to Seq", s)
-	}
-
-	return nil
-}
-*/
-
-/*
-
-newLensStruct creates lens
-*/
-// func newLensStruct(id int, field reflect.StructField) Lens {
-// 	typeof := field.Type.Kind()
-// 	if typeof == reflect.Ptr {
-// 		typeof = field.Type.Elem().Kind()
-// 	}
-
-// 	switch typeof {
-// 	case reflect.String:
-// 		return &lensStructString{lensStruct{id, field.Type}}
-// 	case reflect.Int:
-// 		return &lensStructInt{lensStruct{id, field.Type}}
-// 	case reflect.Float64:
-// 		return &lensStructFloat{lensStruct{id, field.Type}}
-// 	case reflect.Struct:
-// 		switch field.Tag.Get("content") {
-// 		case "form":
-// 			return &lensStructForm{lensStruct{id, field.Type}}
-// 		case "application/x-www-form-urlencoded":
-// 			return &lensStructForm{lensStruct{id, field.Type}}
-// 		case "json":
-// 			return &lensStructJSON{lensStruct{id, field.Type}}
-// 		case "application/json":
-// 			return &lensStructJSON{lensStruct{id, field.Type}}
-// 		default:
-// 			return &lensStructJSON{lensStruct{id, field.Type}}
-// 		}
-// 	// case reflect.Slice:
-// 	// 	return &lensStructSeq{lensStruct{id, field.Type}}
-// 	default:
-// 		panic(fmt.Errorf("Unknown lens type %v", field.Type))
-// 	}
-// }
-
-// func typeOf(t interface{}) reflect.Type {
-// 	typeof := reflect.TypeOf(t)
-// 	if typeof.Kind() == reflect.Ptr {
-// 		typeof = typeof.Elem()
-// 	}
-
-// 	return typeof
-// }
-
 func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
-		typeof := t.Type
-		if typeof.Kind() == reflect.Ptr {
-			typeof = typeof.Elem()
-		}
-
-		switch typeof.Kind() {
+		switch t.PureType.Kind() {
 		case reflect.String:
 			return &lensString[S]{ln.(optics.Reflector[string])}
 		case reflect.Int:

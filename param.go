@@ -26,10 +26,10 @@ import (
 
 /*
 
-Param type defines primitives to match query param in the HTTP requests.
+Param combinator defines primitives to match query param in the HTTP requests.
 
   endpoint := µ.GET(
-    µ.Param("foo").Is("bar"),
+    µ.Param("foo", "bar"),
   )
 
   endpoint(
@@ -46,102 +46,34 @@ func Param[T Pattern](key string, val T) Endpoint {
 	case Lens:
 		return param(key).To(v)
 	default:
-		panic("")
-	}
-}
-
-func ParamAny(key string) Endpoint {
-	return param(key).Any
-}
-
-type param string
-
-/*
-
-Is matches a param key to defined literal value
-
-  e := µ.GET( µ.Param("foo").Is("bar") )
-  e(mock.Input(mock.URL("/?foo=bar"))) == nil
-  e(mock.Input(mock.URL("/?bar=foo"))) != nil
-*/
-func (key param) Is(val string) Endpoint {
-	if val == Any {
-		return key.Any
-	}
-
-	return func(ctx *Context) error {
-		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
-		}
-
-		opt, exists := ctx.params.Get(string(key))
-		if exists && opt == val {
-			return nil
-		}
-		return ErrNoMatch
+		panic("type system failure")
 	}
 }
 
 /*
 
-Any is a wildcard matcher of param key. It fails if key is not defined.
+ ParamAny is a wildcard matcher of param key. It fails if key is not defined.
 
-  e := µ.GET( µ.Param("foo").Any )
+  e := µ.GET( µ.ParamAny("foo") )
   e(mock.Input(mock.URL("/?foo"))) == nil
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
   e(mock.Input(mock.URL("/?foo=baz"))) == nil
   e(mock.Input()) != nil
 */
-func (key param) Any(ctx *Context) error {
-	if ctx.params == nil {
-		ctx.params = Params(ctx.Request.URL.Query())
-	}
-
-	_, exists := ctx.params.Get(string(key))
-	if exists {
-		return nil
-	}
-	return ErrNoMatch
+func ParamAny(key string) Endpoint {
+	return param(key).Any
 }
 
 /*
 
-To matches param value to the request context. It uses lens abstraction to
-decode value into Golang type. The Endpoint causes no-match if param
-value cannot be decoded to the target type. See optics.Lens type for details.
-
-  type myT struct{ Val string }
-
-  x := optics.Lenses1(myT{})
-  e := µ.GET( µ.Param("foo").To(x) )
-  e(mock.Input(mock.URL("/?foo=bar"))) == nil
-	e(mock.Input(mock.URL("/?foo"))) != nil
-	e(mock.Input(mock.URL("/?bar=foo"))) != nil
-*/
-func (key param) To(lens optics.Lens) Endpoint {
-	return func(ctx *Context) error {
-		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
-		}
-
-		opt, exists := ctx.params.Get(string(key))
-		if exists {
-			return ctx.Put(lens, opt)
-		}
-		return ErrNoMatch
-	}
-}
-
-/*
-
-Maybe matches param value to the request context. It uses lens abstraction to
+ParamMaybe matches param value to the request context. It uses lens abstraction to
 decode value into Golang type. The Endpoint does not cause no-match
 if header value cannot be decoded to the target type. See optics.Lens type for details.
 
   type myT struct{ Val string }
 
-  x := optics.Lenses1(myT{})
-  e := µ.GET( µ.Param("foo").Maybe(x) )
+  x := µ.Optics1[myT, string]()
+  e := µ.GET( µ.ParamMaybe("foo", x) )
   e(mock.Input(mock.URL("/?foo=bar"))) == nil
 	e(mock.Input(mock.URL("/?foo"))) == nil
 	e(mock.Input(mock.URL("/"))) == nil
@@ -209,5 +141,66 @@ func ParamMaybeJSON(key string, lens Lens) Endpoint {
 
 		ctx.Put(lens, str)
 		return nil
+	}
+}
+
+// Internal type
+type param string
+
+/*
+
+Is matches a param key to defined literal value
+*/
+func (key param) Is(val string) Endpoint {
+	if val == Any {
+		return key.Any
+	}
+
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		opt, exists := ctx.params.Get(string(key))
+		if exists && opt == val {
+			return nil
+		}
+		return ErrNoMatch
+	}
+}
+
+/*
+
+Any is a wildcard matcher of param key. It fails if key is not defined.
+*/
+func (key param) Any(ctx *Context) error {
+	if ctx.params == nil {
+		ctx.params = Params(ctx.Request.URL.Query())
+	}
+
+	_, exists := ctx.params.Get(string(key))
+	if exists {
+		return nil
+	}
+	return ErrNoMatch
+}
+
+/*
+
+To matches param value to the request context. It uses lens abstraction to
+decode value into Golang type. The Endpoint causes no-match if param
+value cannot be decoded to the target type. See optics.Lens type for details.
+*/
+func (key param) To(lens optics.Lens) Endpoint {
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Params(ctx.Request.URL.Query())
+		}
+
+		opt, exists := ctx.params.Get(string(key))
+		if exists {
+			return ctx.Put(lens, opt)
+		}
+		return ErrNoMatch
 	}
 }

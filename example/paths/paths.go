@@ -70,16 +70,11 @@ var lensEcho = µ.Optics1[param, string]()
 func path() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("path"), µ.Path(lensEcho)),
-		func(ctx *µ.Context) error {
-			var req param
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *param) error {
 			return µ.Status.OK(
 				µ.WithText("matches /path/" + req.Text),
 			)
-		},
+		}),
 	)
 }
 
@@ -90,15 +85,10 @@ matches root (/file/file+)
 func file() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("file"), µ.PathAll(lensEcho)),
-		func(ctx *µ.Context) error {
-			var req param
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *param) error {
 			return µ.Status.OK(
 				µ.WithText("matches /file/" + req.Text),
 			)
-		},
+		}),
 	)
 }

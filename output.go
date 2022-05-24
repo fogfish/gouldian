@@ -81,7 +81,7 @@ Result is a composable function that abstract results of HTTP endpoint.
 The function takes instance of HTTP output and mutates its value
 
   return µ.Status.OK(
-		headers.ContentType.Value("application/json"),
+		µ.WithHeader(headers.ContentType, headers.ApplicationJson),
 		µ.WithJSON(value),
 	)
 */

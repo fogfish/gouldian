@@ -66,17 +66,12 @@ func text() µ.Routable {
 		µ.URI(µ.Path("echo")),
 		µ.Header(headers.ContentType, headers.TextPlain),
 		µ.Body(lensText),
-		func(ctx *µ.Context) error {
-			var req reqText
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *reqText) error {
 			return µ.Status.OK(
 				µ.WithHeader(headers.ContentType, headers.TextPlain),
 				µ.WithText(req.Value),
 			)
-		},
+		}),
 	)
 }
 
@@ -100,17 +95,12 @@ func json() µ.Routable {
 		µ.URI(µ.Path("echo")),
 		µ.Header(headers.ContentType, headers.ApplicationJSON),
 		µ.Body(lensJSON),
-		func(ctx *µ.Context) error {
-			var req reqJSON
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *reqJSON) error {
 			return µ.Status.OK(
 				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
 				µ.WithJSON(req.Value),
 			)
-		},
+		}),
 	)
 }
 
@@ -129,16 +119,11 @@ func form() µ.Routable {
 		µ.URI(µ.Path("echo")),
 		µ.Header(headers.ContentType, headers.ApplicationForm),
 		µ.Body(lensForm),
-		func(ctx *µ.Context) error {
-			var req reqForm
-			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.FMap(func(ctx *µ.Context, req *reqForm) error {
 			return µ.Status.OK(
 				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
 				µ.WithJSON(req.Value),
 			)
-		},
+		}),
 	)
 }
