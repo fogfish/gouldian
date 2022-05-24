@@ -192,24 +192,27 @@ There are built-in HTTP Verb/Method matching endpoints:
 
 **Match Path**
 
-`func func URI(segments ...Segment)` builds the `Endpoint` that matches URL path from HTTP request. The endpoint considers the path as an ordered sequence of segments, it takes a sequence of either pattern matchers (literals) or extractors.
-
-`func Path[](segments ...interface{}) µ.Endpoint`  
+`func func URI(segments ...Segment)` builds the `Endpoint` that matches URL path from HTTP request. The endpoint considers the path as an ordered sequence of segments, it takes a sequence of either pattern matchers (literals) or extractors, create path segments with `µ.Path()`:
 
 ```go
 // sequence of pattern matchers (literals)
-e := µ.Path("foo", "bar")
+e := µ.URI(µ.Path("foo"), µ.Path("bar"))
 e(mock.Input(mock.URL("/foo/bar")))
 ```
 
-Often, implementation of **root** `Endpoint` is required, use `µ.Path` with empty definition.
+Often, implementation of **root** `Endpoint` is required, use empty `µ.URI` for this purpose.
 
 ```go
-e := µ.Path()
+e := µ.URI()
 e(mock.Input(mock.URL("/")))
 ```
 
 Skip `µ.Path` definition to match any path of the request.
+
+There are built-in Path matching endpoints:
+* `µ.Path ⟼ Endpoint`
+* `µ.PathAny ⟼ Endpoint`
+* `µ.PathAll ⟼ Endpoint`
 
 **Extract Path**
 
@@ -220,36 +223,51 @@ type A struct {
   Bar string
 }
 
-var bar := optics.ForProduct1(A{})
-e := µ.Path("foo", bar)
+// builds a lens to focus into type's A field Bar of string type 
+var bar := µ.Optics1[A, string]()
+
+// use the lens to extract value of second segment
+e := µ.URI(µ.Path("foo"), µ.Path(bar))
 e(mock.Input(mock.URL("/foo/bar")))
 ```
 
 **Params**
 
-The library defines a type `Param` that builds the `Endpoint` to match URL query string from HTTP request. The type defines a functions `Is` and `Any` matches query params; `To` and `Maybe` to extracts values.
+The library defines a combinator `Param` that builds the `Endpoint` to match URL query string from HTTP request. The function takes either literal value or lens to extract value.
 
 ```go
-e := µ.Param("foo").Is("bar")
+e := µ.Param("foo", "bar")
 e(mock.Input(mock.URL("/?foo=bar")))
 
-e := µ.Param("foo").To(bar)
+e := µ.Param("foo", bar)
 e(mock.Input(mock.URL("/?foo=bar")))
 ```
+
+There are built-in Param matching endpoints:
+* `µ.Param ⟼ Endpoint`
+* `µ.ParamAny ⟼ Endpoint`
+* `µ.ParamMaybe ⟼ Endpoint`
+* `µ.ParamJSON ⟼ Endpoint`
+* `µ.ParamMaybeJSON ⟼ Endpoint`
 
 **Headers**
 
-The library defines a type `Header` that builds the `Endpoint` to match URL query string from HTTP request. The type defines a functions `Is` and `Any` matches query params; `To` and `Maybe` to extracts values. See the package `headers` that defines HTTP header constants
-
+The library defines a combinator `Header` that builds the `Endpoint` to match HTTP header from the request. The function takes either literal value or lens to extract value. See the package `headers` that defines HTTP header constants.
 
 ```go
 
-e := µ.Header("Content-Type").Is("application/json")
+e := µ.Header("Content-Type", "application/json")
 e(mock.Input(mock.Header("Content-Type", "application/json")))
 
-e := µ.Header("Content-Length").To(length)
+e := µ.Header("Content-Length", length)
 e(mock.Input(mock.Header("Content-Length", "1024")))
 ```
+
+There are built-in Header matching endpoints:
+* `µ.Header ⟼ Endpoint`
+* `µ.HeaderAny ⟼ Endpoint`
+* `µ.HeaderMaybe ⟼ Endpoint`
+
 
 **Body**
 
