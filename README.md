@@ -28,10 +28,6 @@
     <a href="https://goreportcard.com/report/github.com/fogfish/gouldian">
       <img src="https://goreportcard.com/badge/github.com/fogfish/gouldian" />
     </a>
-    <!-- Maintainability -->
-    <a href="https://codeclimate.com/github/fogfish/gouldian/maintainability">
-      <img src="https://api.codeclimate.com/v1/badges/633dc8add2dfc0e7f88e/maintainability" />
-    </a>
   </p>
 </p>
 
@@ -50,14 +46,16 @@ The library is a thin layer of purely functional abstractions to build HTTP serv
 Microservices have become a design style to evolve system architecture in parallel, implement stable and consistent interfaces within distributed system. An expressive language is required to design the manifold of network interfaces. A pure functional languages fits very well to express communication behavior due they rich techniques to hide the networking complexity. [Finch](https://github.com/finagle/finch) is the best library in Scala for microservice development. Gouldian is heavily inspired by Finch. 
 
 The library solves few practical problems of HTTP service development in Golang:
-* The library support opaque migration of HTTP service between traditional, containers and serverless environments. The api implementation remains source compatible regardless the execution environment;  
+* The library support opaque migration of HTTP service between traditional, containers and serverless environments. The api implementation remains source compatible regardless the execution environment; The library supports integration with
+  * Golang standard HTTP server: [`http.Request`](https://pkg.go.dev/net/http)
+  * AWS API Gateway: [`APIGatewayProxyRequest`](https://github.com/aws/aws-lambda-go/blob/master/events/apigw.go).
 * The library enforces a type safe, pattern-based approach for api definition.
 * Fast, zero allocation routing 
 
 
 ## Installing
 
-The library requires **Go 1.13** or later due to usage of [new error interface](https://blog.golang.org/go1.13-errors).
+The library requires **Go 1.18** or later.
 
 The latest version of the library is available at `main` branch. All development, including new features and bug fixes, take place on the `main` branch using forking and pull requests as described in contribution guidelines. The stable version is available via Golang modules.
 
@@ -97,10 +95,10 @@ func main() {
 
 func hello() µ.Routable {
   return µ.GET(
-    µ.Path("hello"),
-    µ.FMap(func(ctx µ.Context) error {
+    µ.URI(µ.Path("hello")),
+    func(ctx µ.Context) error {
       return µ.Status.OK(µ.WithText("Hello World!"))
-    }),
+    },
   )
 }
 ```
