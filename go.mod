@@ -9,4 +9,4 @@ require (
 	github.com/fogfish/it v0.9.1
 )
 
-require github.com/fogfish/golem v0.8.5 // indirect
+require github.com/fogfish/golem v0.8.5
