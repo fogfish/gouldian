@@ -44,7 +44,7 @@ func Optics2[T, A, B any]() (Lens, Lens) {
 
 Optics3 split structure with 3 field to set of lenses
 */
-func Optics3[T, A, B, C, D any]() (Lens, Lens, Lens) {
+func Optics3[T, A, B, C any]() (Lens, Lens, Lens) {
 	a, b, c := lenses.ForProduct3[T, A, B, C]()
 	return hseq.FMap3(
 		hseq.Generic[T](),
@@ -58,7 +58,7 @@ func Optics3[T, A, B, C, D any]() (Lens, Lens, Lens) {
 
 Optics4 split structure with 4 field to set of lenses
 */
-func Optics4[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens) {
+func Optics4[T, A, B, C, D any]() (Lens, Lens, Lens, Lens) {
 	a, b, c, d := lenses.ForProduct4[T, A, B, C, D]()
 	return hseq.FMap4(
 		hseq.Generic[T](),

@@ -310,6 +310,14 @@ func TestHeaderAuthorize(t *testing.T) {
 		it.Ok(t).
 			If(foo(req)).ShouldNot().Equal(nil)
 	})
+
+	t.Run("noheader", func(t *testing.T) {
+		req := mock.Input()
+
+		it.Ok(t).
+			If(foo(req)).ShouldNot().Equal(nil)
+	})
+
 }
 
 func TestHeaderContentJSON(t *testing.T) {

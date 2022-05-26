@@ -40,7 +40,7 @@ JWT combinator defines primitives to match JWT token in the HTTP requests.
 
   endpoint(
     mock.Input(
-			mock.JWT(µ.JWT{"username": "joedoe"})
+			mock.JWT(µ.Token{"username": "joedoe"})
     )
   ) == nil
 
