@@ -91,14 +91,14 @@ func TestServeMatchUnescaped(t *testing.T) {
 func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	return apigateway.Serve(
 		µ.GET(
-			µ.Path(path),
-			µ.FMap(func(ctx *µ.Context) error {
+			µ.URI(µ.Path(path)),
+			func(ctx *µ.Context) error {
 				return µ.Status.OK(
-					headers.ContentType.Value(headers.TextPlain),
-					headers.Server.Value("echo"),
+					µ.WithHeader(headers.ContentType, headers.TextPlain),
+					µ.WithHeader(headers.Server, "echo"),
 					µ.WithText("echo"),
 				)
-			}),
+			},
 		),
 	)
 }

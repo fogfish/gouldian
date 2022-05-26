@@ -21,9 +21,10 @@ package main
 import (
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/optics"
-	"github.com/fogfish/gouldian/server/httpd"
+
 	"net/http"
+
+	"github.com/fogfish/gouldian/server/httpd"
 )
 
 func main() {
@@ -39,20 +40,15 @@ type reqEcho struct {
 	Echo string
 }
 
-var lensEcho = optics.ForProduct1(reqEcho{})
+var lensEcho = µ.Optics1[reqEcho, string]()
 
 func echo() µ.Routable {
 	return µ.GET(
-		µ.Path("echo", lensEcho),
-		µ.FMap(func(ctx *µ.Context) error {
-			var req reqEcho
-			if err := ctx.Get(&req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.URI(µ.Path("echo"), µ.Path(lensEcho)),
+		µ.FMap(func(ctx *µ.Context, req *reqEcho) error {
 			return µ.Status.OK(
-				headers.ContentType.Value(headers.TextPlain),
-				headers.Server.Value("echo"),
+				µ.WithHeader(headers.ContentType, headers.TextPlain),
+				µ.WithHeader(headers.Server, "echo"),
 				µ.WithText(req.Echo),
 			)
 		}),

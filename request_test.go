@@ -25,13 +25,12 @@ import (
 
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/it"
 )
 
 func TestVerbAny(t *testing.T) {
 	endpoint := mock.Endpoint(
-		µ.ANY(µ.Path()),
+		µ.ANY(µ.URI()),
 	)
 
 	success1 := mock.Input(mock.Method("GET"))
@@ -44,7 +43,7 @@ func TestVerbAny(t *testing.T) {
 
 func TestVerbDelete(t *testing.T) {
 	endpoint := mock.Endpoint(
-		µ.DELETE(µ.Path()),
+		µ.DELETE(µ.URI()),
 	)
 	success := mock.Input(mock.Method("DELETE"))
 	failure := mock.Input(mock.Method("OTHER"))
@@ -56,7 +55,7 @@ func TestVerbDelete(t *testing.T) {
 
 func TestVerbGet(t *testing.T) {
 	endpoint := mock.Endpoint(
-		µ.GET(µ.Path()),
+		µ.GET(µ.URI()),
 	)
 	success := mock.Input(mock.Method("GET"))
 	failure := mock.Input(mock.Method("OTHER"))
@@ -68,7 +67,7 @@ func TestVerbGet(t *testing.T) {
 
 func TestVerbPatch(t *testing.T) {
 	endpoint := mock.Endpoint(
-		µ.PATCH(µ.Path()),
+		µ.PATCH(µ.URI()),
 	)
 	success := mock.Input(mock.Method("PATCH"))
 	failure := mock.Input(mock.Method("OTHER"))
@@ -80,7 +79,7 @@ func TestVerbPatch(t *testing.T) {
 
 func TestVerbPost(t *testing.T) {
 	endpoint := mock.Endpoint(
-		µ.POST(µ.Path()),
+		µ.POST(µ.URI()),
 	)
 	success := mock.Input(mock.Method("POST"))
 	failure := mock.Input(mock.Method("OTHER"))
@@ -92,7 +91,7 @@ func TestVerbPost(t *testing.T) {
 
 func TestVerbPut(t *testing.T) {
 	endpoint := mock.Endpoint(
-		µ.PUT(µ.Path()),
+		µ.PUT(µ.URI()),
 	)
 	success := mock.Input(mock.Method("PUT"))
 	failure := mock.Input(mock.Method("OTHER"))
@@ -104,12 +103,12 @@ func TestVerbPut(t *testing.T) {
 
 func TestPath(t *testing.T) {
 	foo := mock.Endpoint(
-		µ.GET(µ.Path("foo")),
+		µ.GET(µ.URI(µ.Path("foo"))),
 	)
 	bar := mock.Endpoint(
-		µ.GET(µ.Path("bar")),
+		µ.GET(µ.URI(µ.Path("bar"))),
 	)
-	foobar := mock.Endpoint(µ.GET(µ.Path("foo", "bar")))
+	foobar := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"), µ.Path("bar"))))
 
 	req := mock.Input(mock.URL("/foo"))
 
@@ -121,7 +120,7 @@ func TestPath(t *testing.T) {
 
 func TestPathRoot(t *testing.T) {
 	root := mock.Endpoint(
-		µ.GET(µ.Path()),
+		µ.GET(µ.URI()),
 	)
 
 	success := mock.Input(mock.URL("/"))
@@ -132,63 +131,24 @@ func TestPathRoot(t *testing.T) {
 		If(root(failure)).ShouldNot().Equal(nil)
 }
 
-// //
-// /*
-// type MyType []string
-
-// func (id *MyType) Pattern() µ.Endpoint {
-// 	return func(req *µ.Input) error {
-// 		var (
-// 			a string
-// 			b string
-// 		)
-
-// 		f := path.String(&a).Then(path.String(&b))
-// 		switch err := f(segments).(type) {
-// 		case µ.Match:
-// 			*id = []string{a, b}
-// 			return err
-// 		default:
-// 			return err
-// 		}
-// 	}
-// }
-
-// func TestPathTypeSafePattern(t *testing.T) {
-// 	var id MyType
-
-// 	foo := µ.GET(µ.Path(path.Is("foo"), id.Pattern()))
-// 	success := mock.Input(mock.URL("/foo/a/b"))
-// 	failure1 := mock.Input(mock.URL("/foo/a"))
-// 	failure2 := mock.Input(mock.URL("/foo/a/b/c"))
-
-// 	it.Ok(t).
-// 		If(foo(success)).Should().Equal(nil).
-// 		If(id[0]).Should().Equal("a").
-// 		If(id[1]).Should().Equal("b").
-// 		If(foo(failure1)).ShouldNot().Equal(nil).
-// 		If(foo(failure2)).ShouldNot().Equal(nil)
-// }
-// */
-
 func TestParam(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
-			µ.Path(),
-			µ.Param("foo").Is("bar"),
+			µ.URI(),
+			µ.Param("foo", "bar"),
 		),
 	)
 	bar := mock.Endpoint(
 		µ.GET(
-			µ.Path(),
-			µ.Param("bar").Is("foo"),
+			µ.URI(),
+			µ.Param("bar", "foo"),
 		),
 	)
 	foobar := mock.Endpoint(
 		µ.GET(
-			µ.Path(),
-			µ.Param("foo").Is("bar"),
-			µ.Param("bar").Is("foo"),
+			µ.URI(),
+			µ.Param("foo", "bar"),
+			µ.Param("bar", "foo"),
 		),
 	)
 
@@ -203,22 +163,22 @@ func TestParam(t *testing.T) {
 func TestHeader(t *testing.T) {
 	foo1 := mock.Endpoint(
 		µ.GET(
-			µ.Path(),
-			µ.Header("foo").Is("bar"),
+			µ.URI(),
+			µ.Header("foo", "bar"),
 		),
 	)
 
 	bar := mock.Endpoint(
 		µ.GET(
-			µ.Path(),
-			µ.Header("bar").Is("foo"),
+			µ.URI(),
+			µ.Header("bar", "foo"),
 		),
 	)
 	foobar := mock.Endpoint(
 		µ.GET(
-			µ.Path(),
-			µ.Header("foo").Is("bar"),
-			µ.Header("bar").Is("foo"),
+			µ.URI(),
+			µ.Header("foo", "bar"),
+			µ.Header("bar", "foo"),
 		),
 	)
 
@@ -239,10 +199,10 @@ func TestBodyJSON(t *testing.T) {
 	type request struct {
 		FooBar foobar
 	}
-	var lens = optics.ForProduct1(request{})
+	var lens = µ.Optics1[request, foobar]()
 
 	var value request
-	foo := mock.Endpoint(µ.GET(µ.Path(), µ.Body(lens)))
+	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
 	success1 := mock.Input(
 		mock.JSON(foobar{"foo1", 10}),
 	)
@@ -258,15 +218,15 @@ func TestBodyJSON(t *testing.T) {
 
 	it.Ok(t).
 		If(foo(success1)).Should().Equal(nil).
-		If(success1.Get(&value)).Should().Equal(nil).
+		If(µ.FromContext(success1, &value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo1", 10}).
 		//
 		If(foo(success2)).Should().Equal(nil).
-		If(success2.Get(&value)).Should().Equal(nil).
+		If(µ.FromContext(success2, &value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo2", 10}).
 		//
 		If(foo(failure1)).Should().Equal(nil).
-		If(failure1.Get(&value)).ShouldNot().Equal(nil).
+		If(µ.FromContext(failure1, &value)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
@@ -279,10 +239,10 @@ func TestBodyForm(t *testing.T) {
 	type request struct {
 		FooBar foobar `content:"form"`
 	}
-	var lens = optics.ForProduct1(request{})
+	var lens = µ.Optics1[request, foobar]()
 
 	var value request
-	foo := mock.Endpoint(µ.GET(µ.Path(), µ.Body(lens)))
+	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
 
 	success1 := mock.Input(
 		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
@@ -301,15 +261,15 @@ func TestBodyForm(t *testing.T) {
 	it.Ok(t).
 		//
 		If(foo(success1)).Should().Equal(nil).
-		If(success1.Get(&value)).Should().Equal(nil).
+		If(µ.FromContext(success1, &value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo1", 10}).
 		//
 		If(foo(success2)).Should().Equal(nil).
-		If(success2.Get(&value)).Should().Equal(nil).
+		If(µ.FromContext(success2, &value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal(foobar{"foo2", 10}).
 		//
 		If(foo(failure1)).Should().Equal(nil).
-		If(failure1.Get(&value)).ShouldNot().Equal(nil).
+		If(µ.FromContext(failure1, &value)).ShouldNot().Equal(nil).
 		If(foo(failure2)).ShouldNot().Equal(nil)
 }
 
@@ -317,22 +277,22 @@ func TestText(t *testing.T) {
 	type request struct {
 		FooBar string
 	}
-	var lens = optics.ForProduct1(request{})
+	var lens = µ.Optics1[request, string]()
 
 	var value request
-	foo := mock.Endpoint(µ.GET(µ.Path(), µ.Body(lens)))
+	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
 	success := mock.Input(mock.Text("foobar"))
 	failure := mock.Input()
 
 	it.Ok(t).
 		If(foo(success)).Should().Equal(nil).
-		If(success.Get(&value)).Should().Equal(nil).
+		If(µ.FromContext(success, &value)).Should().Equal(nil).
 		If(value.FooBar).Should().Equal("foobar").
 		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestContextFree(t *testing.T) {
-	foo := mock.Endpoint(µ.GET(µ.Path("foo")))
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"))))
 	req := mock.Input(mock.URL("/foo"))
 
 	it.Ok(t).
@@ -344,13 +304,13 @@ func TestContextFree(t *testing.T) {
 		If(foo(req)).ShouldNot().Equal(nil)
 }
 
-func TestFMapSuccess(t *testing.T) {
+func TestHandlerSuccess(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
-			µ.Path("foo"),
-			µ.FMap(func(*µ.Context) error {
+			µ.URI(µ.Path("foo")),
+			func(*µ.Context) error {
 				return µ.Status.OK(µ.WithText("bar"))
-			}),
+			},
 		),
 	)
 	req := mock.Input(mock.URL("/foo"))
@@ -363,19 +323,63 @@ func TestFMapSuccess(t *testing.T) {
 	)
 }
 
-func TestFMap2Success(t *testing.T) {
+func TestFMapSuccess(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
 	foo := mock.Endpoint(
 		µ.GET(
-			µ.Path("foo"),
-			µ.FMap(func(*µ.Context) error {
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.FMap(func(ctx *µ.Context, t *T) error {
+				return µ.Status.OK(µ.WithText(t.A))
+			}),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "bar"
+		},
+	)
+}
+
+func TestMapSuccess(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.Map(func(ctx *µ.Context, t *T) (*T, error) {
+				return t, nil
+			}),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			return be.(error).Error() == "{\"A\":\"bar\"}"
+		},
+	)
+}
+
+func TestHandler2Success(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			func(*µ.Context) error {
 				return µ.Status.
 					OK(µ.WithText("bar"))
-			}),
+			},
 		),
 	)
 	bar := mock.Endpoint(
 		µ.GET(
-			µ.Path("bar"),
+			µ.URI(µ.Path("bar")),
 			func(*µ.Context) error {
 				return µ.Status.
 					OK(µ.WithText("foo"))
@@ -392,17 +396,72 @@ func TestFMap2Success(t *testing.T) {
 	)
 }
 
-func TestFMapFailure(t *testing.T) {
+func TestHandlerFailure(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
-			µ.Path("foo"),
-			µ.FMap(func(*µ.Context) error {
+			µ.URI(µ.Path("foo")),
+			func(*µ.Context) error {
+				return µ.Status.
+					Unauthorized(µ.WithIssue(fmt.Errorf("")))
+			},
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			switch v := be.(type) {
+			case *µ.Output:
+				return v.Status == http.StatusUnauthorized
+			default:
+				return false
+			}
+		},
+	)
+}
+
+func TestFMapFailure(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.FMap(func(*µ.Context, *T) error {
 				return µ.Status.
 					Unauthorized(µ.WithIssue(fmt.Errorf("")))
 			}),
 		),
 	)
-	req := mock.Input(mock.URL("/foo"))
+	req := mock.Input(mock.URL("/foo/bar"))
+
+	it.Ok(t).
+		If(foo(req)).Should().Assert(
+		func(be interface{}) bool {
+			switch v := be.(type) {
+			case *µ.Output:
+				return v.Status == http.StatusUnauthorized
+			default:
+				return false
+			}
+		},
+	)
+}
+
+func TestMapFailure(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.Map(func(*µ.Context, *T) (*T, error) {
+				return nil, µ.Status.Unauthorized(µ.WithIssue(fmt.Errorf("")))
+			}),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
 
 	it.Ok(t).
 		If(foo(req)).Should().Assert(
@@ -428,15 +487,15 @@ func TestBodyLeak(t *testing.T) {
 	type request struct {
 		Item Item
 	}
-	lens := optics.ForProduct1(request{})
+	lens := µ.Optics1[request, Item]()
 
 	endpoint := func() µ.Routable {
 		return µ.GET(
-			µ.Path(),
+			µ.URI(),
 			µ.Body(lens),
 			func(ctx *µ.Context) error {
 				var req request
-				if err := ctx.Get(&req); err != nil {
+				if err := µ.FromContext(ctx, &req); err != nil {
 					return err
 				}
 
@@ -466,126 +525,4 @@ func TestBodyLeak(t *testing.T) {
 		out := foo(req)
 		it.Ok(t).If(out.Error()).Should().Equal(expect)
 	}
-}
-
-func TestAccessIs(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.Path(),
-			µ.Access(µ.JWT.Sub).Is("sub"),
-		),
-	)
-	success := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
-	failure1 := mock.Input(mock.JWT(µ.JWT{"sub": "foo"}))
-	failure2 := mock.Input()
-
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
-}
-
-func TestAccessOneOf(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.Path(),
-			µ.Access(µ.JWT.Scope).OneOf("a", "b", "c"),
-		),
-	)
-
-	success := mock.Input(mock.JWT(µ.JWT{"scope": "x y c"}))
-	failure1 := mock.Input(mock.JWT(µ.JWT{"scope": "x y"}))
-	failure2 := mock.Input()
-
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
-}
-
-func TestAccessAllOf(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.Path(),
-			µ.Access(µ.JWT.Scope).AllOf("a", "b", "c"),
-		),
-	)
-
-	success := mock.Input(mock.JWT(µ.JWT{"scope": "a b c"}))
-	failure1 := mock.Input(mock.JWT(µ.JWT{"scope": "a b"}))
-	failure2 := mock.Input()
-
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure1)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
-}
-
-func TestAccessTo(t *testing.T) {
-	type MyT struct{ Sub string }
-	sub := optics.ForProduct1(MyT{})
-
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.Path(),
-			µ.Access(µ.JWT.Sub).To(sub),
-		),
-	)
-
-	t.Run("some", func(t *testing.T) {
-		var val MyT
-		req := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
-
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
-			If(val.Sub).Should().Equal("sub")
-	})
-
-	t.Run("none", func(t *testing.T) {
-		req := mock.Input()
-
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
-	})
-}
-
-func TestAccessMaybe(t *testing.T) {
-	type MyT struct{ Sub string }
-	sub := optics.ForProduct1(MyT{})
-
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.Path(),
-			µ.Access(µ.JWT.Sub).Maybe(sub),
-		),
-	)
-
-	t.Run("some", func(t *testing.T) {
-		var val MyT
-		req := mock.Input(mock.JWT(µ.JWT{"sub": "sub"}))
-
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
-			If(val.Sub).Should().Equal("sub")
-	})
-
-	t.Run("empty", func(t *testing.T) {
-		var val MyT
-		req := mock.Input(mock.JWT(µ.JWT{}))
-
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
-			If(val.Sub).Should().Equal("")
-	})
-
-	t.Run("none", func(t *testing.T) {
-		req := mock.Input()
-
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
-	})
-
 }

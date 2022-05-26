@@ -22,9 +22,7 @@ Endpoint: Context ⟼ Output
 type Endpoint func(*Context) error
 ```
 
-`Context` is a convenient wrapper of HTTP request with some Gouldian specific context. This library supports integration with 
-* Golang standard HTTP server: [`http.Request`](https://pkg.go.dev/net/http)
-* AWS API Gateway: [`APIGatewayProxyRequest`](https://github.com/aws/aws-lambda-go/blob/master/events/apigw.go).
+`Context` is a convenient wrapper of HTTP request with some Gouldian specific context. The context is build for each request and passed further to `Endpoint` for the processing. 
 
 `Output` is a sum type that captures a result of `Endpoint` evaluation. Technically, it indicates if:
 * the endpoint do not match the request
@@ -32,7 +30,7 @@ type Endpoint func(*Context) error
 * the endpoint successfully transforms the request to HTTP output
 * the endpoint has failed to transform the request
 
-Golang is missing generics and type variance. Therefore, the Output is always an `error` value. The library could possible implement own interface but due to opaque error handling requirement, the interface behind `error` type is used. The library supplies [primitives](../output.go) to declare output using HTTP status codes notation (e.g. `Ok`, `Created`, `BadRequest`, `Unauthorized`, etc).
+Golang is missing type variance. Therefore, the Output is always an `error` value. The library could possible implement own interface but due to opaque error handling requirement, the interface behind `error` type is used. The library supplies [primitives](../output.go) to declare output using HTTP status codes notation (e.g. `Ok`, `Created`, `BadRequest`, `Unauthorized`, etc).
 
 ## Composition
 
@@ -77,19 +75,27 @@ These rules of Endpoint composition allow developers to build any complex HTTP r
 
 ## Life-cycle
 
-Entire HTTP service is built (see `Serve` combinator) as a co-product Endpoint that defined entire *"api algebra"* of application. Each incoming HTTP request passed to this *"algebra"* - root endpoint for the further evaluation:
+Entire HTTP service is built (see `Serve` combinator) as a co-product Endpoint that defined entire *"api algebra"* for the application. Each incoming HTTP request passed to this *"algebra"* for the further evaluation. Internally, the library uses decision tree to route HTTP request. Therefore, it annotates each endpoint as new `Routable` type. This type is only used to built high-performant co-product Endpoint. 
+
+```go
+/*
+
+Routable seed the product Endpoint : Context ⟼ Output
+*/
+type Routable func() ([]string, Endpoint)
+```
 
 ```go
 service := httpd.Serve(
-  µ.GET(µ.Path("a"), /* ... */),
-  µ.GET(µ.Path("b"), /* ... */),
+  µ.GET(µ.URI(µ.Path("a")), /* ... */),
+  µ.GET(µ.URI(µ.Path("b")), /* ... */),
   /* ... */
 )
 ```
 
 It is important to understand the life-cycle behavior for development of a [High-Order Endpoints](#high-order-endpoints) and writing a [Unit Testing](#unit-testing) in your application.
 
-1. The library envelops each incoming request to `Context` type and applies it to the endpoint `service(input)`.
+1. The library envelops each incoming HTTP request to `Context` type and applies it to the endpoint `service(input)`.
 2. The resulting value of `error` (aka `Output`) type is matched against
 * `NoMatch` causes abort of current *product* `Endpoint`. The request is passed to succeeding *co-product* `Endpoint`.
 * `nil` continues evaluation of *product* `Endpoint` to succeeding item.
@@ -98,14 +104,14 @@ It is important to understand the life-cycle behavior for development of a [High
 
 ## Primitive Endpoint types
 
-Each Endpoint is acting either as *pattern matching* or *value extractor*. Pattern matching compares a defined literal (constant) value with a corresponding term at HTTP request. It fails if term is not "equal" to specified value with `NoMatch` response.
+Each Endpoint is acting either as *pattern matching* or *value extractor*. Pattern matching compares defined literal (constant) values with a corresponding term at HTTP request. It fails if term is not "equal" to specified value with `NoMatch` response.
 
 ```go
 // For example, the endpoint uses pattern matching, it is only "matches"
 // HTTP request containing URL /foo/bar?baz=zar
 µ.GET(
-  µ.Path("foo", "bar"),
-  µ.Param("baz").To("zar"),
+  µ.URI(µ.Path("foo"), µ.Path("bar")),
+  µ.Param("baz", "foz"),
   // ...
 )
 ```
@@ -115,15 +121,15 @@ Extractors matches corresponding terms and lift its values to the context so tha
 
 ```go
 // For example, the endpoint uses extractors, it "matches" the HTTP request 
-// containing URL /foo/{bar}?baz={zar}
+// containing URL /foo/{bar}?baz={foz}
 µ.GET(
-  µ.Path("foo", bar),
-  µ.Param("baz").To(zar),
+  µ.URI(µ.Path("foo"), µ.Path(bar)),
+  µ.Param("baz", foz),
   // ...
 )
 ```
 
-Extractor uses lenses to inject decoded terms of HTTP request into the application type. Lenses are essential and core feature of the library that ensures type safety of HTTP services.
+Extractors are lenses, which is core feature of the library that ensures type safety. Lenses are pure functional abstraction that resembles concept of getters and setters. The library uses this abstraction to inject decoded terms of HTTP request into application variables:
 
 ```go
 /*
@@ -139,27 +145,20 @@ from the type-safe perspective of api specification, each endpoint is implemente
 Therefore, endpoint needs to transform Context to A, apply function F and output type B.
 */
 type A struct {
-  Bar, Zar string
+  Bar, Foz string
 } 
 
 /*
 
-The optics package of this library implement decomposition of product type (struct) into lenses
+The optics abstraction from this library implement decomposition of product type (structure of type A) into pair of lenses
 */
-var bar, zar = optics.ForProduct2(A{})
+var bar, foz = µ.Optics2[A, string, string]()
 
 µ.GET(
   // these lenses are passed to extractors 
-  µ.Path("foo", bar),
-  µ.Param("baz").To(zar),
-  µ.FMap(func(ctx *µ.Context) error {
-    // the context contains matched value and can be decoded to value of type A
-    var a A
-    if err := ctx.Get(&a); err != nil {
-      return µ.Status.BadRequest(µ.WithIssue(err))
-    }
-    // ...
-  }),
+  µ.URI(µ.Path("foo"), µ.Path(bar)),
+  µ.Param("baz", foz),
+  µ.FMap(func(ctx *µ.Context, a *A) error {/* ... */}),
 ),
 ```
 
@@ -181,24 +180,39 @@ e := µ.GET(/* ... */)
 e(mock.Input())
 ```
 
+There are built-in HTTP Verb/Method matching endpoints:
+* `µ.DELETE ⟼ Routable`
+* `µ.GET ⟼ Routable`
+* `µ.PATCH ⟼ Routable`
+* `µ.POST ⟼ Routable`
+* `µ.PUT ⟼ Routable`
+* `µ.ANY ⟼ Routable`
+* `µ.Method(string) ⟼ Endpoint`
+
+
 **Match Path**
 
-`func Path(segments ...interface{}) µ.Endpoint` builds the `Endpoint` that matches URL path from HTTP request. The endpoint considers the path as an ordered sequence of segments, it takes a sequence of either pattern matchers (literals) or extractors. 
+`func func URI(segments ...Segment)` builds the `Endpoint` that matches URL path from HTTP request. The endpoint considers the path as an ordered sequence of segments, it takes a sequence of either pattern matchers (literals) or extractors, create path segments with `µ.Path()`:
 
 ```go
 // sequence of pattern matchers (literals)
-e := µ.Path("foo", "bar")
+e := µ.URI(µ.Path("foo"), µ.Path("bar"))
 e(mock.Input(mock.URL("/foo/bar")))
 ```
 
-Often, implementation of **root** `Endpoint` is required, use `µ.Path` with empty definition.
+Often, implementation of **root** `Endpoint` is required, use empty `µ.URI` for this purpose.
 
 ```go
-e := µ.Path()
+e := µ.URI()
 e(mock.Input(mock.URL("/")))
 ```
 
 Skip `µ.Path` definition to match any path of the request.
+
+There are built-in Path matching endpoints:
+* `µ.Path ⟼ Endpoint`
+* `µ.PathAny ⟼ Endpoint`
+* `µ.PathAll ⟼ Endpoint`
 
 **Extract Path**
 
@@ -209,40 +223,56 @@ type A struct {
   Bar string
 }
 
-var bar := optics.ForProduct1(A{})
-e := µ.Path("foo", bar)
+// builds a lens to focus into type's A field Bar of string type 
+var bar := µ.Optics1[A, string]()
+
+// use the lens to extract value of second segment
+e := µ.URI(µ.Path("foo"), µ.Path(bar))
 e(mock.Input(mock.URL("/foo/bar")))
 ```
 
 **Params**
 
-The library defines a type `Param` that builds the `Endpoint` to match URL query string from HTTP request. The type defines a functions `Is` and `Any` matches query params; `To` and `Maybe` to extracts values.
+The library defines a combinator `Param` to build the `Endpoint`. The combinator matches URL query string from HTTP request. It either matches literal value or uses lens to extract value.
 
 ```go
-e := µ.Param("foo").Is("bar")
+e := µ.Param("foo", "bar")
 e(mock.Input(mock.URL("/?foo=bar")))
 
-e := µ.Param("foo").To(bar)
+e := µ.Param("foo", bar)
 e(mock.Input(mock.URL("/?foo=bar")))
 ```
+
+There are built-in Param matching endpoints:
+* `µ.Param ⟼ Endpoint`
+* `µ.ParamAny ⟼ Endpoint`
+* `µ.ParamMaybe ⟼ Endpoint`
+* `µ.ParamJSON ⟼ Endpoint`
+* `µ.ParamMaybeJSON ⟼ Endpoint`
 
 **Headers**
 
-The library defines a type `Header` that builds the `Endpoint` to match URL query string from HTTP request. The type defines a functions `Is` and `Any` matches query params; `To` and `Maybe` to extracts values. See the package `headers` that defines HTTP header constants
+The library defines a combinator `Header` to build the `Endpoint`. The combinator matches HTTP header from the request. It either matches literal value or uses lens to extract value. See the package `headers` that defines HTTP header constants.
 
 
 ```go
 
-e := µ.Header("Content-Type").Is("application/json")
+e := µ.Header("Content-Type", "application/json")
 e(mock.Input(mock.Header("Content-Type", "application/json")))
 
-e := µ.Header("Content-Length").To(length)
+e := µ.Header("Content-Length", length)
 e(mock.Input(mock.Header("Content-Length", "1024")))
 ```
 
+There are built-in Header matching endpoints:
+* `µ.Header ⟼ Endpoint`
+* `µ.HeaderAny ⟼ Endpoint`
+* `µ.HeaderMaybe ⟼ Endpoint`
+
+
 **Body**
 
-The library defines `Body` function build `Endpoint` to extract value. The value is then decoded by lens into the application type. The following example decodes body into struct. 
+The library defines a combinator`Body` to build `Endpoint`. The combinator consumes payload from HTTP request and decodes the value into the type associated with lens. The following example decodes body into the application specific data structure. 
 
 ```go
 // application type that captures application payload
@@ -254,7 +284,7 @@ type User struct {
 type A struct {
   User User
 }
-var user := optics.ForProduct1(A{})
+var user := µ.Optics1[A, User]()
 
 e := µ.Body(user)
 e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
@@ -263,17 +293,23 @@ e(mock.Input(mock.Text("{\"username\":\"Joe Doe\"}")))
 
 **Authentication with AWS Cognito**
 
-The library defines a types `µ.JWT`, `µ.Access` that builds the `Endpoint` to extract JWT access token. The type defines a functions `Is` matches fields of JWT token; `To` and `Maybe` to extracts values. The serverless factory of support automatic decoding of JWT access token, which is provided by AWS Cognito service.
+The library defines a types `µ.Token` and combinator `µ.JWT` to build the `Endpoint`. The combinator matches JWT claims from HTTP request. The library supports automatic decoding of JWT access token into instance of `µ.Token` container. 
 
 ```go
+/*
+
+Endpoint matches if HTTP request contains JWT with scopes
+*/
+e := µ.GET( µ.JWT(µ.Token.Scope, "rw") )
+
 /*
 
 Endpoint matches if HTTP request contains JWT created by AWS Cognito for user
 */ 
 type A struct{ User string }
 
-user := optics.Lenses1(MyT{})
-e := µ.GET( µ.Access(µ.JWT.Username).To(user) )
+user := µ.Optics1[A, string]
+e := µ.GET( µ.JWT(µ.Token.Username, user) )
 
 /*
 
@@ -281,9 +317,15 @@ Endpoint matches if HTTP request contains JWT created by AWS Cognito for trusted
 */ 
 type A struct{ Client string }
 
-client := optics.Lenses1(MyT{})
-e := µ.GET( µ.Access(µ.JWT.ClientID).To(client) )
+client := µ.Optics1[A, string]
+e := µ.GET( µ.JWT(µ.Token.Username, client) )
 ```
+
+There are built-in JWT claims matching endpoints:
+* `µ.JWT ⟼ Endpoint`
+* `µ.JWTMaybe ⟼ Endpoint`
+* `µ.JWTOneOf ⟼ Endpoint`
+* `µ.JWTAllOf ⟼ Endpoint`
 
 
 ## High-order Endpoints
@@ -296,17 +338,19 @@ Use the product combinator to declare *conjunctive conditions*.
 
 ```go
 // High Order Product Endpoint
-//  /search?q=:text
-func search(text optics.Lens) µ.Endpoint {
+func search(text µ.Lens) µ.Endpoint {
   return µ.Join(
-    µ.Path("search"),
-    µ.Param("q").To(text))
+    µ.Param("q", text),
+    µ.Header("Accept", "application/json"),
   )
 }
 
 // Use HoC
-var text = optics.FromProduct1(A{})
-µ.GET( search(text) )
+var text = µ.Optics1[A, string]
+µ.GET(
+  µ.URI(µ.Path("search")),
+  search(text),
+)
 ```
 
 **Coproduct endpoint**
@@ -315,31 +359,88 @@ A co-product represents either-or endpoint evaluation.
 
 ```go
 // High Order CoProduct Endpoint
-//  /search?q=:text
-//  /search/:text
 func search(text optics.Lens) µ.Endpoint {
   return µ.Or(
-    µ.Path("search", text),
-    µ.Join(
-      µ.Path("search"),
-      µ.Param("q").To(text)),
-    ),
+    µ.Param("query", text),
+    µ.Param("q", text),
   )
 }
 
 // Use HoC
 var text = optics.FromProduct1(A{})
-µ.GET( search(text) )
+µ.GET(
+  µ.URI(µ.Path("search")),
+  search(text),
+)
 ```
+
+The library automatically creates co-product endpoint if few HoC shares same path.
+
+```go
+func create() µ.Routable {
+  return µ.POST(µ.URI(µ.Path("user")), /* ... */)
+}
+
+func lookup() µ.Routable {
+  return µ.GET(µ.URI(µ.Path("user")), /* ... */)
+}
+
+// Internally co-product endpoint is created at /user
+httpd.Serve(create(), lookup())
+```
+
 
 ## Mapping Endpoints
 
-A business logic is defined as Endpoint mapper with help of closure functions `Context ⟼ Output`. The library provides `func FMap(f func(µ.Context) error) µ.Endpoint` function. It lifts a transformer into Endpoint so that it is composable with other Endpoints.
+A business logic is defined as `Endpoint` type as well. It is a transformer function that maps `Context` to `Output`.
 
 ```go
 µ.GET(
-  µ.Path("foo"),
-  µ.FMap(func(*µ.Context) error { µ.Status.OK() }),
+  µ.URI(µ.Path("foo")),
+  func(*µ.Context) error { return µ.Status.OK() },
+)
+```
+
+The library provides a few helper function that simplify extraction of matched parameters from the request context:
+
+```go
+// application type that captures application payload
+type User struct {
+  Username string `json:"username"` 
+}
+
+// type of the request
+type A struct {
+  Space string
+  User  User
+}
+var space, user := µ.Optics2[A, string, User]()
+
+/*
+
+µ.FMap: (µ.Context, A) ⟼ Output 
+Just simplify encoding of matched parameters into the parameters of
+the function. It expects Output type as result.   
+*/ 
+µ.POST(
+  µ.URI(µ.Path("spaces"), µ.Path(space)),
+  µ.Body(user),
+  µ.FMap(func(ctx *µ.Context, a *A) error {
+    return µ.Status.OK(µ.WithJSON(a))
+  }),
+)
+
+/*
+
+µ.Map: (µ.Context, A) ⟼ (B, error)
+This is a classical A ⟼ B map function that produces JSON as output. 
+*/ 
+µ.POST(
+  µ.URI(µ.Path("spaces"), µ.Path(space)),
+  µ.Body(user),
+  µ.Map(func(ctx *µ.Context, a *A) (*A, error) {
+    return a, nil
+  }),
 )
 ```
 
@@ -351,7 +452,7 @@ The library provides factory functions named after HTTP status codes. Use them t
 
 ```go
 µ.GET(
-  µ.Path(path.Is("foo")),
+  µ.URI(µ.Path("foo")),
   µ.FMap(
     func(*µ.Context) error {
       return µ.Status.Ok(

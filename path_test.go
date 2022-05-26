@@ -21,13 +21,12 @@ package gouldian_test
 import (
 	µ "github.com/fogfish/gouldian"
 	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/it"
 	"testing"
 )
 
 func TestPathIs(t *testing.T) {
-	foo := mock.Endpoint(µ.GET(µ.Path("foo")))
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"))))
 
 	t.Run("success", func(t *testing.T) {
 		for _, url := range []string{
@@ -53,7 +52,7 @@ func TestPathIs(t *testing.T) {
 }
 
 func TestPathAny(t *testing.T) {
-	foo := mock.Endpoint(µ.GET(µ.Path("foo", µ.Any)))
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"), µ.PathAny())))
 
 	t.Run("success", func(t *testing.T) {
 		for _, url := range []string{
@@ -80,7 +79,7 @@ func TestPathAny(t *testing.T) {
 }
 
 func TestPathEmpty(t *testing.T) {
-	foo := mock.Endpoint(µ.GET(µ.Path()))
+	foo := mock.Endpoint(µ.GET(µ.URI()))
 
 	t.Run("success", func(t *testing.T) {
 		for _, url := range []string{
@@ -107,8 +106,8 @@ func TestPathEmpty(t *testing.T) {
 func TestPathString(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1(myT{})
-	foo := mock.Endpoint(µ.GET(µ.Path("foo", val)))
+	val := µ.Optics1[myT, string]()
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"), µ.Path(val))))
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
@@ -116,7 +115,7 @@ func TestPathString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("bar")
 	})
 
@@ -126,7 +125,7 @@ func TestPathString(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("1")
 	})
 }
@@ -134,8 +133,8 @@ func TestPathString(t *testing.T) {
 func TestPathInt(t *testing.T) {
 	type myT struct{ Val int }
 
-	val := optics.ForProduct1(myT{})
-	foo := mock.Endpoint(µ.GET(µ.Path("foo", val)))
+	val := µ.Optics1[myT, int]()
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"), µ.Path(val))))
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/foo/bar"))
@@ -150,7 +149,7 @@ func TestPathInt(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal(1)
 	})
 }
@@ -158,8 +157,8 @@ func TestPathInt(t *testing.T) {
 func TestPathSeq(t *testing.T) {
 	type myT struct{ Val string }
 
-	val := optics.ForProduct1(myT{})
-	foo := mock.Endpoint(µ.GET(µ.PathAll("foo", val)))
+	val := µ.Optics1[myT, string]()
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"), µ.PathAll(val))))
 
 	t.Run("seq0", func(t *testing.T) {
 		req := mock.Input(mock.URL("/foo"))
@@ -174,7 +173,7 @@ func TestPathSeq(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("a")
 	})
 
@@ -184,7 +183,7 @@ func TestPathSeq(t *testing.T) {
 
 		it.Ok(t).
 			If(foo(req)).Should().Equal(nil).
-			If(req.Get(&val)).Should().Equal(nil).
+			If(µ.FromContext(req, &val)).Should().Equal(nil).
 			If(val.Val).Should().Equal("a/b/c")
 	})
 }

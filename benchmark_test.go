@@ -20,15 +20,15 @@ package gouldian_test
 
 import (
 	"context"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/optics"
-	"github.com/fogfish/gouldian/server/httpd"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/gouldian/headers"
+	"github.com/fogfish/gouldian/mock"
+	"github.com/fogfish/gouldian/server/httpd"
 )
 
 //
@@ -42,12 +42,12 @@ Path Pattern with 1 param
 */
 
 type MyT1 struct {
-	Name *string
+	Name string
 }
 
 var (
-	name           = optics.ForProduct1(MyT1{})
-	pathWithParam1 = µ.Path("user", name)
+	name           = µ.Optics1[MyT1, string]()
+	pathWithParam1 = µ.URI(µ.Path("user"), µ.Path(name))
 	foo1           = mock.Endpoint(µ.GET(pathWithParam1))
 	req1           = mock.Input(mock.URL("/user/123456"))
 )
@@ -89,8 +89,8 @@ Path Pattern with 5 param
 type MyT5 struct{ A, B, C, D, E string }
 
 var (
-	a, b, c, d, e  = optics.ForProduct5(MyT5{})
-	pathWithParam5 = µ.Path("bench", a, b, c, d, e)
+	a, b, c, d, e  = µ.Optics5[MyT5, string, string, string, string, string]()
+	pathWithParam5 = µ.URI(µ.Path("bench"), µ.Path(a), µ.Path(b), µ.Path(c), µ.Path(d), µ.Path(e))
 	foo5           = mock.Endpoint(µ.GET(pathWithParam5))
 	req5           = mock.Input(mock.URL("/bench/a/b/c/d/e"))
 )
@@ -139,7 +139,7 @@ func BenchmarkLensForProduct1(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		ctx.Get(&val)
+		µ.FromContext(ctx, &val)
 	}
 }
 
@@ -163,7 +163,7 @@ func BenchmarkLensForProduct5(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		ctx.Get(&val)
+		µ.FromContext(ctx, &val)
 	}
 }
 
@@ -178,14 +178,14 @@ var endpoint1 = mock.Endpoint(
 		pathWithParam1,
 		func(ctx *µ.Context) error {
 			var req MyT1
-			if err := ctx.Get(&req); err != nil {
+			if err := µ.FromContext(ctx, &req); err != nil {
 				return µ.Status.BadRequest(µ.WithIssue(err))
 			}
 
 			return µ.Status.OK(
-				headers.ContentType.Value(headers.TextPlain),
-				headers.Server.Value("echo"),
-				µ.WithText(*req.Name),
+				µ.WithHeader(headers.ContentType, headers.TextPlain),
+				µ.WithHeader(headers.Server, "echo"),
+				µ.WithText(req.Name),
 			)
 		},
 	),
@@ -216,13 +216,13 @@ var endpoint5 = mock.Endpoint(
 		pathWithParam5,
 		func(ctx *µ.Context) error {
 			var req MyT5
-			if err := ctx.Get(&req); err != nil {
+			if err := µ.FromContext(ctx, &req); err != nil {
 				return µ.Status.BadRequest(µ.WithIssue(err))
 			}
 
 			return µ.Status.OK(
-				headers.ContentType.Value(headers.TextPlain),
-				headers.Server.Value("echo"),
+				µ.WithHeader(headers.ContentType, headers.TextPlain),
+				µ.WithHeader(headers.Server, "echo"),
 				µ.WithText(filepath.Join(req.A, req.B, req.C, req.D, req.E)),
 			)
 		},
@@ -514,30 +514,30 @@ type githubReq struct {
 	V0, V1, V2, V3, V4, V5, V6, V7, V8, V9 string
 }
 
-var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = optics.ForProduct10(githubReq{})
+var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = µ.Optics10[githubReq, string, string, string, string, string, string, string, string, string, string]()
 
 func githubHandle(c *µ.Context) error { return nil }
 
 func loadRouter(routes []struct{ method, path string }) http.Handler {
 	seq := make([]µ.Routable, 0, len(routes))
 	for _, ep := range routes {
-		lens := []interface{}{v0, v1, v2, v3, v4, v5, v6, v7, v8, v9}
-		segs := []interface{}{}
+		lens := []µ.Lens{v0, v1, v2, v3, v4, v5, v6, v7, v8, v9}
+		segs := []µ.Segment{}
 		path := strings.Split(ep.path, "/")[1:]
 		for _, seg := range path {
 			switch {
 			case len(seg) == 0:
 				break
 			case seg[0] == ':':
-				segs = append(segs, lens[0])
+				segs = append(segs, µ.Path(lens[0]))
 				lens = lens[1:]
 			default:
-				segs = append(segs, seg)
+				segs = append(segs, µ.Path(seg))
 			}
 		}
 		seq = append(seq,
 			µ.Route(
-				µ.Path(segs...),
+				µ.URI(segs...),
 				µ.Method(ep.method),
 				githubHandle,
 			),

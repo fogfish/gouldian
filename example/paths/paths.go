@@ -20,7 +20,6 @@ package main
 
 import (
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/optics"
 	"github.com/fogfish/gouldian/server/httpd"
 	"net/http"
 )
@@ -49,7 +48,7 @@ matches root (/)
 */
 func root() µ.Routable {
 	return µ.GET(
-		µ.Path(),
+		µ.URI(),
 		func(ctx *µ.Context) error {
 			return µ.Status.OK(
 				µ.WithText("matches root (/)"),
@@ -66,21 +65,16 @@ type param struct {
 	Text string
 }
 
-var lensEcho = optics.ForProduct1(param{})
+var lensEcho = µ.Optics1[param, string]()
 
 func path() µ.Routable {
 	return µ.GET(
-		µ.Path("path", lensEcho),
-		func(ctx *µ.Context) error {
-			var req param
-			if err := ctx.Get(&req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.URI(µ.Path("path"), µ.Path(lensEcho)),
+		µ.FMap(func(ctx *µ.Context, req *param) error {
 			return µ.Status.OK(
 				µ.WithText("matches /path/" + req.Text),
 			)
-		},
+		}),
 	)
 }
 
@@ -90,16 +84,11 @@ matches root (/file/file+)
 */
 func file() µ.Routable {
 	return µ.GET(
-		µ.PathAll("file", lensEcho),
-		func(ctx *µ.Context) error {
-			var req param
-			if err := ctx.Get(&req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
-			}
-
+		µ.URI(µ.Path("file"), µ.PathAll(lensEcho)),
+		µ.FMap(func(ctx *µ.Context, req *param) error {
 			return µ.Status.OK(
 				µ.WithText("matches /file/" + req.Text),
 			)
-		},
+		}),
 	)
 }

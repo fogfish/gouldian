@@ -32,9 +32,9 @@ func main() {
 
 func hello() µ.Routable {
 	return µ.GET(
-		µ.Path("hello"),
-		µ.FMap(func(ctx *µ.Context) error {
+		µ.URI(µ.Path("hello")),
+		func(ctx *µ.Context) error {
 			return µ.Status.OK(µ.WithText("Hello World!"))
-		}),
+		},
 	)
 }

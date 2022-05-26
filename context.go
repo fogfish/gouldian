@@ -23,7 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 )
 
 /*
@@ -39,9 +39,9 @@ type Context struct {
 	params  Params
 	payload []byte
 
-	JWT JWT
+	JWT Token
 
-	morphism optics.Morphism
+	morphism optics.Morphisms
 }
 
 /*
@@ -52,7 +52,7 @@ func NewContext(ctx context.Context) *Context {
 	return &Context{
 		Context:  ctx,
 		values:   make([]string, 0, 20),
-		morphism: make(optics.Morphism, 0, 20),
+		morphism: make(optics.Morphisms, 0, 20),
 	}
 }
 
@@ -88,7 +88,7 @@ func (ctx *Context) Put(lens optics.Lens, str string) error {
 		return ErrNoMatch
 	}
 
-	ctx.morphism = append(ctx.morphism, optics.Setter{Lens: lens, Value: val})
+	ctx.morphism = append(ctx.morphism, optics.Morphism{Lens: lens, Value: val})
 	return nil
 }
 
@@ -96,8 +96,8 @@ func (ctx *Context) Put(lens optics.Lens, str string) error {
 
 Get decodes context into structure
 */
-func (ctx *Context) Get(val interface{}) error {
-	if err := ctx.morphism.Apply(val); err != nil {
+func FromContext[S any](ctx *Context, val *S) error {
+	if err := optics.Morph(ctx.morphism, val); err != nil {
 		return err
 	}
 

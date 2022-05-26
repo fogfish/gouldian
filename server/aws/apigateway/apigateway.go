@@ -58,7 +58,7 @@ func Request(r *events.APIGatewayProxyRequest) *µ.Context {
 	return ctx
 }
 
-func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
+func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.Token {
 	if r.RequestContext.Authorizer == nil {
 		return nil
 	}
@@ -66,7 +66,7 @@ func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.JWT {
 	if jwt, isJwt := r.RequestContext.Authorizer["claims"]; isJwt {
 		switch tkn := jwt.(type) {
 		case map[string]interface{}:
-			return µ.NewJWT(tkn)
+			return µ.NewToken(tkn)
 		}
 	}
 

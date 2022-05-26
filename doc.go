@@ -50,10 +50,10 @@ to /hello endpoint.
 
   func hello() µ.Endpoint {
     return µ.GET(
-      µ.Path("hello"),
-      µ.FMap(func(ctx µ.Context) error {
+      µ.URI(µ.Path("hello")),
+      func(ctx µ.Context) error {
         return µ.Status.OK(µ.WithText("Hello World!"))
-      }),
+      },
     )
   }
 
@@ -61,7 +61,7 @@ See examples folder for advanced use-case.
 
 Next steps
 
-↣ Study Endpoint type and its composition
+↣ Study Endpoint type and its composition, see User Guide
 
 ↣ Check build-in collection of endpoints to deal with HTTP request.
 See types: HTTP, APIGateway

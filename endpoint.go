@@ -134,3 +134,15 @@ func (seq Endpoints) Or(ctx *Context) (err error) {
 	}
 	return ErrNoMatch
 }
+
+/*
+
+Join builds product endpoint from sequence
+*/
+func Join(seq ...Endpoint) Endpoint { return Endpoints(seq).Join }
+
+/*
+
+Or builds co-product endpoint from sequence
+*/
+func Or(seq ...Endpoint) Endpoint { return Endpoints(seq).Or }

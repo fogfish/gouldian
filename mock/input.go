@@ -105,7 +105,7 @@ func Text(val string) Mock {
 }
 
 // JWT adds JWT token to mocked HTTP request
-func JWT(token µ.JWT) Mock {
+func JWT(token µ.Token) Mock {
 	return func(mock *µ.Context) *µ.Context {
 		mock.JWT = token
 		return mock

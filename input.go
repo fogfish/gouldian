@@ -20,6 +20,12 @@ package gouldian
 
 /*
 
+Pattern is a union type of allowed params to matcher functions
+*/
+type Pattern interface{ string | Lens }
+
+/*
+
 Params of path query in HTTP request
 */
 type Params map[string][]string
@@ -36,36 +42,36 @@ func (params Params) Get(key string) (string, bool) {
 
 /*
 
-JWT is a container for access token
+Token is a container for access token
 */
-type JWT map[string]string
+type Token map[string]string
 
 // Jti is unique JWT token identity
-func (t JWT) Jti() string { return t["jti"] }
+func (t Token) Jti() string { return t["jti"] }
 
 // Iss -uer of token
-func (t JWT) Iss() string { return t["iss"] }
+func (t Token) Iss() string { return t["iss"] }
 
 // Exp -ires after
-func (t JWT) Exp() string { return t["exp"] }
+func (t Token) Exp() string { return t["exp"] }
 
 // Sub -ject of token
-func (t JWT) Sub() string { return t["sub"] }
+func (t Token) Sub() string { return t["sub"] }
 
 // Scope of the token
-func (t JWT) Scope() string { return t["scope"] }
+func (t Token) Scope() string { return t["scope"] }
 
 // Username associated with token
-func (t JWT) Username() string { return t["username"] }
+func (t Token) Username() string { return t["username"] }
 
 // ClientID associated with token
-func (t JWT) ClientID() string { return t["client_id"] }
+func (t Token) ClientID() string { return t["client_id"] }
 
 /*
 
-NewJWT creates access token object
+NewToken creates access token object
 */
-func NewJWT(raw map[string]interface{}) JWT {
+func NewToken(raw map[string]interface{}) Token {
 	asString := func(id string) string {
 		if val, ok := raw[id]; ok {
 			return val.(string)
@@ -73,7 +79,7 @@ func NewJWT(raw map[string]interface{}) JWT {
 		return ""
 	}
 
-	return JWT{
+	return Token{
 		"jti":       asString("jti"),
 		"iss":       asString("iss"),
 		"exp":       asString("exp"),

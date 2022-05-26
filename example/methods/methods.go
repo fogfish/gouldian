@@ -46,24 +46,26 @@ curl -XDELETE http://localhost:8080/echo
 
 */
 
+var root = µ.URI(µ.Path("echo"))
+
 func get() µ.Routable {
-	return µ.GET(µ.Path("echo"), serve)
+	return µ.GET(root, serve)
 }
 
 func post() µ.Routable {
-	return µ.POST(µ.Path("echo"), serve)
+	return µ.POST(root, serve)
 }
 
 func put() µ.Routable {
-	return µ.PUT(µ.Path("echo"), serve)
+	return µ.PUT(root, serve)
 }
 
 func patch() µ.Routable {
-	return µ.PATCH(µ.Path("echo"), serve)
+	return µ.PATCH(root, serve)
 }
 
 func delete() µ.Routable {
-	return µ.DELETE(µ.Path("echo"), serve)
+	return µ.DELETE(root, serve)
 }
 
 func serve(ctx *µ.Context) error {

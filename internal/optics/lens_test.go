@@ -21,7 +21,7 @@ package optics_test
 import (
 	"testing"
 
-	"github.com/fogfish/gouldian/optics"
+	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/it"
 )
 
@@ -30,18 +30,18 @@ func TestLensStructString(t *testing.T) {
 		A string
 		B *string
 	}
-	a, b := optics.ForProduct2(T{})
+	a, b := optics.ForProduct2[T, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 
 	t.Run("ByVal", func(t *testing.T) {
 		var z T
 
-		m := optics.Morphism{
+		m := optics.Morphisms{
 			{Lens: a, Value: x},
 			{Lens: b, Value: y},
 		}
-		e := m.Apply(&z)
+		e := optics.Morph(m, &z)
 
 		it.Ok(t).
 			IfNil(e).
@@ -52,14 +52,14 @@ func TestLensStructString(t *testing.T) {
 
 func TestLensStructInt(t *testing.T) {
 	type T struct{ A int }
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, int]()
 	x, err := a.FromString("100")
 	it.Ok(t).If(err).Must().Equal(nil)
 
-	m := optics.Morphism{{Lens: a, Value: x}}
+	m := optics.Morphisms{{Lens: a, Value: x}}
 
 	var v T
-	err = m.Apply(&v)
+	err = optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -68,21 +68,21 @@ func TestLensStructInt(t *testing.T) {
 
 func TestLensStructIntFail(t *testing.T) {
 	type T struct{ A int }
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, int]()
 	_, err := a.FromString("abc")
 	it.Ok(t).If(err).MustNot().Equal(nil)
 }
 
 func TestLensStructFloat(t *testing.T) {
 	type T struct{ A float64 }
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, float64]()
 	x, err := a.FromString("100.0")
 	it.Ok(t).If(err).Must().Equal(nil)
 
-	m := optics.Morphism{{Lens: a, Value: x}}
+	m := optics.Morphisms{{Lens: a, Value: x}}
 
 	var v T
-	err = m.Apply(&v)
+	err = optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -91,7 +91,7 @@ func TestLensStructFloat(t *testing.T) {
 
 func TestLensStructFloatFail(t *testing.T) {
 	type T struct{ A float64 }
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, float64]()
 	_, err := a.FromString("abc")
 	it.Ok(t).If(err).MustNot().Equal(nil)
 }
@@ -101,12 +101,12 @@ func TestLensStructJSON(t *testing.T) {
 		X string `json:"x"`
 	}
 	type T struct{ A J }
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, J]()
 	x, _ := a.FromString("{\"x\":\"abc\"}")
-	m := optics.Morphism{{Lens: a, Value: x}}
+	m := optics.Morphisms{{Lens: a, Value: x}}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -120,12 +120,12 @@ func TestLensStructForm(t *testing.T) {
 	type T struct {
 		A J `content:"form"`
 	}
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, J]()
 	x, _ := a.FromString("x=abc")
-	m := optics.Morphism{{Lens: a, Value: x}}
+	m := optics.Morphisms{{Lens: a, Value: x}}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -149,12 +149,12 @@ func TestLenses1(t *testing.T) {
 	type T struct {
 		A string
 	}
-	a := optics.ForProduct1(T{})
+	a := optics.ForProduct1[T, string]()
 	x, _ := a.FromString("a")
-	m := optics.Morphism{{Lens: a, Value: x}}
+	m := optics.Morphisms{{Lens: a, Value: x}}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -166,16 +166,16 @@ func TestLenses2(t *testing.T) {
 		A string
 		B string
 	}
-	a, b := optics.ForProduct2(T{})
+	a, b := optics.ForProduct2[T, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -189,18 +189,18 @@ func TestLenses3(t *testing.T) {
 		B string
 		C string
 	}
-	a, b, c := optics.ForProduct3(T{})
+	a, b, c := optics.ForProduct3[T, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -216,12 +216,12 @@ func TestLenses4(t *testing.T) {
 		C string
 		D string
 	}
-	a, b, c, d := optics.ForProduct4(T{})
+	a, b, c, d := optics.ForProduct4[T, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
 	k, _ := d.FromString("d")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -229,7 +229,7 @@ func TestLenses4(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -247,13 +247,13 @@ func TestLenses5(t *testing.T) {
 		D string
 		E string
 	}
-	a, b, c, d, e := optics.ForProduct5(T{})
+	a, b, c, d, e := optics.ForProduct5[T, string, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
 	k, _ := d.FromString("d")
 	q, _ := e.FromString("e")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -262,7 +262,7 @@ func TestLenses5(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -282,14 +282,14 @@ func TestLenses6(t *testing.T) {
 		E string
 		F string
 	}
-	a, b, c, d, e, f := optics.ForProduct6(T{})
+	a, b, c, d, e, f := optics.ForProduct6[T, string, string, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
 	k, _ := d.FromString("d")
 	q, _ := e.FromString("e")
 	w, _ := f.FromString("f")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -299,7 +299,7 @@ func TestLenses6(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -321,7 +321,7 @@ func TestLenses7(t *testing.T) {
 		F string
 		G string
 	}
-	a, b, c, d, e, f, g := optics.ForProduct7(T{})
+	a, b, c, d, e, f, g := optics.ForProduct7[T, string, string, string, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -329,7 +329,7 @@ func TestLenses7(t *testing.T) {
 	q, _ := e.FromString("e")
 	w, _ := f.FromString("f")
 	s, _ := g.FromString("g")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -340,7 +340,7 @@ func TestLenses7(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -364,7 +364,7 @@ func TestLenses8(t *testing.T) {
 		G string
 		H string
 	}
-	a, b, c, d, e, f, g, h := optics.ForProduct8(T{})
+	a, b, c, d, e, f, g, h := optics.ForProduct8[T, string, string, string, string, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -373,7 +373,7 @@ func TestLenses8(t *testing.T) {
 	w, _ := f.FromString("f")
 	s, _ := g.FromString("g")
 	r, _ := h.FromString("h")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -385,7 +385,7 @@ func TestLenses8(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -411,7 +411,7 @@ func TestLenses9(t *testing.T) {
 		H string
 		I string
 	}
-	a, b, c, d, e, f, g, h, i := optics.ForProduct9(T{})
+	a, b, c, d, e, f, g, h, i := optics.ForProduct9[T, string, string, string, string, string, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -421,7 +421,7 @@ func TestLenses9(t *testing.T) {
 	s, _ := g.FromString("g")
 	r, _ := h.FromString("h")
 	u, _ := i.FromString("i")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -434,7 +434,7 @@ func TestLenses9(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
@@ -462,7 +462,7 @@ func TestLenses10(t *testing.T) {
 		I string
 		K string
 	}
-	a, b, c, d, e, f, g, h, i, k := optics.ForProduct10(T{})
+	a, b, c, d, e, f, g, h, i, k := optics.ForProduct10[T, string, string, string, string, string, string, string, string, string, string]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -473,7 +473,7 @@ func TestLenses10(t *testing.T) {
 	r, _ := h.FromString("h")
 	u, _ := i.FromString("i")
 	n, _ := k.FromString("k")
-	m := optics.Morphism{
+	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
 		{Lens: c, Value: z},
@@ -487,7 +487,7 @@ func TestLenses10(t *testing.T) {
 	}
 
 	var v T
-	err := m.Apply(&v)
+	err := optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).

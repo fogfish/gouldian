@@ -41,7 +41,7 @@ func TestAccessToken(t *testing.T) {
 	err := json.Unmarshal([]byte(raw), &jwt)
 	it.Ok(t).If(err).Must().Equal(nil)
 
-	token := µ.NewJWT(jwt)
+	token := µ.NewToken(jwt)
 	it.Ok(t).
 		If(token.Jti()).Equal("jti").
 		If(token.Iss()).Equal("iss").
