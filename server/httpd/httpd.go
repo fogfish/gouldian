@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/logger"
 	"net/http"
 	"sync"
 )
@@ -75,6 +76,10 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (routes *routes) output(w http.ResponseWriter, out *µ.Output) {
+	if out.Failure != nil {
+		logger.Error("%v", out.Failure)
+	}
+
 	for _, h := range out.Headers {
 		w.Header().Set(h.Header, h.Value)
 	}

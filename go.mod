@@ -9,4 +9,7 @@ require (
 	github.com/fogfish/it v0.9.1
 )
 
-require github.com/fogfish/golem v0.8.5
+require (
+	github.com/fogfish/golem v0.8.5
+	github.com/fogfish/logger v1.1.0
+)

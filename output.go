@@ -413,7 +413,7 @@ func WithText(content string) Result {
 }
 
 // WithIssue appends Issue, RFC 7807: Problem Details for HTTP APIs
-func WithIssue(err error, title ...string) Result {
+func WithIssue(failure error, title ...string) Result {
 	return func(out *Output) error {
 		issue := NewIssue(out.Status)
 		if len(title) != 0 {
@@ -441,7 +441,8 @@ func WithIssue(err error, title ...string) Result {
 			}{"Content-Type", "application/json"},
 		)
 		out.Body = string(body)
-		out.Failure = err
+		out.Failure = fmt.Errorf("%s: %d %s - %w", issue.ID, out.Status, issue.Title, failure)
+
 		return nil
 	}
 }
