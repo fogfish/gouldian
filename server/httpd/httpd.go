@@ -59,25 +59,25 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch v := routes.endpoint(req).(type) {
 	case nil:
 	case *µ.Output:
-		routes.output(w, v)
+		routes.output(w, r, v)
 	case µ.NoMatch:
 		failure := µ.Status.NotImplemented(
 			µ.WithIssue(fmt.Errorf("NoMatch %s", r.URL.Path)),
 		).(*µ.Output)
-		routes.output(w, failure)
+		routes.output(w, r, failure)
 	default:
 		failure := µ.Status.InternalServerError(
 			µ.WithIssue(fmt.Errorf("Unknown response %s", r.URL.Path)),
 		).(*µ.Output)
-		routes.output(w, failure)
+		routes.output(w, r, failure)
 	}
 
 	routes.pool.Put(req)
 }
 
-func (routes *routes) output(w http.ResponseWriter, out *µ.Output) {
+func (routes *routes) output(w http.ResponseWriter, r *http.Request, out *µ.Output) {
 	if out.Failure != nil {
-		logger.Error("%v", out.Failure)
+		logger.Error("%s %v", r.RequestURI, out.Failure)
 	}
 
 	for _, h := range out.Headers {
