@@ -27,6 +27,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	µ "github.com/fogfish/gouldian"
+	"github.com/fogfish/logger"
 )
 
 /*
@@ -105,6 +106,10 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 }
 
 func output(out *µ.Output, req *µ.Context) (events.APIGatewayProxyResponse, error) {
+	if out.Failure != nil {
+		logger.Error("%v", out.Failure)
+	}
+
 	evt := events.APIGatewayProxyResponse{
 		Body:       out.Body,
 		StatusCode: out.Status,
