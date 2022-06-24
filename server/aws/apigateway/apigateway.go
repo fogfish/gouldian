@@ -106,7 +106,7 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 }
 
 func output(out *µ.Output, req *µ.Context) (events.APIGatewayProxyResponse, error) {
-	if out.Failure != nil {
+	if out.Failure != nil && req != nil && req.Request != nil {
 		logger.Error("%s %v", req.Request.URL, out.Failure)
 	}
 

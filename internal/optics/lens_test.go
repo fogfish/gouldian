@@ -26,44 +26,66 @@ import (
 )
 
 func TestLensStructString(t *testing.T) {
+	type String string
 	type T struct {
 		A string
 		B *string
+		C String
 	}
-	a, b := optics.ForProduct2[T, string, string]()
+	a, b, c := optics.ForProduct3[T, string, string, String]()
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
+	z, _ := c.FromString("c")
 
 	t.Run("ByVal", func(t *testing.T) {
-		var z T
+		var v T
 
 		m := optics.Morphisms{
 			{Lens: a, Value: x},
 			{Lens: b, Value: y},
+			{Lens: c, Value: z},
 		}
-		e := optics.Morph(m, &z)
+		e := optics.Morph(m, &v)
 
 		it.Ok(t).
 			IfNil(e).
-			If(z.A).Equal("a").
-			If(*z.B).Equal("b")
+			If(v.A).Equal("a").
+			If(*v.B).Equal("b").
+			If(v.C).Equal(String("c"))
 	})
 }
 
 func TestLensStructInt(t *testing.T) {
-	type T struct{ A int }
-	a := optics.ForProduct1[T, int]()
+	type Int int
+	type T struct {
+		A int
+		B *int
+		C Int
+	}
+	a, b, c := optics.ForProduct3[T, int, int, Int]()
 	x, err := a.FromString("100")
 	it.Ok(t).If(err).Must().Equal(nil)
 
-	m := optics.Morphisms{{Lens: a, Value: x}}
+	y, err := b.FromString("100")
+	it.Ok(t).If(err).Must().Equal(nil)
+
+	z, err := c.FromString("100")
+	it.Ok(t).If(err).Must().Equal(nil)
 
 	var v T
+
+	m := optics.Morphisms{
+		{Lens: a, Value: x},
+		{Lens: b, Value: y},
+		{Lens: c, Value: z},
+	}
 	err = optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
-		If(v.A).Equal(100)
+		If(v.A).Equal(100).
+		If(*v.B).Equal(100).
+		If(v.C).Equal(Int(100))
 }
 
 func TestLensStructIntFail(t *testing.T) {
@@ -74,19 +96,37 @@ func TestLensStructIntFail(t *testing.T) {
 }
 
 func TestLensStructFloat(t *testing.T) {
-	type T struct{ A float64 }
-	a := optics.ForProduct1[T, float64]()
+	type Float64 float64
+	type T struct {
+		A float64
+		B *float64
+		C Float64
+	}
+	a, b, c := optics.ForProduct3[T, float64, float64, Float64]()
+
 	x, err := a.FromString("100.0")
 	it.Ok(t).If(err).Must().Equal(nil)
 
-	m := optics.Morphisms{{Lens: a, Value: x}}
+	y, err := b.FromString("100.0")
+	it.Ok(t).If(err).Must().Equal(nil)
+
+	z, err := c.FromString("100.0")
+	it.Ok(t).If(err).Must().Equal(nil)
 
 	var v T
+
+	m := optics.Morphisms{
+		{Lens: a, Value: x},
+		{Lens: b, Value: y},
+		{Lens: c, Value: z},
+	}
 	err = optics.Morph(m, &v)
 
 	it.Ok(t).
 		IfNil(err).
-		If(v.A).Equal(100.0)
+		If(v.A).Equal(100.0).
+		If(*v.B).Equal(100.0).
+		If(v.C).Equal(Float64(100.0))
 }
 
 func TestLensStructFloatFail(t *testing.T) {
