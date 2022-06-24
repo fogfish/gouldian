@@ -98,6 +98,23 @@ func (l *lensString[S]) FromString(a string) (Value, error) {
 
 /*
 
+Lens to deal with custom string type
+*/
+type lensStringTyped[S, A any] struct{ optics.Reflector[A] }
+
+func (l *lensStringTyped[S, A]) Put(s reflect.Value, a Value) error {
+	var t A
+	r := reflect.ValueOf(&t).Elem()
+	r.SetString(a.String)
+	return l.Reflector.PutValue(s, t)
+}
+
+func (l *lensStringTyped[S, A]) FromString(a string) (Value, error) {
+	return Value{String: a}, nil
+}
+
+/*
+
 Lens to deal with number type
 */
 type lensNumber[S any] struct{ optics.Reflector[int] }
@@ -117,6 +134,28 @@ func (l *lensNumber[S]) FromString(a string) (Value, error) {
 
 /*
 
+Lens to deal with custom number type
+*/
+type lensNumberTyped[S, A any] struct{ optics.Reflector[A] }
+
+func (l *lensNumberTyped[S, A]) Put(s reflect.Value, a Value) error {
+	var t A
+	r := reflect.ValueOf(&t).Elem()
+	r.SetInt(int64(a.Number))
+	return l.Reflector.PutValue(s, t)
+}
+
+func (l *lensNumberTyped[S, A]) FromString(a string) (Value, error) {
+	val, err := strconv.Atoi(a)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return Value{Number: val}, nil
+}
+
+/*
+
 Lens to deal with double type
 */
 type lensDouble[S any] struct{ optics.Reflector[float64] }
@@ -126,6 +165,28 @@ func (l *lensDouble[S]) Put(s reflect.Value, a Value) error {
 }
 
 func (l *lensDouble[S]) FromString(a string) (Value, error) {
+	val, err := strconv.ParseFloat(a, 64)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return Value{Double: val}, nil
+}
+
+/*
+
+Lens to deal with custom double type
+*/
+type lensDoubleTyped[S, A any] struct{ optics.Reflector[A] }
+
+func (l *lensDoubleTyped[S, A]) Put(s reflect.Value, a Value) error {
+	var t A
+	r := reflect.ValueOf(&t).Elem()
+	r.SetFloat(a.Double)
+	return l.Reflector.PutValue(s, t)
+}
+
+func (l *lensDoubleTyped[S, A]) FromString(a string) (Value, error) {
 	val, err := strconv.ParseFloat(a, 64)
 	if err != nil {
 		return Value{}, err
@@ -200,11 +261,20 @@ func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
 		switch t.PureType.Kind() {
 		case reflect.String:
-			return &lensString[S]{ln.(optics.Reflector[string])}
+			if t.PureType.Name() == "string" {
+				return &lensString[S]{ln.(optics.Reflector[string])}
+			}
+			return &lensStringTyped[S, A]{ln.(optics.Reflector[A])}
 		case reflect.Int:
-			return &lensNumber[S]{ln.(optics.Reflector[int])}
+			if t.PureType.Name() == "int" {
+				return &lensNumber[S]{ln.(optics.Reflector[int])}
+			}
+			return &lensNumberTyped[S, A]{ln.(optics.Reflector[A])}
 		case reflect.Float64:
-			return &lensDouble[S]{ln.(optics.Reflector[float64])}
+			if t.PureType.Name() == "float64" {
+				return &lensDouble[S]{ln.(optics.Reflector[float64])}
+			}
+			return &lensDoubleTyped[S, A]{ln.(optics.Reflector[A])}
 		case reflect.Struct:
 			switch t.Tag.Get("content") {
 			case "form":
