@@ -1,0 +1,27 @@
+"[#] ci/cd":
+ - '.github/*'
+ - '.github/**/*'
+
+"[#] deps":
+ - 'go.mod'
+ - 'go.sum'
+
+"[#] doc":
+ - '*.md'
+ - 'doc/*'
+ - 'doc/**/*'
+ - 'examples/**/*'
+
+"[#] core":
+ - '*.go'
+ - 'headers/*'
+ - 'headers/**/*'
+ - 'internal/*'
+ - 'internal/**/*'
+ - 'mock'
+ 
+"[#] httpd":
+ - 'server/httpd/*'
+
+"[#] aws apigateway":
+ - 'server/aws/apigateway/*'
