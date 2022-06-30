@@ -83,7 +83,7 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 		req := Request(&r)
 		if req == nil {
 			failure := µ.Status.BadRequest(
-				µ.WithIssue(fmt.Errorf("Unknown response %s", r.Path)),
+				µ.WithIssue(fmt.Errorf("unknown response %s", r.Path)),
 			).(*µ.Output)
 			return output(failure, req)
 		}
@@ -98,7 +98,7 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 			return output(failure, req)
 		default:
 			failure := µ.Status.InternalServerError(
-				µ.WithIssue(fmt.Errorf("Unknown response %s", r.Path)),
+				µ.WithIssue(fmt.Errorf("unknown response %s", r.Path)),
 			).(*µ.Output)
 			return output(failure, req)
 		}

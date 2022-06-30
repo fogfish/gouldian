@@ -516,7 +516,7 @@ type githubReq struct {
 
 var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = µ.Optics10[githubReq, string, string, string, string, string, string, string, string, string, string]()
 
-func githubHandle(c *µ.Context) error { return nil }
+func githubHandle(*µ.Context, *githubReq) error { return nil }
 
 func loadRouter(routes []struct{ method, path string }) http.Handler {
 	seq := make([]µ.Routable, 0, len(routes))
@@ -526,12 +526,10 @@ func loadRouter(routes []struct{ method, path string }) http.Handler {
 		path := strings.Split(ep.path, "/")[1:]
 		for _, seg := range path {
 			switch {
-			case len(seg) == 0:
-				break
 			case seg[0] == ':':
 				segs = append(segs, µ.Path(lens[0]))
 				lens = lens[1:]
-			default:
+			case len(seq) != 0:
 				segs = append(segs, µ.Path(seg))
 			}
 		}
@@ -539,7 +537,7 @@ func loadRouter(routes []struct{ method, path string }) http.Handler {
 			µ.Route(
 				µ.URI(segs...),
 				µ.Method(ep.method),
-				githubHandle,
+				µ.FMap(githubHandle),
 			),
 		)
 	}

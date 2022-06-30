@@ -137,7 +137,7 @@ func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 
 		val := claim(ctx.JWT)
 		for _, x := range vals {
-			if strings.Index(val, x) != -1 {
+			if strings.Contains(val, x) {
 				return nil
 			}
 		}
@@ -160,7 +160,7 @@ func JWTAllOf(claim JWTClaim, vals ...string) Endpoint {
 
 		val := claim(ctx.JWT)
 		for _, x := range vals {
-			if strings.Index(val, x) == -1 {
+			if !strings.Contains(val, x) {
 				return ErrNoMatch
 			}
 		}

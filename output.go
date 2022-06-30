@@ -429,7 +429,7 @@ func WithIssue(failure error, title ...string) Result {
 					Value  string
 				}{"Content-Type", "text/plain"},
 			)
-			out.Body = fmt.Sprintf("JSON serialization is failed for <Issue>")
+			out.Body = "JSON serialization is failed for <Issue>"
 
 			return nil
 		}

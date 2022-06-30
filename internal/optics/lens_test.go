@@ -89,6 +89,7 @@ func TestLensStructInt(t *testing.T) {
 }
 
 func TestLensStructIntFail(t *testing.T) {
+	//lint:ignore U1000 type is used but not instantiated
 	type T struct{ A int }
 	a := optics.ForProduct1[T, int]()
 	_, err := a.FromString("abc")
@@ -130,6 +131,7 @@ func TestLensStructFloat(t *testing.T) {
 }
 
 func TestLensStructFloatFail(t *testing.T) {
+	//lint:ignore U1000 type is used but not instantiated
 	type T struct{ A float64 }
 	a := optics.ForProduct1[T, float64]()
 	_, err := a.FromString("abc")

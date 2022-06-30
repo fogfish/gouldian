@@ -289,7 +289,7 @@ func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
 			}
 		default:
-			panic(fmt.Errorf("Type %v is not supported", t.Type))
+			panic(fmt.Errorf("type %v is not supported", t.Type))
 		}
 	}
 }
