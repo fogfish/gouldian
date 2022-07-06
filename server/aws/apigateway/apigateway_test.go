@@ -30,7 +30,7 @@ import (
 )
 
 func TestServeMatch(t *testing.T) {
-	api := mock("echo")
+	api := apigateway.Serve(mock("echo"))
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/echo?foo=bar",
@@ -54,7 +54,7 @@ func TestServeMatch(t *testing.T) {
 }
 
 func TestServeNoMatch(t *testing.T) {
-	api := mock("echo")
+	api := apigateway.Serve(mock("echo"))
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/foo",
@@ -75,7 +75,7 @@ func TestServeNoMatch(t *testing.T) {
 }
 
 func TestServeMatchUnescaped(t *testing.T) {
-	api := mock("h%rt")
+	api := apigateway.Serve(mock("h%rt"))
 	req := events.APIGatewayProxyRequest{
 		HTTPMethod: "GET",
 		Path:       "/h%rt",
@@ -88,17 +88,38 @@ func TestServeMatchUnescaped(t *testing.T) {
 		If(out.StatusCode).Should().Equal(http.StatusBadRequest)
 }
 
-func mock(path string) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return apigateway.Serve(
-		µ.GET(
-			µ.URI(µ.Path(path)),
-			func(ctx *µ.Context) error {
-				return µ.Status.OK(
-					µ.WithHeader(headers.ContentType, headers.TextPlain),
-					µ.WithHeader(headers.Server, "echo"),
-					µ.WithText("echo"),
-				)
-			},
-		),
+func TestServeAndCommit(t *testing.T) {
+	cnt := 0
+	api := apigateway.ServeAndCommit(
+		func() { cnt = cnt + 1 },
+		mock("echo"),
+	)
+	req := events.APIGatewayProxyRequest{
+		HTTPMethod: "GET",
+		Path:       "/echo?foo=bar",
+		Headers:    map[string]string{"Accept": "*/*"},
+	}
+
+	out, err1 := api(req)
+	it.Ok(t).If(err1).Must().Equal(nil)
+
+	it.Ok(t).
+		If(out.StatusCode).Should().Equal(http.StatusOK).
+		If(out.Headers["Server"]).Should().Equal("echo").
+		If(out.Headers["Content-Type"]).Should().Equal("text/plain").
+		If(out.Body).Should().Equal("echo").
+		If(cnt).Should().Equal(1)
+}
+
+func mock(path string) µ.Routable {
+	return µ.GET(
+		µ.URI(µ.Path(path)),
+		func(ctx *µ.Context) error {
+			return µ.Status.OK(
+				µ.WithHeader(headers.ContentType, headers.TextPlain),
+				µ.WithHeader(headers.Server, "echo"),
+				µ.WithText("echo"),
+			)
+		},
 	)
 }
