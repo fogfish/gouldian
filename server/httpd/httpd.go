@@ -46,6 +46,24 @@ func Serve(endpoints ...µ.Routable) http.Handler {
 	return routes
 }
 
+/*
+
+Serve builds http.Handler for sequence of endpoints.
+It executes commit function after each request.
+
+  http.ListenAndServe(":8080", httpd.Server( ... ))
+*/
+func ServeAndCommit(commit func(), endpoints ...µ.Routable) http.Handler {
+	h := Serve(endpoints...)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
+		commit()
+	})
+}
+
+//
+//
 type routes struct {
 	endpoint µ.Endpoint
 	pool     sync.Pool

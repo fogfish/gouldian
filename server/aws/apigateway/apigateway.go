@@ -75,6 +75,17 @@ func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.Token {
 
 }
 
+//
+func ServeAndCommit(commit func(), endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	h := Serve(endpoints...)
+
+	return func(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+		ret, err := h(req)
+		commit()
+		return ret, err
+	}
+}
+
 // Serve HTTP service
 func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	api := µ.NewRoutes(endpoints...).Endpoint()

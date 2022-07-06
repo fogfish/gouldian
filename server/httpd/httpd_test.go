@@ -32,7 +32,7 @@ import (
 )
 
 func TestServeMatch(t *testing.T) {
-	ts := mock()
+	ts := httptest.NewServer(httpd.Serve(mock()))
 	defer ts.Close()
 
 	req, err1 := http.NewRequest("GET", ts.URL+"/echo", nil)
@@ -52,7 +52,7 @@ func TestServeMatch(t *testing.T) {
 }
 
 func TestServeNoMatch(t *testing.T) {
-	ts := mock()
+	ts := httptest.NewServer(httpd.Serve(mock()))
 	defer ts.Close()
 
 	req, err1 := http.NewRequest("GET", ts.URL+"/foo", nil)
@@ -91,22 +91,45 @@ func TestServeUnknownError(t *testing.T) {
 		If(out.StatusCode).Should().Equal(http.StatusInternalServerError).
 		If(out.Header.Get("Content-Type")).Should().Equal("application/json").
 		If(msg).ShouldNot().Equal([]byte{})
-
 }
 
-func mock() *httptest.Server {
-	return httptest.NewServer(
-		httpd.Serve(
-			µ.GET(
-				µ.URI(µ.Path("echo")),
-				func(ctx *µ.Context) error {
-					return µ.Status.OK(
-						µ.WithHeader(headers.ContentType, headers.TextPlain),
-						µ.WithHeader(headers.Server, "echo"),
-						µ.WithText("echo"),
-					)
-				},
-			),
+func TestServeAndCommit(t *testing.T) {
+	cnt := 0
+	ts := httptest.NewServer(
+		httpd.ServeAndCommit(
+			func() { cnt = cnt + 1 },
+			mock(),
 		),
 	)
+	defer ts.Close()
+
+	req, err1 := http.NewRequest("GET", ts.URL+"/echo", nil)
+	it.Ok(t).If(err1).Must().Equal(nil)
+
+	out, err2 := http.DefaultClient.Do(req)
+	it.Ok(t).If(err2).Must().Equal(nil)
+
+	msg, err3 := ioutil.ReadAll(out.Body)
+	it.Ok(t).If(err3).Must().Equal(nil)
+
+	it.Ok(t).
+		If(out.StatusCode).Should().Equal(http.StatusOK).
+		If(out.Header.Get("Server")).Should().Equal("echo").
+		If(out.Header.Get("Content-Type")).Should().Equal("text/plain").
+		If(msg).Should().Equal([]byte("echo")).
+		If(cnt).Should().Equal(1)
+}
+
+func mock() µ.Routable {
+	return µ.GET(
+		µ.URI(µ.Path("echo")),
+		func(ctx *µ.Context) error {
+			return µ.Status.OK(
+				µ.WithHeader(headers.ContentType, headers.TextPlain),
+				µ.WithHeader(headers.Server, "echo"),
+				µ.WithText("echo"),
+			)
+		},
+	)
+
 }
