@@ -87,7 +87,7 @@ func ServeAndCommit(commit func(), endpoints ...µ.Routable) func(r events.APIGa
 }
 
 // Serve HTTP service
-func Serve(endpoints ...µ.Routable) func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	api := µ.NewRoutes(endpoints...).Endpoint()
 
 	return func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
