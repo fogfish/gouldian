@@ -19,7 +19,6 @@
 package gouldian_test
 
 import (
-	"errors"
 	"net/http"
 	"reflect"
 	"testing"
@@ -123,13 +122,14 @@ func output(t *testing.T, a, b error) {
 		If(foo(req)).Should().
 		Assert(
 			func(be interface{}) bool {
-				var out error
-				if errors.As(be.(error), &out) {
+				switch out := be.(type) {
+				case error:
 					eq := reflect.DeepEqual(b, out)
 					a.(*µ.Output).Free()
 					b.(*µ.Output).Free()
 					return eq
 				}
+
 				return false
 			},
 		)

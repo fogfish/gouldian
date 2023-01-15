@@ -46,7 +46,7 @@ type MyT1 struct {
 }
 
 var (
-	name           = µ.Optics1[MyT1, string]()
+	name           = µ.Optics1[MyT1, string]("Name")
 	pathWithParam1 = µ.URI(µ.Path("user"), µ.Path(name))
 	foo1           = mock.Endpoint(µ.GET(pathWithParam1))
 	req1           = mock.Input(mock.URL("/user/123456"))
@@ -89,7 +89,11 @@ Path Pattern with 5 param
 type MyT5 struct{ A, B, C, D, E string }
 
 var (
-	a, b, c, d, e  = µ.Optics5[MyT5, string, string, string, string, string]()
+	a              = µ.Optics1[MyT5, string]("A")
+	b              = µ.Optics1[MyT5, string]("B")
+	c              = µ.Optics1[MyT5, string]("C")
+	d              = µ.Optics1[MyT5, string]("D")
+	e              = µ.Optics1[MyT5, string]("E")
 	pathWithParam5 = µ.URI(µ.Path("bench"), µ.Path(a), µ.Path(b), µ.Path(c), µ.Path(d), µ.Path(e))
 	foo5           = mock.Endpoint(µ.GET(pathWithParam5))
 	req5           = mock.Input(mock.URL("/bench/a/b/c/d/e"))
@@ -514,7 +518,18 @@ type githubReq struct {
 	V0, V1, V2, V3, V4, V5, V6, V7, V8, V9 string
 }
 
-var v0, v1, v2, v3, v4, v5, v6, v7, v8, v9 = µ.Optics10[githubReq, string, string, string, string, string, string, string, string, string, string]()
+var (
+	v0 = µ.Optics1[githubReq, string]("V0")
+	v1 = µ.Optics1[githubReq, string]("V1")
+	v2 = µ.Optics1[githubReq, string]("V2")
+	v3 = µ.Optics1[githubReq, string]("V3")
+	v4 = µ.Optics1[githubReq, string]("V4")
+	v5 = µ.Optics1[githubReq, string]("V5")
+	v6 = µ.Optics1[githubReq, string]("V6")
+	v7 = µ.Optics1[githubReq, string]("V7")
+	v8 = µ.Optics1[githubReq, string]("V8")
+	v9 = µ.Optics1[githubReq, string]("V9")
+)
 
 func githubHandle(*µ.Context, *githubReq) error { return nil }
 

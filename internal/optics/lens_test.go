@@ -21,6 +21,8 @@ package optics_test
 import (
 	"testing"
 
+	lenses "github.com/fogfish/golem/optics"
+	"github.com/fogfish/golem/pure/hseq"
 	"github.com/fogfish/gouldian/internal/optics"
 	"github.com/fogfish/it"
 )
@@ -32,7 +34,13 @@ func TestLensStructString(t *testing.T) {
 		B *string
 		C String
 	}
-	a, b, c := optics.ForProduct3[T, string, string, String]()
+
+	a, b, c := hseq.FMap3(
+		hseq.New[T]("A", "B", "C"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, String]),
+	)
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -62,7 +70,12 @@ func TestLensStructInt(t *testing.T) {
 		B *int
 		C Int
 	}
-	a, b, c := optics.ForProduct3[T, int, int, Int]()
+	a, b, c := hseq.FMap3(
+		hseq.New[T]("A", "B", "C"),
+		optics.NewLens(lenses.NewLens[T, int]),
+		optics.NewLens(lenses.NewLens[T, int]),
+		optics.NewLens(lenses.NewLens[T, Int]),
+	)
 	x, err := a.FromString("100")
 	it.Ok(t).If(err).Must().Equal(nil)
 
@@ -91,7 +104,10 @@ func TestLensStructInt(t *testing.T) {
 func TestLensStructIntFail(t *testing.T) {
 	//lint:ignore U1000 type is used but not instantiated
 	type T struct{ A int }
-	a := optics.ForProduct1[T, int]()
+	a := hseq.FMap1(
+		hseq.New[T]("A"),
+		optics.NewLens(lenses.NewLens[T, int]),
+	)
 	_, err := a.FromString("abc")
 	it.Ok(t).If(err).MustNot().Equal(nil)
 }
@@ -103,7 +119,12 @@ func TestLensStructFloat(t *testing.T) {
 		B *float64
 		C Float64
 	}
-	a, b, c := optics.ForProduct3[T, float64, float64, Float64]()
+	a, b, c := hseq.FMap3(
+		hseq.New[T]("A", "B", "C"),
+		optics.NewLens(lenses.NewLens[T, float64]),
+		optics.NewLens(lenses.NewLens[T, float64]),
+		optics.NewLens(lenses.NewLens[T, Float64]),
+	)
 
 	x, err := a.FromString("100.0")
 	it.Ok(t).If(err).Must().Equal(nil)
@@ -133,7 +154,10 @@ func TestLensStructFloat(t *testing.T) {
 func TestLensStructFloatFail(t *testing.T) {
 	//lint:ignore U1000 type is used but not instantiated
 	type T struct{ A float64 }
-	a := optics.ForProduct1[T, float64]()
+	a := hseq.FMap1(
+		hseq.New[T]("A"),
+		optics.NewLens(lenses.NewLens[T, float64]),
+	)
 	_, err := a.FromString("abc")
 	it.Ok(t).If(err).MustNot().Equal(nil)
 }
@@ -143,7 +167,10 @@ func TestLensStructJSON(t *testing.T) {
 		X string `json:"x"`
 	}
 	type T struct{ A J }
-	a := optics.ForProduct1[T, J]()
+	a := hseq.FMap1(
+		hseq.New[T]("A"),
+		optics.NewLens(lenses.NewLens[T, J]),
+	)
 	x, _ := a.FromString("{\"x\":\"abc\"}")
 	m := optics.Morphisms{{Lens: a, Value: x}}
 
@@ -162,7 +189,10 @@ func TestLensStructForm(t *testing.T) {
 	type T struct {
 		A J `content:"form"`
 	}
-	a := optics.ForProduct1[T, J]()
+	a := hseq.FMap1(
+		hseq.New[T]("A"),
+		optics.NewLens(lenses.NewLens[T, J]),
+	)
 	x, _ := a.FromString("x=abc")
 	m := optics.Morphisms{{Lens: a, Value: x}}
 
@@ -188,10 +218,11 @@ func TestLensStructForm(t *testing.T) {
 // }
 
 func TestLenses1(t *testing.T) {
-	type T struct {
-		A string
-	}
-	a := optics.ForProduct1[T, string]()
+	type T struct{ A string }
+	a := hseq.FMap1(
+		hseq.New[T]("A"),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
 	x, _ := a.FromString("a")
 	m := optics.Morphisms{{Lens: a, Value: x}}
 
@@ -208,7 +239,12 @@ func TestLenses2(t *testing.T) {
 		A string
 		B string
 	}
-	a, b := optics.ForProduct2[T, string, string]()
+	a, b := hseq.FMap2(
+		hseq.New[T]("A", "B"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	m := optics.Morphisms{
@@ -231,7 +267,13 @@ func TestLenses3(t *testing.T) {
 		B string
 		C string
 	}
-	a, b, c := optics.ForProduct3[T, string, string, string]()
+	a, b, c := hseq.FMap3(
+		hseq.New[T]("A", "B", "C"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -258,7 +300,14 @@ func TestLenses4(t *testing.T) {
 		C string
 		D string
 	}
-	a, b, c, d := optics.ForProduct4[T, string, string, string, string]()
+	a, b, c, d := hseq.FMap4(
+		hseq.New[T]("A", "B", "C", "D"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -289,7 +338,15 @@ func TestLenses5(t *testing.T) {
 		D string
 		E string
 	}
-	a, b, c, d, e := optics.ForProduct5[T, string, string, string, string, string]()
+	a, b, c, d, e := hseq.FMap5(
+		hseq.New[T]("A", "B", "C", "D", "E"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -324,7 +381,16 @@ func TestLenses6(t *testing.T) {
 		E string
 		F string
 	}
-	a, b, c, d, e, f := optics.ForProduct6[T, string, string, string, string, string, string]()
+	a, b, c, d, e, f := hseq.FMap6(
+		hseq.New[T]("A", "B", "C", "D", "E", "F"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -363,7 +429,17 @@ func TestLenses7(t *testing.T) {
 		F string
 		G string
 	}
-	a, b, c, d, e, f, g := optics.ForProduct7[T, string, string, string, string, string, string, string]()
+	a, b, c, d, e, f, g := hseq.FMap7(
+		hseq.New[T]("A", "B", "C", "D", "E", "F", "G"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -406,7 +482,18 @@ func TestLenses8(t *testing.T) {
 		G string
 		H string
 	}
-	a, b, c, d, e, f, g, h := optics.ForProduct8[T, string, string, string, string, string, string, string, string]()
+	a, b, c, d, e, f, g, h := hseq.FMap8(
+		hseq.New[T]("A", "B", "C", "D", "E", "F", "G", "H"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -453,7 +540,19 @@ func TestLenses9(t *testing.T) {
 		H string
 		I string
 	}
-	a, b, c, d, e, f, g, h, i := optics.ForProduct9[T, string, string, string, string, string, string, string, string, string]()
+	a, b, c, d, e, f, g, h, i := hseq.FMap9(
+		hseq.New[T]("A", "B", "C", "D", "E", "F", "G", "H", "I"),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+		optics.NewLens(lenses.NewLens[T, string]),
+	)
+
 	x, _ := a.FromString("a")
 	y, _ := b.FromString("b")
 	z, _ := c.FromString("c")
@@ -489,58 +588,4 @@ func TestLenses9(t *testing.T) {
 		If(v.G).Equal("g").
 		If(v.H).Equal("h").
 		If(v.I).Equal("i")
-}
-
-func TestLenses10(t *testing.T) {
-	type T struct {
-		A string
-		B string
-		C string
-		D string
-		E string
-		F string
-		G string
-		H string
-		I string
-		K string
-	}
-	a, b, c, d, e, f, g, h, i, k := optics.ForProduct10[T, string, string, string, string, string, string, string, string, string, string]()
-	x, _ := a.FromString("a")
-	y, _ := b.FromString("b")
-	z, _ := c.FromString("c")
-	p, _ := d.FromString("d")
-	q, _ := e.FromString("e")
-	w, _ := f.FromString("f")
-	s, _ := g.FromString("g")
-	r, _ := h.FromString("h")
-	u, _ := i.FromString("i")
-	n, _ := k.FromString("k")
-	m := optics.Morphisms{
-		{Lens: a, Value: x},
-		{Lens: b, Value: y},
-		{Lens: c, Value: z},
-		{Lens: d, Value: p},
-		{Lens: e, Value: q},
-		{Lens: f, Value: w},
-		{Lens: g, Value: s},
-		{Lens: h, Value: r},
-		{Lens: i, Value: u},
-		{Lens: k, Value: n},
-	}
-
-	var v T
-	err := optics.Morph(m, &v)
-
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g").
-		If(v.H).Equal("h").
-		If(v.I).Equal("i").
-		If(v.K).Equal("k")
 }

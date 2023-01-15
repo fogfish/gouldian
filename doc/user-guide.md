@@ -145,14 +145,18 @@ from the type-safe perspective of api specification, each endpoint is implemente
 Therefore, endpoint needs to transform Context to A, apply function F and output type B.
 */
 type A struct {
-  Bar, Foz string
+  Bar
+  Foz
 } 
 
 /*
 
 The optics abstraction from this library implement decomposition of product type (structure of type A) into pair of lenses
 */
-var bar, foz = µ.Optics2[A, string, string]()
+var (
+  bar = µ.Optics1[A, Bar]()
+  foz = µ.Optics1[A, Foz]()
+)
 
 µ.GET(
   // these lenses are passed to extractors 
@@ -308,7 +312,7 @@ Endpoint matches if HTTP request contains JWT created by AWS Cognito for user
 */ 
 type A struct{ User string }
 
-user := µ.Optics1[A, string]
+user := µ.Optics1[A, string]("User")
 e := µ.GET( µ.JWT(µ.Token.Username, user) )
 
 /*
@@ -317,7 +321,7 @@ Endpoint matches if HTTP request contains JWT created by AWS Cognito for trusted
 */ 
 type A struct{ Client string }
 
-client := µ.Optics1[A, string]
+client := µ.Optics1[A, string]("Client")
 e := µ.GET( µ.JWT(µ.Token.Username, client) )
 ```
 
@@ -346,7 +350,7 @@ func search(text µ.Lens) µ.Endpoint {
 }
 
 // Use HoC
-var text = µ.Optics1[A, string]
+var text = µ.Optics1[A, string]()
 µ.GET(
   µ.URI(µ.Path("search")),
   search(text),
@@ -367,7 +371,7 @@ func search(text optics.Lens) µ.Endpoint {
 }
 
 // Use HoC
-var text = optics.FromProduct1(A{})
+var text = µ.Optics1[A, string]()
 µ.GET(
   µ.URI(µ.Path("search")),
   search(text),
