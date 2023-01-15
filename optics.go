@@ -9,173 +9,179 @@ import (
 // Lens type
 type Lens struct{ optics.Lens }
 
-func newLens[S, A any](ln lenses.Lens[S, A]) func(hseq.Type[S]) Lens {
+func newLens[S, A any](ln func(t hseq.Type[S]) lenses.Lens[S, A]) func(hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
 		return Lens{optics.NewLens(ln)(t)}
 	}
 }
 
-/*
+// Optics1 unfold attribute(s) of type T
+func Optics1[T, A any](attr ...string) Lens {
+	var seq hseq.Seq[T]
 
-ForProduct1 split structure with 1 field to set of lenses
-*/
-func Optics1[T, A any]() Lens {
-	a := lenses.ForProduct1[T, A]()
-	return hseq.FMap1(
-		hseq.Generic[T](),
-		newLens(a),
+	if len(attr) == 0 {
+		seq = hseq.New1[T, A]()
+	} else {
+		seq = hseq.New[T](attr[0])
+	}
+
+	return hseq.FMap1(seq,
+		newLens(lenses.NewLens[T, A]),
 	)
 }
 
-/*
+// Optics2 unfold attribute(s) of type T
+func Optics2[T, A, B any](attr ...string) (Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics2 split structure with 2 field to set of lenses
-*/
-func Optics2[T, A, B any]() (Lens, Lens) {
-	a, b := lenses.ForProduct2[T, A, B]()
-	return hseq.FMap2(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
+	if len(attr) == 0 {
+		seq = hseq.New2[T, A, B]()
+	} else {
+		seq = hseq.New[T](attr[0:2]...)
+	}
+
+	return hseq.FMap2(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
 	)
 }
 
-/*
+// Optics3 unfold attribute(s) of type T
+func Optics3[T, A, B, C any](attr ...string) (Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics3 split structure with 3 field to set of lenses
-*/
-func Optics3[T, A, B, C any]() (Lens, Lens, Lens) {
-	a, b, c := lenses.ForProduct3[T, A, B, C]()
-	return hseq.FMap3(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
+	if len(attr) == 0 {
+		seq = hseq.New3[T, A, B, C]()
+	} else {
+		seq = hseq.New[T](attr[0:3]...)
+	}
+
+	return hseq.FMap3(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
 	)
 }
 
-/*
+// Optics4 unfold attribute(s) of type T
+func Optics4[T, A, B, C, D any](attr ...string) (Lens, Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics4 split structure with 4 field to set of lenses
-*/
-func Optics4[T, A, B, C, D any]() (Lens, Lens, Lens, Lens) {
-	a, b, c, d := lenses.ForProduct4[T, A, B, C, D]()
-	return hseq.FMap4(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
+	if len(attr) == 0 {
+		seq = hseq.New4[T, A, B, C, D]()
+	} else {
+		seq = hseq.New[T](attr[0:4]...)
+	}
+
+	return hseq.FMap4(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
+		newLens(lenses.NewLens[T, D]),
 	)
 }
 
-/*
+// Optics5 unfold attribute(s) of type T
+func Optics5[T, A, B, C, D, E any](attr ...string) (Lens, Lens, Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics5 split structure with 5 field to set of lenses
-*/
-func Optics5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e := lenses.ForProduct5[T, A, B, C, D, E]()
-	return hseq.FMap5(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
-		newLens(e),
+	if len(attr) == 0 {
+		seq = hseq.New5[T, A, B, C, D, E]()
+	} else {
+		seq = hseq.New[T](attr[0:5]...)
+	}
+
+	return hseq.FMap5(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
+		newLens(lenses.NewLens[T, D]),
+		newLens(lenses.NewLens[T, E]),
 	)
 }
 
-/*
+// Optics6 unfold attribute(s) of type T
+func Optics6[T, A, B, C, D, E, F any](attr ...string) (Lens, Lens, Lens, Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics6 split structure with 6 field to set of lenses
-*/
-func Optics6[T, A, B, C, D, E, F any]() (Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f := lenses.ForProduct6[T, A, B, C, D, E, F]()
-	return hseq.FMap6(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
-		newLens(e),
-		newLens(f),
+	if len(attr) == 0 {
+		seq = hseq.New6[T, A, B, C, D, E, F]()
+	} else {
+		seq = hseq.New[T](attr[0:6]...)
+	}
+
+	return hseq.FMap6(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
+		newLens(lenses.NewLens[T, D]),
+		newLens(lenses.NewLens[T, E]),
+		newLens(lenses.NewLens[T, F]),
 	)
 }
 
-/*
+// Optics7 unfold attribute(s) of type T
+func Optics7[T, A, B, C, D, E, F, G any](attr ...string) (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics7 split structure with 7 field to set of lenses
-*/
-func Optics7[T, A, B, C, D, E, F, G any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g := lenses.ForProduct7[T, A, B, C, D, E, F, G]()
-	return hseq.FMap7(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
-		newLens(e),
-		newLens(f),
-		newLens(g),
+	if len(attr) == 0 {
+		seq = hseq.New7[T, A, B, C, D, E, F, G]()
+	} else {
+		seq = hseq.New[T](attr[0:7]...)
+	}
+
+	return hseq.FMap7(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
+		newLens(lenses.NewLens[T, D]),
+		newLens(lenses.NewLens[T, E]),
+		newLens(lenses.NewLens[T, F]),
+		newLens(lenses.NewLens[T, G]),
 	)
 }
 
-/*
+// Optics8 unfold attribute(s) of type T
+func Optics8[T, A, B, C, D, E, F, G, H any](attr ...string) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics8 split structure with 8 field to set of lenses
-*/
-func Optics8[T, A, B, C, D, E, F, G, H any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g, h := lenses.ForProduct8[T, A, B, C, D, E, F, G, H]()
-	return hseq.FMap8(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
-		newLens(e),
-		newLens(f),
-		newLens(g),
-		newLens(h),
+	if len(attr) == 0 {
+		seq = hseq.New8[T, A, B, C, D, E, F, G, H]()
+	} else {
+		seq = hseq.New[T](attr[0:8]...)
+	}
+
+	return hseq.FMap8(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
+		newLens(lenses.NewLens[T, D]),
+		newLens(lenses.NewLens[T, E]),
+		newLens(lenses.NewLens[T, F]),
+		newLens(lenses.NewLens[T, G]),
+		newLens(lenses.NewLens[T, H]),
 	)
 }
 
-/*
+// Optics9 unfold attribute(s) of type T
+func Optics9[T, A, B, C, D, E, F, G, H, I any](attr ...string) (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+	var seq hseq.Seq[T]
 
-Optics9 split structure with 9 field to set of lenses
-*/
-func Optics9[T, A, B, C, D, E, F, G, H, I any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g, h, i := lenses.ForProduct9[T, A, B, C, D, E, F, G, H, I]()
-	return hseq.FMap9(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
-		newLens(e),
-		newLens(f),
-		newLens(g),
-		newLens(h),
-		newLens(i),
-	)
-}
+	if len(attr) == 0 {
+		seq = hseq.New9[T, A, B, C, D, E, F, G, H, I]()
+	} else {
+		seq = hseq.New[T](attr[0:9]...)
+	}
 
-/*
-
-Optics10 split structure with 10 field to set of lenses
-*/
-func Optics10[T, A, B, C, D, E, F, G, H, I, J any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g, h, i, j := lenses.ForProduct10[T, A, B, C, D, E, F, G, H, I, J]()
-	return hseq.FMap10(
-		hseq.Generic[T](),
-		newLens(a),
-		newLens(b),
-		newLens(c),
-		newLens(d),
-		newLens(e),
-		newLens(f),
-		newLens(g),
-		newLens(h),
-		newLens(i),
-		newLens(j),
+	return hseq.FMap9(seq,
+		newLens(lenses.NewLens[T, A]),
+		newLens(lenses.NewLens[T, B]),
+		newLens(lenses.NewLens[T, C]),
+		newLens(lenses.NewLens[T, D]),
+		newLens(lenses.NewLens[T, E]),
+		newLens(lenses.NewLens[T, F]),
+		newLens(lenses.NewLens[T, G]),
+		newLens(lenses.NewLens[T, H]),
+		newLens(lenses.NewLens[T, I]),
 	)
 }

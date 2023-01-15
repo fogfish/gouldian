@@ -17,9 +17,7 @@
 */
 
 /*
-
 Package optics is an internal, see golem.optics for public api
-
 */
 package optics
 
@@ -35,7 +33,6 @@ import (
 )
 
 /*
-
 Value is co-product types matchable by patterns
 Note: do not extend the structure, optimal size for performance
 See https://goinbigdata.com/golang-pass-by-pointer-vs-pass-by-value/
@@ -47,7 +44,6 @@ type Value struct {
 }
 
 /*
-
 Lens is composable setter of Value to "some" struct
 */
 type Lens interface {
@@ -56,7 +52,6 @@ type Lens interface {
 }
 
 /*
-
 Morphism is product of Lens and Value
 */
 type Morphism struct {
@@ -65,7 +60,6 @@ type Morphism struct {
 }
 
 /*
-
 Morphisms is collection of lenses and values to be applied for object
 */
 type Morphisms []Morphism
@@ -83,7 +77,6 @@ func Morph[S any](m Morphisms, s *S) error {
 }
 
 /*
-
 Lens to deal with string type
 */
 type lensString[S any] struct{ optics.Reflector[string] }
@@ -97,7 +90,6 @@ func (l *lensString[S]) FromString(a string) (Value, error) {
 }
 
 /*
-
 Lens to deal with custom string type
 */
 type lensStringTyped[S, A any] struct{ optics.Reflector[A] }
@@ -114,7 +106,6 @@ func (l *lensStringTyped[S, A]) FromString(a string) (Value, error) {
 }
 
 /*
-
 Lens to deal with number type
 */
 type lensNumber[S any] struct{ optics.Reflector[int] }
@@ -133,7 +124,6 @@ func (l *lensNumber[S]) FromString(a string) (Value, error) {
 }
 
 /*
-
 Lens to deal with custom number type
 */
 type lensNumberTyped[S, A any] struct{ optics.Reflector[A] }
@@ -155,7 +145,6 @@ func (l *lensNumberTyped[S, A]) FromString(a string) (Value, error) {
 }
 
 /*
-
 Lens to deal with double type
 */
 type lensDouble[S any] struct{ optics.Reflector[float64] }
@@ -174,7 +163,6 @@ func (l *lensDouble[S]) FromString(a string) (Value, error) {
 }
 
 /*
-
 Lens to deal with custom double type
 */
 type lensDoubleTyped[S, A any] struct{ optics.Reflector[A] }
@@ -196,7 +184,6 @@ func (l *lensDoubleTyped[S, A]) FromString(a string) (Value, error) {
 }
 
 /*
-
 lensStructJSON implements lens for complex "product" type
 */
 type lensStructJSON[A any] struct{ optics.Reflector[A] }
@@ -225,7 +212,6 @@ func (lens *lensStructJSON[A]) GetValue(s reflect.Value) string {
 }
 
 /*
-
 lensStructForm implements lens for complex "product" type
 */
 type lensStructForm[A any] struct{ optics.Reflector[A] }
@@ -254,11 +240,11 @@ func (lens *lensStructForm[A]) GetValue(s reflect.Value) string {
 }
 
 /*
-
 NewLens creates lense instance
 */
-func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
+func NewLens[S, A any](fln func(t hseq.Type[S]) optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 	return func(t hseq.Type[S]) Lens {
+		ln := fln(t)
 		switch t.PureType.Kind() {
 		case reflect.String:
 			if t.PureType.Name() == "string" {
@@ -295,166 +281,171 @@ func NewLens[S, A any](ln optics.Lens[S, A]) func(t hseq.Type[S]) Lens {
 }
 
 /*
-
 ForProduct1 split structure with 1 field to set of lenses
 */
-func ForProduct1[T, A any]() Lens {
-	a := optics.ForProduct1[T, A]()
-	return hseq.FMap1(
-		hseq.Generic[T](),
-		NewLens(a),
-	)
-}
+// func ForProduct1[T, A any](attr ...string) Lens {
+// 	var seq hseq.Seq[T]
 
-/*
+// 	if len(attr) == 0 {
+// 		seq = hseq.New1[T, A]()
+// 	} else {
+// 		seq = hseq.New[T](attr[0])
+// 	}
 
-ForProduct2 split structure with 2 fields to set of lenses
-*/
-func ForProduct2[T, A, B any]() (Lens, Lens) {
-	a, b := optics.ForProduct2[T, A, B]()
-	return hseq.FMap2(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-	)
-}
+// 	return hseq.FMap1(seq,
+// 		NewLens(optics.NewLens[T, A]),
+// 	)
+// }
 
-/*
+// /*
+// ForProduct2 split structure with 2 fields to set of lenses
+// */
+// func ForProduct2[T, A, B any](attr ...string) (Lens, Lens) {
+// 	a, b := optics.ForProduct2[T, A, B]()
 
-ForProduct3 split structure with 3 fields to set of lenses
-*/
-func ForProduct3[T, A, B, C any]() (Lens, Lens, Lens) {
-	a, b, c := optics.ForProduct3[T, A, B, C]()
-	return hseq.FMap3(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-	)
-}
+// 	var seq hseq.Seq[T]
 
-/*
+// 	if len(attr) == 0 {
+// 		seq = hseq.New1[T, A]()
+// 	} else {
+// 		seq = hseq.New[T](attr[0])
+// 	}
 
-ForProduct4 split structure with 4 fields to set of lenses
-*/
-func ForProduct4[T, A, B, C, D any]() (Lens, Lens, Lens, Lens) {
-	a, b, c, d := optics.ForProduct4[T, A, B, C, D]()
-	return hseq.FMap4(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-	)
-}
+// 	return hseq.FMap2(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 	)
+// }
 
-/*
+// /*
+// ForProduct3 split structure with 3 fields to set of lenses
+// */
+// func ForProduct3[T, A, B, C any]() (Lens, Lens, Lens) {
+// 	a, b, c := optics.ForProduct3[T, A, B, C]()
+// 	return hseq.FMap3(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 	)
+// }
 
-ForProduct5 split structure with 5 fields to set of lenses
-*/
-func ForProduct5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e := optics.ForProduct5[T, A, B, C, D, E]()
-	return hseq.FMap5(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-		NewLens(e),
-	)
-}
+// /*
+// ForProduct4 split structure with 4 fields to set of lenses
+// */
+// func ForProduct4[T, A, B, C, D any]() (Lens, Lens, Lens, Lens) {
+// 	a, b, c, d := optics.ForProduct4[T, A, B, C, D]()
+// 	return hseq.FMap4(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 	)
+// }
 
-/*
+// /*
+// ForProduct5 split structure with 5 fields to set of lenses
+// */
+// func ForProduct5[T, A, B, C, D, E any]() (Lens, Lens, Lens, Lens, Lens) {
+// 	a, b, c, d, e := optics.ForProduct5[T, A, B, C, D, E]()
+// 	return hseq.FMap5(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 		NewLens(e),
+// 	)
+// }
 
-ForProduct6 split structure with 6 fields to set of lenses
-*/
-func ForProduct6[T, A, B, C, D, E, F any]() (Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f := optics.ForProduct6[T, A, B, C, D, E, F]()
-	return hseq.FMap6(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-		NewLens(e),
-		NewLens(f),
-	)
-}
+// /*
+// ForProduct6 split structure with 6 fields to set of lenses
+// */
+// func ForProduct6[T, A, B, C, D, E, F any]() (Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	a, b, c, d, e, f := optics.ForProduct6[T, A, B, C, D, E, F]()
+// 	return hseq.FMap6(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 		NewLens(e),
+// 		NewLens(f),
+// 	)
+// }
 
-/*
+// /*
+// ForProduct7 split structure with 7 fields to set of lenses
+// */
+// func ForProduct7[T, A, B, C, D, E, F, G any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	a, b, c, d, e, f, g := optics.ForProduct7[T, A, B, C, D, E, F, G]()
+// 	return hseq.FMap7(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 		NewLens(e),
+// 		NewLens(f),
+// 		NewLens(g),
+// 	)
+// }
 
-ForProduct7 split structure with 7 fields to set of lenses
-*/
-func ForProduct7[T, A, B, C, D, E, F, G any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g := optics.ForProduct7[T, A, B, C, D, E, F, G]()
-	return hseq.FMap7(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-		NewLens(e),
-		NewLens(f),
-		NewLens(g),
-	)
-}
+// /*
+// ForProduct8 split structure with 8 fields to set of lenses
+// */
+// func ForProduct8[T, A, B, C, D, E, F, G, H any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	a, b, c, d, e, f, g, h := optics.ForProduct8[T, A, B, C, D, E, F, G, H]()
+// 	return hseq.FMap8(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 		NewLens(e),
+// 		NewLens(f),
+// 		NewLens(g),
+// 		NewLens(h),
+// 	)
+// }
 
-/*
+// /*
+// ForProduct9 split structure with 9 fields to set of lenses
+// */
+// func ForProduct9[T, A, B, C, D, E, F, G, H, I any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	a, b, c, d, e, f, g, h, i := optics.ForProduct9[T, A, B, C, D, E, F, G, H, I]()
+// 	return hseq.FMap9(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 		NewLens(e),
+// 		NewLens(f),
+// 		NewLens(g),
+// 		NewLens(h),
+// 		NewLens(i),
+// 	)
+// }
 
-ForProduct8 split structure with 8 fields to set of lenses
-*/
-func ForProduct8[T, A, B, C, D, E, F, G, H any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g, h := optics.ForProduct8[T, A, B, C, D, E, F, G, H]()
-	return hseq.FMap8(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-		NewLens(e),
-		NewLens(f),
-		NewLens(g),
-		NewLens(h),
-	)
-}
-
-/*
-
-ForProduct9 split structure with 9 fields to set of lenses
-*/
-func ForProduct9[T, A, B, C, D, E, F, G, H, I any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g, h, i := optics.ForProduct9[T, A, B, C, D, E, F, G, H, I]()
-	return hseq.FMap9(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-		NewLens(e),
-		NewLens(f),
-		NewLens(g),
-		NewLens(h),
-		NewLens(i),
-	)
-}
-
-/*
-
-ForProduct10 split structure with 10 fields to set of lenses
-*/
-func ForProduct10[T, A, B, C, D, E, F, G, H, I, J any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
-	a, b, c, d, e, f, g, h, i, j := optics.ForProduct10[T, A, B, C, D, E, F, G, H, I, J]()
-	return hseq.FMap10(
-		hseq.Generic[T](),
-		NewLens(a),
-		NewLens(b),
-		NewLens(c),
-		NewLens(d),
-		NewLens(e),
-		NewLens(f),
-		NewLens(g),
-		NewLens(h),
-		NewLens(i),
-		NewLens(j),
-	)
-}
+// /*
+// ForProduct10 split structure with 10 fields to set of lenses
+// */
+// func ForProduct10[T, A, B, C, D, E, F, G, H, I, J any]() (Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens, Lens) {
+// 	a, b, c, d, e, f, g, h, i, j := optics.ForProduct10[T, A, B, C, D, E, F, G, H, I, J]()
+// 	return hseq.FMap10(
+// 		hseq.Generic[T](),
+// 		NewLens(a),
+// 		NewLens(b),
+// 		NewLens(c),
+// 		NewLens(d),
+// 		NewLens(e),
+// 		NewLens(f),
+// 		NewLens(g),
+// 		NewLens(h),
+// 		NewLens(i),
+// 		NewLens(j),
+// 	)
+// }
