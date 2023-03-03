@@ -336,13 +336,3 @@ func TestHeaderContentJSON(t *testing.T) {
 			If(foo(failure)).ShouldNot().Equal(nil)
 	}
 }
-
-func TestHeaderOutput(t *testing.T) {
-	out := µ.Status.OK(
-		µ.WithHeader("foo", "bar"),
-	).(*µ.Output)
-
-	it.Ok(t).
-		If(out.Status).Should().Equal(200) //.
-	// If(out.Headers["foo"]).Should().Equal("bar")
-}

@@ -28,7 +28,7 @@ func TestJWTLit(t *testing.T) {
 
 func TestJWTVar(t *testing.T) {
 	type MyT struct{ Sub string }
-	sub := µ.Optics1[myT, string]()
+	sub := µ.Optics1[MyT, string]()
 
 	foo := mock.Endpoint(
 		µ.GET(

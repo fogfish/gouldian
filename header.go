@@ -20,23 +20,35 @@ package gouldian
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 )
 
-/*
+type ReadableHeaderValues interface {
+	int | string | time.Time
+}
 
+type WriteableHeaderValues interface {
+	*int | *string | *time.Time
+}
+
+type MatchableHeaderValues interface {
+	ReadableHeaderValues | WriteableHeaderValues
+}
+
+/*
 Header combinator defines primitives to match Headers of HTTP requests.
 
-  endpoint := µ.GET(
-    µ.Header("X-Foo", "Bar"),
-  )
+	endpoint := µ.GET(
+	  µ.Header("X-Foo", "Bar"),
+	)
 
-  endpoint(
-    mock.Input(
-      mock.Header("X-Foo", "Bar")
-    )
-  ) == nil
-
+	endpoint(
+	  mock.Input(
+	    mock.Header("X-Foo", "Bar")
+	  )
+	) == nil
 */
 func Header[T Pattern](hdr string, val T) Endpoint {
 	switch v := any(val).(type) {
@@ -50,30 +62,27 @@ func Header[T Pattern](hdr string, val T) Endpoint {
 }
 
 /*
-
 HeaderAny is a wildcard matcher of header. It fails if header is not defined.
 
-  e := µ.GET( µ.HeaderAny("X-Foo") )
-  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
-  e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
-  e(mock.Input()) != nil
+	e := µ.GET( µ.HeaderAny("X-Foo") )
+	e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
+	e(mock.Input(mock.Header("X-Foo", "Baz"))) == nil
+	e(mock.Input()) != nil
 */
 func HeaderAny(hdr string) Endpoint {
 	return header(hdr).Any
 }
 
 /*
-
 HeaderMaybe matches header value to the request context. It uses lens abstraction to
 decode HTTP header into Golang type. The Endpoint does not cause no-match
 if header value cannot be decoded to the target type. See optics.Lens type for details.
 
-  type myT struct{ Val string }
+	type myT struct{ Val string }
 
-  x := µ.Optics1[myT, string]()
-  e := µ.GET(µ.HeaderMaybe("X-Foo", x))
-  e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
-
+	x := µ.Optics1[myT, string]()
+	e := µ.GET(µ.HeaderMaybe("X-Foo", x))
+	e(mock.Input(mock.Header("X-Foo", "Bar"))) == nil
 */
 func HeaderMaybe(header string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
@@ -88,7 +97,6 @@ func HeaderMaybe(header string, lens Lens) Endpoint {
 type header string
 
 /*
-
 Is matches a header to defined literal value.
 */
 func (header header) Is(val string) Endpoint {
@@ -106,7 +114,6 @@ func (header header) Is(val string) Endpoint {
 }
 
 /*
-
 Any is a wildcard matcher of header. It fails if header is not defined.
 */
 func (header header) Any(ctx *Context) error {
@@ -118,7 +125,6 @@ func (header header) Any(ctx *Context) error {
 }
 
 /*
-
 To matches header value to the request context. It uses lens abstraction to
 decode HTTP header into Golang type. The Endpoint causes no-match if header
 value cannot be decoded to the target type. See optics.Lens type for details.
@@ -133,36 +139,33 @@ func (header header) To(lens Lens) Endpoint {
 }
 
 /*
-
 Authorization defines Endpoints that simplify validation of credentials/tokens
 supplied within the request
 
-  e := µ.GET( µ.Authorization(func(string, string) error { ... }) )
-  e(mock.Input(mock.Header("Authorization", "Basic foo"))) == nil
-  e(mock.Input(mock.Header("Authorization", "Basic bar"))) != nil
+	e := µ.GET( µ.Authorization(func(string, string) error { ... }) )
+	e(mock.Input(mock.Header("Authorization", "Basic foo"))) == nil
+	e(mock.Input(mock.Header("Authorization", "Basic bar"))) != nil
 */
 func Authorization(f func(string, string) error) Endpoint {
 	return func(ctx *Context) error {
 		auth := ctx.Request.Header.Get("Authorization")
 		if auth == "" {
-			return Status.Unauthorized(
-				WithIssue(
-					fmt.Errorf("Unauthorized %s", ctx.Request.URL.Path),
-				),
-			)
+			out := NewOutput(http.StatusUnauthorized)
+			out.SetIssue(fmt.Errorf("Unauthorized %s", ctx.Request.URL.Path))
+			return out
 		}
 
 		cred := strings.Split(auth, " ")
 		if len(cred) != 2 {
-			return Status.Unauthorized(
-				WithIssue(
-					fmt.Errorf("Unauthorized %v", ctx.Request.URL.Path),
-				),
-			)
+			out := NewOutput(http.StatusUnauthorized)
+			out.SetIssue(fmt.Errorf("Unauthorized %s", ctx.Request.URL.Path))
+			return out
 		}
 
 		if err := f(cred[0], cred[1]); err != nil {
-			return Status.Unauthorized(WithIssue(err))
+			out := NewOutput(http.StatusUnauthorized)
+			out.SetIssue(err)
+			return out
 		}
 
 		return nil

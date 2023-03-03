@@ -27,7 +27,6 @@ import (
 	"github.com/fogfish/guid"
 )
 
-//
 // Global pools
 var (
 	outputs sync.Pool
@@ -44,10 +43,7 @@ func init() {
 	}
 }
 
-/*
-
-Output is HTTP response
-*/
+// Output
 type Output struct {
 	Status  int
 	Headers []struct{ Header, Value string }
@@ -75,16 +71,63 @@ func (out *Output) Free() {
 	outputs.Put(out)
 }
 
-/*
-
-Result is a composable function that abstract results of HTTP endpoint.
-The function takes instance of HTTP output and mutates its value
-
-  return µ.Status.OK(
-		µ.WithHeader(headers.ContentType, headers.ApplicationJson),
-		µ.WithJSON(value),
+func (out *Output) SetHeader(header, value string) {
+	out.Headers = append(out.Headers,
+		struct {
+			Header string
+			Value  string
+		}{header, value},
 	)
-*/
+}
+
+func (out *Output) GetHeader(header string) string {
+	for i := 0; i < len(out.Headers); i++ {
+		if out.Headers[i].Header == header {
+			return out.Headers[i].Value
+		}
+	}
+
+	return ""
+}
+
+// WithIssue appends Issue, RFC 7807: Problem Details for HTTP APIs
+func (out *Output) SetIssue(failure error, title ...string) {
+	issue := NewIssue(out.Status)
+	if len(title) != 0 {
+		issue.Title = title[0]
+	}
+
+	body, err := json.Marshal(issue)
+	if err != nil {
+		out.Status = http.StatusInternalServerError
+		out.Headers = append(out.Headers,
+			struct {
+				Header string
+				Value  string
+			}{"Content-Type", "text/plain"},
+		)
+		out.Body = "JSON serialization is failed for <Issue>"
+
+		return
+	}
+
+	out.Headers = append(out.Headers,
+		struct {
+			Header string
+			Value  string
+		}{"Content-Type", "application/json"},
+	)
+	out.Body = string(body)
+	out.Failure = fmt.Errorf("%s: %d %s - %w", issue.ID, out.Status, issue.Title, failure)
+}
+
+// Result is a composable function that abstract results of HTTP endpoint.
+// The function takes instance of HTTP output and mutates its value
+//
+//	  return µ.Status.OK(
+//			µ.WithHeader(headers.ContentType, headers.ApplicationJson),
+//			µ.WithJSON(value),
+//		)
 type Result func(*Output) error
 
 // Issue implements RFC 7807: Problem Details for HTTP APIs
@@ -105,244 +148,242 @@ func NewIssue(status int) Issue {
 	}
 }
 
-/*
+// /*
+// StatusCode is a warapper type over http.StatusCode so that ...
+// */
+// type StatusCode int
 
-StatusCode is a warpper type over http.StatusCode so that ...
-*/
-type StatusCode int
+// /*
+// Status is collection of constants for HTTP Status Code
 
-/*
+// 	return µ.Status.Ok()
+// */
+// const Status = StatusCode(0)
 
-Status is collection of constants for HTTP Status Code
+// func (code StatusCode) output(status int, out []Result) *Output {
+// 	v := NewOutput(status)
+// 	for _, f := range out {
+// 		f(v)
+// 	}
+// 	return v
+// }
 
-  return µ.Status.Ok()
-*/
-const Status = StatusCode(0)
+// /*
+// TODO:
+//   Continue
+// 	SwitchingProtocols
+// 	Processing
+// 	EarlyHints
+// */
 
-func (code StatusCode) output(status int, out []Result) *Output {
-	v := NewOutput(status)
-	for _, f := range out {
-		f(v)
-	}
-	return v
-}
+// // OK ⟼ http.StatusOK
+// func (code StatusCode) OK(out ...Result) error {
+// 	return code.output(http.StatusOK, out)
+// }
 
-/*
-TODO:
-  Continue
-	SwitchingProtocols
-	Processing
-	EarlyHints
-*/
+// // Created ⟼ http.StatusCreated
+// func (code StatusCode) Created(out ...Result) error {
+// 	return code.output(http.StatusCreated, out)
+// }
 
-// OK ⟼ http.StatusOK
-func (code StatusCode) OK(out ...Result) error {
-	return code.output(http.StatusOK, out)
-}
+// // Accepted ⟼ http.StatusAccepted
+// func (code StatusCode) Accepted(out ...Result) error {
+// 	return code.output(http.StatusAccepted, out)
+// }
 
-// Created ⟼ http.StatusCreated
-func (code StatusCode) Created(out ...Result) error {
-	return code.output(http.StatusCreated, out)
-}
+// // NonAuthoritativeInfo ⟼ http.StatusNonAuthoritativeInfo
+// func (code StatusCode) NonAuthoritativeInfo(out ...Result) error {
+// 	return code.output(http.StatusNonAuthoritativeInfo, out)
+// }
 
-// Accepted ⟼ http.StatusAccepted
-func (code StatusCode) Accepted(out ...Result) error {
-	return code.output(http.StatusAccepted, out)
-}
+// // NoContent ⟼ http.StatusNoContent
+// func (code StatusCode) NoContent(out ...Result) error {
+// 	return code.output(http.StatusNoContent, out)
+// }
 
-// NonAuthoritativeInfo ⟼ http.StatusNonAuthoritativeInfo
-func (code StatusCode) NonAuthoritativeInfo(out ...Result) error {
-	return code.output(http.StatusNonAuthoritativeInfo, out)
-}
+// // ResetContent ⟼ http.StatusResetContent
+// func (code StatusCode) ResetContent(out ...Result) error {
+// 	return code.output(http.StatusResetContent, out)
+// }
 
-// NoContent ⟼ http.StatusNoContent
-func (code StatusCode) NoContent(out ...Result) error {
-	return code.output(http.StatusNoContent, out)
-}
+// /*
+// TODO:
+// 	PartialContent
+// 	MultiStatus
+// 	AlreadyReported
+// 	IMUsed
+// */
 
-// ResetContent ⟼ http.StatusResetContent
-func (code StatusCode) ResetContent(out ...Result) error {
-	return code.output(http.StatusResetContent, out)
-}
+// // MultipleChoices ⟼ http.StatusMultipleChoices
+// func (code StatusCode) MultipleChoices(out ...Result) error {
+// 	return code.output(http.StatusMultipleChoices, out)
+// }
 
-/*
-TODO:
-	PartialContent
-	MultiStatus
-	AlreadyReported
-	IMUsed
-*/
+// // MovedPermanently ⟼ http.StatusMovedPermanently
+// func (code StatusCode) MovedPermanently(out ...Result) error {
+// 	return code.output(http.StatusMovedPermanently, out)
+// }
 
-// MultipleChoices ⟼ http.StatusMultipleChoices
-func (code StatusCode) MultipleChoices(out ...Result) error {
-	return code.output(http.StatusMultipleChoices, out)
-}
+// // Found ⟼ http.StatusFound
+// func (code StatusCode) Found(out ...Result) error {
+// 	return code.output(http.StatusFound, out)
+// }
 
-// MovedPermanently ⟼ http.StatusMovedPermanently
-func (code StatusCode) MovedPermanently(out ...Result) error {
-	return code.output(http.StatusMovedPermanently, out)
-}
+// // SeeOther ⟼ http.StatusSeeOther
+// func (code StatusCode) SeeOther(out ...Result) error {
+// 	return code.output(http.StatusSeeOther, out)
+// }
 
-// Found ⟼ http.StatusFound
-func (code StatusCode) Found(out ...Result) error {
-	return code.output(http.StatusFound, out)
-}
+// // NotModified ⟼ http.StatusNotModified
+// func (code StatusCode) NotModified(out ...Result) error {
+// 	return code.output(http.StatusNotModified, out)
+// }
 
-// SeeOther ⟼ http.StatusSeeOther
-func (code StatusCode) SeeOther(out ...Result) error {
-	return code.output(http.StatusSeeOther, out)
-}
+// // UseProxy ⟼ http.StatusUseProxy
+// func (code StatusCode) UseProxy(out ...Result) error {
+// 	return code.output(http.StatusUseProxy, out)
+// }
 
-// NotModified ⟼ http.StatusNotModified
-func (code StatusCode) NotModified(out ...Result) error {
-	return code.output(http.StatusNotModified, out)
-}
+// // TemporaryRedirect ⟼ http.StatusTemporaryRedirect
+// func (code StatusCode) TemporaryRedirect(out ...Result) error {
+// 	return code.output(http.StatusTemporaryRedirect, out)
+// }
 
-// UseProxy ⟼ http.StatusUseProxy
-func (code StatusCode) UseProxy(out ...Result) error {
-	return code.output(http.StatusUseProxy, out)
-}
+// // PermanentRedirect ⟼ http.StatusPermanentRedirect
+// func (code StatusCode) PermanentRedirect(out ...Result) error {
+// 	return code.output(http.StatusPermanentRedirect, out)
+// }
 
-// TemporaryRedirect ⟼ http.StatusTemporaryRedirect
-func (code StatusCode) TemporaryRedirect(out ...Result) error {
-	return code.output(http.StatusTemporaryRedirect, out)
-}
+// //
+// //
+// //
 
-// PermanentRedirect ⟼ http.StatusPermanentRedirect
-func (code StatusCode) PermanentRedirect(out ...Result) error {
-	return code.output(http.StatusPermanentRedirect, out)
-}
+// // BadRequest ⟼ http.StatusBadRequest
+// func (code StatusCode) BadRequest(out ...Result) error {
+// 	return code.output(http.StatusBadRequest, out)
+// }
 
-//
-//
-//
+// // Unauthorized ⟼ http.StatusUnauthorized
+// func (code StatusCode) Unauthorized(out ...Result) error {
+// 	return code.output(http.StatusUnauthorized, out)
+// }
 
-// BadRequest ⟼ http.StatusBadRequest
-func (code StatusCode) BadRequest(out ...Result) error {
-	return code.output(http.StatusBadRequest, out)
-}
+// // PaymentRequired ⟼ http.StatusPaymentRequired
+// func (code StatusCode) PaymentRequired(out ...Result) error {
+// 	return code.output(http.StatusPaymentRequired, out)
+// }
 
-// Unauthorized ⟼ http.StatusUnauthorized
-func (code StatusCode) Unauthorized(out ...Result) error {
-	return code.output(http.StatusUnauthorized, out)
-}
+// // Forbidden ⟼ http.StatusForbidden
+// func (code StatusCode) Forbidden(out ...Result) error {
+// 	return code.output(http.StatusForbidden, out)
+// }
 
-// PaymentRequired ⟼ http.StatusPaymentRequired
-func (code StatusCode) PaymentRequired(out ...Result) error {
-	return code.output(http.StatusPaymentRequired, out)
-}
+// // NotFound ⟼ http.StatusNotFound
+// func (code StatusCode) NotFound(out ...Result) error {
+// 	return code.output(http.StatusNotFound, out)
+// }
 
-// Forbidden ⟼ http.StatusForbidden
-func (code StatusCode) Forbidden(out ...Result) error {
-	return code.output(http.StatusForbidden, out)
-}
+// // MethodNotAllowed ⟼ http.StatusMethodNotAllowed
+// func (code StatusCode) MethodNotAllowed(out ...Result) error {
+// 	return code.output(http.StatusMethodNotAllowed, out)
+// }
 
-// NotFound ⟼ http.StatusNotFound
-func (code StatusCode) NotFound(out ...Result) error {
-	return code.output(http.StatusNotFound, out)
-}
+// // NotAcceptable ⟼ http.StatusNotAcceptable
+// func (code StatusCode) NotAcceptable(out ...Result) error {
+// 	return code.output(http.StatusNotAcceptable, out)
+// }
 
-// MethodNotAllowed ⟼ http.StatusMethodNotAllowed
-func (code StatusCode) MethodNotAllowed(out ...Result) error {
-	return code.output(http.StatusMethodNotAllowed, out)
-}
+// // ProxyAuthRequired ⟼ http.StatusProxyAuthRequired
+// func (code StatusCode) ProxyAuthRequired(out ...Result) error {
+// 	return code.output(http.StatusProxyAuthRequired, out)
+// }
 
-// NotAcceptable ⟼ http.StatusNotAcceptable
-func (code StatusCode) NotAcceptable(out ...Result) error {
-	return code.output(http.StatusNotAcceptable, out)
-}
+// // RequestTimeout ⟼ http.StatusRequestTimeout
+// func (code StatusCode) RequestTimeout(out ...Result) error {
+// 	return code.output(http.StatusRequestTimeout, out)
+// }
 
-// ProxyAuthRequired ⟼ http.StatusProxyAuthRequired
-func (code StatusCode) ProxyAuthRequired(out ...Result) error {
-	return code.output(http.StatusProxyAuthRequired, out)
-}
+// // Conflict ⟼ http.StatusConflict
+// func (code StatusCode) Conflict(out ...Result) error {
+// 	return code.output(http.StatusConflict, out)
+// }
 
-// RequestTimeout ⟼ http.StatusRequestTimeout
-func (code StatusCode) RequestTimeout(out ...Result) error {
-	return code.output(http.StatusRequestTimeout, out)
-}
+// // Gone ⟼ http.StatusGone
+// func (code StatusCode) Gone(out ...Result) error {
+// 	return code.output(http.StatusGone, out)
+// }
 
-// Conflict ⟼ http.StatusConflict
-func (code StatusCode) Conflict(out ...Result) error {
-	return code.output(http.StatusConflict, out)
-}
+// // LengthRequired ⟼ http.StatusLengthRequired
+// func (code StatusCode) LengthRequired(out ...Result) error {
+// 	return code.output(http.StatusLengthRequired, out)
+// }
 
-// Gone ⟼ http.StatusGone
-func (code StatusCode) Gone(out ...Result) error {
-	return code.output(http.StatusGone, out)
-}
+// // PreconditionFailed ⟼ http.StatusPreconditionFailed
+// func (code StatusCode) PreconditionFailed(out ...Result) error {
+// 	return code.output(http.StatusPreconditionFailed, out)
+// }
 
-// LengthRequired ⟼ http.StatusLengthRequired
-func (code StatusCode) LengthRequired(out ...Result) error {
-	return code.output(http.StatusLengthRequired, out)
-}
+// // RequestEntityTooLarge ⟼ http.StatusRequestEntityTooLarge
+// func (code StatusCode) RequestEntityTooLarge(out ...Result) error {
+// 	return code.output(http.StatusRequestEntityTooLarge, out)
+// }
 
-// PreconditionFailed ⟼ http.StatusPreconditionFailed
-func (code StatusCode) PreconditionFailed(out ...Result) error {
-	return code.output(http.StatusPreconditionFailed, out)
-}
+// // RequestURITooLong ⟼ http.StatusRequestURITooLong
+// func (code StatusCode) RequestURITooLong(out ...Result) error {
+// 	return code.output(http.StatusRequestURITooLong, out)
+// }
 
-// RequestEntityTooLarge ⟼ http.StatusRequestEntityTooLarge
-func (code StatusCode) RequestEntityTooLarge(out ...Result) error {
-	return code.output(http.StatusRequestEntityTooLarge, out)
-}
+// // UnsupportedMediaType ⟼ http.StatusUnsupportedMediaType
+// func (code StatusCode) UnsupportedMediaType(out ...Result) error {
+// 	return code.output(http.StatusUnsupportedMediaType, out)
+// }
 
-// RequestURITooLong ⟼ http.StatusRequestURITooLong
-func (code StatusCode) RequestURITooLong(out ...Result) error {
-	return code.output(http.StatusRequestURITooLong, out)
-}
+// /*
+// TODO:
+// 	RequestedRangeNotSatisfiable
+// 	ExpectationFailed
+// 	Teapot
+// 	MisdirectedRequest
+// 	UnprocessableEntity
+// 	Locked
+// 	FailedDependency
+// 	TooEarly
+// 	UpgradeRequired
+// 	PreconditionRequired
+// 	TooManyRequests
+// 	RequestHeaderFieldsTooLarge
+// 	UnavailableForLegalReasons
+// */
 
-// UnsupportedMediaType ⟼ http.StatusUnsupportedMediaType
-func (code StatusCode) UnsupportedMediaType(out ...Result) error {
-	return code.output(http.StatusUnsupportedMediaType, out)
-}
+// // InternalServerError ⟼ http.StatusInternalServerError
+// func (code StatusCode) InternalServerError(out ...Result) error {
+// 	return code.output(http.StatusInternalServerError, out)
+// }
 
-/*
-TODO:
-	RequestedRangeNotSatisfiable
-	ExpectationFailed
-	Teapot
-	MisdirectedRequest
-	UnprocessableEntity
-	Locked
-	FailedDependency
-	TooEarly
-	UpgradeRequired
-	PreconditionRequired
-	TooManyRequests
-	RequestHeaderFieldsTooLarge
-	UnavailableForLegalReasons
-*/
+// // NotImplemented ⟼ http.StatusNotImplemented
+// func (code StatusCode) NotImplemented(out ...Result) error {
+// 	return code.output(http.StatusNotImplemented, out)
+// }
 
-// InternalServerError ⟼ http.StatusInternalServerError
-func (code StatusCode) InternalServerError(out ...Result) error {
-	return code.output(http.StatusInternalServerError, out)
-}
+// // BadGateway ⟼ http.StatusBadGateway
+// func (code StatusCode) BadGateway(out ...Result) error {
+// 	return code.output(http.StatusBadGateway, out)
+// }
 
-// NotImplemented ⟼ http.StatusNotImplemented
-func (code StatusCode) NotImplemented(out ...Result) error {
-	return code.output(http.StatusNotImplemented, out)
-}
+// // ServiceUnavailable ⟼ http.StatusServiceUnavailable
+// func (code StatusCode) ServiceUnavailable(out ...Result) error {
+// 	return code.output(http.StatusServiceUnavailable, out)
+// }
 
-// BadGateway ⟼ http.StatusBadGateway
-func (code StatusCode) BadGateway(out ...Result) error {
-	return code.output(http.StatusBadGateway, out)
-}
+// // GatewayTimeout ⟼ http.StatusGatewayTimeout
+// func (code StatusCode) GatewayTimeout(out ...Result) error {
+// 	return code.output(http.StatusGatewayTimeout, out)
+// }
 
-// ServiceUnavailable ⟼ http.StatusServiceUnavailable
-func (code StatusCode) ServiceUnavailable(out ...Result) error {
-	return code.output(http.StatusServiceUnavailable, out)
-}
-
-// GatewayTimeout ⟼ http.StatusGatewayTimeout
-func (code StatusCode) GatewayTimeout(out ...Result) error {
-	return code.output(http.StatusGatewayTimeout, out)
-}
-
-// HTTPVersionNotSupported ⟼ http.StatusHTTPVersionNotSupported
-func (code StatusCode) HTTPVersionNotSupported(out ...Result) error {
-	return code.output(http.StatusHTTPVersionNotSupported, out)
-}
+// // HTTPVersionNotSupported ⟼ http.StatusHTTPVersionNotSupported
+// func (code StatusCode) HTTPVersionNotSupported(out ...Result) error {
+// 	return code.output(http.StatusHTTPVersionNotSupported, out)
+// }
 
 /*
 TODO:
@@ -353,96 +394,96 @@ TODO:
 	NetworkAuthenticationRequired
 */
 
-// WithHeader appends header to HTTP response
-func WithHeader(header, value string) Result {
-	return func(out *Output) error {
-		out.Headers = append(out.Headers,
-			struct {
-				Header string
-				Value  string
-			}{header, value},
-		)
-		return nil
-	}
-}
+// // WithHeader appends header to HTTP response
+// func WithHeader(header, value string) Result {
+// 	return func(out *Output) error {
+// 		out.Headers = append(out.Headers,
+// 			struct {
+// 				Header string
+// 				Value  string
+// 			}{header, value},
+// 		)
+// 		return nil
+// 	}
+// }
 
 // WithJSON appends application/json payload to HTTP response
-func WithJSON(val interface{}) Result {
-	return func(out *Output) error {
-		body, err := json.Marshal(val)
-		if err != nil {
-			out.Status = http.StatusInternalServerError
-			out.Headers = append(out.Headers,
-				struct {
-					Header string
-					Value  string
-				}{"Content-Type", "text/plain"},
-			)
-			out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
+// func WithJSON(val interface{}) Result {
+// 	return func(out *Output) error {
+// 		body, err := json.Marshal(val)
+// 		if err != nil {
+// 			out.Status = http.StatusInternalServerError
+// 			out.Headers = append(out.Headers,
+// 				struct {
+// 					Header string
+// 					Value  string
+// 				}{"Content-Type", "text/plain"},
+// 			)
+// 			out.Body = fmt.Sprintf("JSON serialization is failed for <%T>", val)
 
-			return nil
-		}
+// 			return nil
+// 		}
 
-		out.Headers = append(out.Headers,
-			struct {
-				Header string
-				Value  string
-			}{"Content-Type", "application/json"},
-		)
-		out.Body = string(body)
-		return nil
-	}
-}
+// 		out.Headers = append(out.Headers,
+// 			struct {
+// 				Header string
+// 				Value  string
+// 			}{"Content-Type", "application/json"},
+// 		)
+// 		out.Body = string(body)
+// 		return nil
+// 	}
+// }
 
-// WithBytes appends arbitrary octet/stream payload to HTTP response
-// content type shall be specified using With method
-func WithBytes(content []byte) Result {
-	return func(out *Output) error {
-		out.Body = string(content)
-		return nil
-	}
-}
+// // WithBytes appends arbitrary octet/stream payload to HTTP response
+// // content type shall be specified using With method
+// func WithBytes(content []byte) Result {
+// 	return func(out *Output) error {
+// 		out.Body = string(content)
+// 		return nil
+// 	}
+// }
 
-// WithText appends arbitrary octet/stream payload to HTTP response
-// content type shall be specified using With method
-func WithText(content string) Result {
-	return func(out *Output) error {
-		out.Body = content
-		return nil
-	}
-}
+// // WithText appends arbitrary octet/stream payload to HTTP response
+// // content type shall be specified using With method
+// func WithText(content string) Result {
+// 	return func(out *Output) error {
+// 		out.Body = content
+// 		return nil
+// 	}
+// }
 
-// WithIssue appends Issue, RFC 7807: Problem Details for HTTP APIs
-func WithIssue(failure error, title ...string) Result {
-	return func(out *Output) error {
-		issue := NewIssue(out.Status)
-		if len(title) != 0 {
-			issue.Title = title[0]
-		}
+// // WithIssue appends Issue, RFC 7807: Problem Details for HTTP APIs
+// func WithIssue(failure error, title ...string) Result {
+// 	return func(out *Output) error {
+// 		issue := NewIssue(out.Status)
+// 		if len(title) != 0 {
+// 			issue.Title = title[0]
+// 		}
 
-		body, err := json.Marshal(issue)
-		if err != nil {
-			out.Status = http.StatusInternalServerError
-			out.Headers = append(out.Headers,
-				struct {
-					Header string
-					Value  string
-				}{"Content-Type", "text/plain"},
-			)
-			out.Body = "JSON serialization is failed for <Issue>"
+// 		body, err := json.Marshal(issue)
+// 		if err != nil {
+// 			out.Status = http.StatusInternalServerError
+// 			out.Headers = append(out.Headers,
+// 				struct {
+// 					Header string
+// 					Value  string
+// 				}{"Content-Type", "text/plain"},
+// 			)
+// 			out.Body = "JSON serialization is failed for <Issue>"
 
-			return nil
-		}
+// 			return nil
+// 		}
 
-		out.Headers = append(out.Headers,
-			struct {
-				Header string
-				Value  string
-			}{"Content-Type", "application/json"},
-		)
-		out.Body = string(body)
-		out.Failure = fmt.Errorf("%s: %d %s - %w", issue.ID, out.Status, issue.Title, failure)
+// 		out.Headers = append(out.Headers,
+// 			struct {
+// 				Header string
+// 				Value  string
+// 			}{"Content-Type", "application/json"},
+// 		)
+// 		out.Body = string(body)
+// 		out.Failure = fmt.Errorf("%s: %d %s - %w", issue.ID, out.Status, issue.Title, failure)
 
-		return nil
-	}
-}
+// 		return nil
+// 	}
+// }
