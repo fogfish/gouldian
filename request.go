@@ -216,7 +216,7 @@ func Map[A, B any](f func(*Context, *A) (*B, error)) Endpoint {
 
 		val, err := json.Marshal(b)
 		if err != nil {
-			out.SetIssue(fmt.Errorf("Serialization is failed for <%T>", val))
+			out.SetIssue(fmt.Errorf("serialization is failed for <%T>", val))
 			return out
 		}
 
