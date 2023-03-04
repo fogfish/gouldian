@@ -70,7 +70,7 @@ func Send(data any) µ.Result {
 			val, err := encode(content, data)
 			if err != nil {
 				out.Status = http.StatusInternalServerError
-				out.SetIssue(fmt.Errorf("Serialization is failed for <%T>", val))
+				out.SetIssue(fmt.Errorf("serialization is failed for <%T>", val))
 				return nil
 			}
 			if !chunked {

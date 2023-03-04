@@ -45,6 +45,7 @@ var lensEcho = µ.Optics1[reqEcho, string]()
 func echo() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo"), µ.Path(lensEcho)),
+		µ.Accept.Text,
 		µ.FMap(func(ctx *µ.Context, req *reqEcho) error {
 			return ø.Status.OK(
 				ø.Server.Set("echo"),
