@@ -13,3 +13,5 @@ require (
 	github.com/fogfish/golem v0.9.2
 	github.com/fogfish/logger v1.1.0
 )
+
+require github.com/fogfish/it/v2 v2.0.1 // indirect
