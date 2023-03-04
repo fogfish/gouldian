@@ -22,16 +22,16 @@ import (
 	"context"
 	"fmt"
 	µ "github.com/fogfish/gouldian"
+	ø "github.com/fogfish/gouldian/emitter"
 	"github.com/fogfish/logger"
 	"net/http"
 	"sync"
 )
 
 /*
-
 Serve builds http.Handler for sequence of endpoints
 
-  http.ListenAndServe(":8080", httpd.Server( ... ))
+	http.ListenAndServe(":8080", httpd.Server( ... ))
 */
 func Serve(endpoints ...µ.Routable) http.Handler {
 	routes := &routes{
@@ -47,11 +47,10 @@ func Serve(endpoints ...µ.Routable) http.Handler {
 }
 
 /*
-
 Serve builds http.Handler for sequence of endpoints.
 It executes commit function after each request.
 
-  http.ListenAndServe(":8080", httpd.Server( ... ))
+	http.ListenAndServe(":8080", httpd.Server( ... ))
 */
 func ServeAndCommit(commit func(), endpoints ...µ.Routable) http.Handler {
 	h := Serve(endpoints...)
@@ -62,8 +61,6 @@ func ServeAndCommit(commit func(), endpoints ...µ.Routable) http.Handler {
 	})
 }
 
-//
-//
 type routes struct {
 	endpoint µ.Endpoint
 	pool     sync.Pool
@@ -79,13 +76,13 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case *µ.Output:
 		routes.output(w, r, v)
 	case µ.NoMatch:
-		failure := µ.Status.NotImplemented(
-			µ.WithIssue(fmt.Errorf("NoMatch %s", r.URL.Path)),
+		failure := ø.Status.NotImplemented(
+			ø.Error(fmt.Errorf("NoMatch %s", r.URL.Path)),
 		).(*µ.Output)
 		routes.output(w, r, failure)
 	default:
-		failure := µ.Status.InternalServerError(
-			µ.WithIssue(fmt.Errorf("unknown response %s", r.URL.Path)),
+		failure := ø.Status.InternalServerError(
+			ø.Error(fmt.Errorf("unknown response %s", r.URL.Path)),
 		).(*µ.Output)
 		routes.output(w, r, failure)
 	}

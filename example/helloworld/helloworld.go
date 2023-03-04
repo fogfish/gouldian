@@ -20,6 +20,7 @@ package main
 
 import (
 	µ "github.com/fogfish/gouldian"
+	ø "github.com/fogfish/gouldian/emitter"
 	"github.com/fogfish/gouldian/server/httpd"
 	"net/http"
 )
@@ -34,7 +35,10 @@ func hello() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("hello")),
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(µ.WithText("Hello World!"))
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send("Hello World!"),
+			)
 		},
 	)
 }

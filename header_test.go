@@ -137,7 +137,6 @@ func TestHeaderIsLowerCase(t *testing.T) {
 
 func TestHeaderAny(t *testing.T) {
 	foo := µ.HeaderAny("X-Value")
-	bar := µ.Header("X-Value", "_")
 
 	success1 := mock.Input(mock.Header("X-Value", "bar"))
 	success2 := mock.Input(mock.Header("X-Value", "baz"))
@@ -146,10 +145,7 @@ func TestHeaderAny(t *testing.T) {
 	it.Ok(t).
 		If(foo(success1)).Should().Equal(nil).
 		If(foo(success2)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil).
-		If(bar(success1)).Should().Equal(nil).
-		If(bar(success2)).Should().Equal(nil).
-		If(bar(failure)).ShouldNot().Equal(nil)
+		If(foo(failure)).ShouldNot().Equal(nil)
 }
 
 func TestHeaderString(t *testing.T) {

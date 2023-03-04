@@ -27,11 +27,11 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	µ "github.com/fogfish/gouldian"
+	ø "github.com/fogfish/gouldian/emitter"
 	"github.com/fogfish/logger"
 )
 
 /*
-
 Request is events.APIGatewayProxyRequest ⟼ µ.Input
 */
 func Request(r *events.APIGatewayProxyRequest) *µ.Context {
@@ -75,7 +75,6 @@ func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.Token {
 
 }
 
-//
 func ServeAndCommit(commit func(), endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	h := Serve(endpoints...)
 
@@ -93,8 +92,8 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 	return func(r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 		req := Request(&r)
 		if req == nil {
-			failure := µ.Status.BadRequest(
-				µ.WithIssue(fmt.Errorf("unknown response %s", r.Path)),
+			failure := ø.Status.BadRequest(
+				ø.Error(fmt.Errorf("unknown response %s", r.Path)),
 			).(*µ.Output)
 			return output(failure, req)
 		}
@@ -103,13 +102,13 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 		case *µ.Output:
 			return output(v, req)
 		case µ.NoMatch:
-			failure := µ.Status.NotImplemented(
-				µ.WithIssue(fmt.Errorf("NoMatch %s", r.Path)),
+			failure := ø.Status.NotImplemented(
+				ø.Error(fmt.Errorf("NoMatch %s", r.Path)),
 			).(*µ.Output)
 			return output(failure, req)
 		default:
-			failure := µ.Status.InternalServerError(
-				µ.WithIssue(fmt.Errorf("unknown response %s", r.Path)),
+			failure := ø.Status.InternalServerError(
+				ø.Error(fmt.Errorf("unknown response %s", r.Path)),
 			).(*µ.Output)
 			return output(failure, req)
 		}

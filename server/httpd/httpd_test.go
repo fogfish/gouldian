@@ -26,7 +26,7 @@ import (
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
+	ø "github.com/fogfish/gouldian/emitter"
 	"github.com/fogfish/gouldian/server/httpd"
 	"github.com/fogfish/it"
 )
@@ -124,10 +124,10 @@ func mock() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo")),
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithHeader(headers.Server, "echo"),
-				µ.WithText("echo"),
+			return ø.Status.OK(
+				ø.Server.Set("echo"),
+				ø.ContentType.TextPlain,
+				ø.Send("echo"),
 			)
 		},
 	)

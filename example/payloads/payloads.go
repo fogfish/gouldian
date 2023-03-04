@@ -20,6 +20,7 @@ package main
 
 import (
 	µ "github.com/fogfish/gouldian"
+	ø "github.com/fogfish/gouldian/emitter"
 	"github.com/fogfish/gouldian/headers"
 	"github.com/fogfish/gouldian/server/httpd"
 	"net/http"
@@ -52,7 +53,6 @@ curl -v http://localhost:8080/echo \
 */
 
 /*
-
 matches string payload
 */
 type reqText struct {
@@ -67,16 +67,15 @@ func text() µ.Routable {
 		µ.Header(headers.ContentType, headers.TextPlain),
 		µ.Body(lensText),
 		µ.FMap(func(ctx *µ.Context, req *reqText) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithText(req.Value),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(req.Value),
 			)
 		}),
 	)
 }
 
 /*
-
 matches JSON payload
 */
 type reqJSON struct {
@@ -96,16 +95,15 @@ func json() µ.Routable {
 		µ.Header(headers.ContentType, headers.ApplicationJSON),
 		µ.Body(lensJSON),
 		µ.FMap(func(ctx *µ.Context, req *reqJSON) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
-				µ.WithJSON(req.Value),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(req.Value),
 			)
 		}),
 	)
 }
 
 /*
-
 matches Form payload
 */
 type reqForm struct {
@@ -120,9 +118,9 @@ func form() µ.Routable {
 		µ.Header(headers.ContentType, headers.ApplicationForm),
 		µ.Body(lensForm),
 		µ.FMap(func(ctx *µ.Context, req *reqForm) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
-				µ.WithJSON(req.Value),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(req.Value),
 			)
 		}),
 	)

@@ -19,20 +19,16 @@
 package gouldian
 
 /*
-
 Pattern is a union type of allowed params to matcher functions
 */
 type Pattern interface{ string | Lens }
 
-/*
-
-Params of path query in HTTP request
-*/
-type Params map[string][]string
+// Query of HTTP request
+type Query map[string][]string
 
 // Get parameter by key
-func (params Params) Get(key string) (string, bool) {
-	v, exists := params[key]
+func (query Query) Get(key string) (string, bool) {
+	v, exists := query[key]
 	if !exists {
 		return "", exists
 	}
@@ -41,7 +37,6 @@ func (params Params) Get(key string) (string, bool) {
 }
 
 /*
-
 Token is a container for access token
 */
 type Token map[string]string
@@ -68,7 +63,6 @@ func (t Token) Username() string { return t["username"] }
 func (t Token) ClientID() string { return t["client_id"] }
 
 /*
-
 NewToken creates access token object
 */
 func NewToken(raw map[string]interface{}) Token {

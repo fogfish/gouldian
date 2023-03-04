@@ -20,7 +20,7 @@ package main
 
 import (
 	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
+	ø "github.com/fogfish/gouldian/emitter"
 
 	"net/http"
 
@@ -46,10 +46,10 @@ func echo() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo"), µ.Path(lensEcho)),
 		µ.FMap(func(ctx *µ.Context, req *reqEcho) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithHeader(headers.Server, "echo"),
-				µ.WithText(req.Echo),
+			return ø.Status.OK(
+				ø.Server.Set("echo"),
+				ø.ContentType.TextPlain,
+				ø.Send(req.Echo),
 			)
 		}),
 	)

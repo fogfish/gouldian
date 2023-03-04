@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	µ "github.com/fogfish/gouldian"
+	ø "github.com/fogfish/gouldian/emitter"
 	"github.com/fogfish/gouldian/mock"
 	"github.com/fogfish/it"
 )
@@ -309,7 +310,7 @@ func TestHandlerSuccess(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo")),
 			func(*µ.Context) error {
-				return µ.Status.OK(µ.WithText("bar"))
+				return ø.Status.OK(ø.Send("bar"))
 			},
 		),
 	)
@@ -331,7 +332,7 @@ func TestFMapSuccess(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.FMap(func(ctx *µ.Context, t *T) error {
-				return µ.Status.OK(µ.WithText(t.A))
+				return ø.Status.OK(ø.Send(t.A))
 			}),
 		),
 	)
@@ -372,8 +373,7 @@ func TestHandler2Success(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo")),
 			func(*µ.Context) error {
-				return µ.Status.
-					OK(µ.WithText("bar"))
+				return ø.Status.OK(ø.Send("bar"))
 			},
 		),
 	)
@@ -381,8 +381,7 @@ func TestHandler2Success(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("bar")),
 			func(*µ.Context) error {
-				return µ.Status.
-					OK(µ.WithText("foo"))
+				return ø.Status.OK(ø.Send("foo"))
 			},
 		),
 	)
@@ -401,8 +400,7 @@ func TestHandlerFailure(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo")),
 			func(*µ.Context) error {
-				return µ.Status.
-					Unauthorized(µ.WithIssue(fmt.Errorf("")))
+				return ø.Status.Unauthorized(ø.Error(fmt.Errorf("")))
 			},
 		),
 	)
@@ -429,8 +427,7 @@ func TestFMapFailure(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.FMap(func(*µ.Context, *T) error {
-				return µ.Status.
-					Unauthorized(µ.WithIssue(fmt.Errorf("")))
+				return ø.Status.Unauthorized(ø.Error(fmt.Errorf("")))
 			}),
 		),
 	)
@@ -457,7 +454,7 @@ func TestMapFailure(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.Map(func(*µ.Context, *T) (*T, error) {
-				return nil, µ.Status.Unauthorized(µ.WithIssue(fmt.Errorf("")))
+				return nil, ø.Status.Unauthorized(ø.Error(fmt.Errorf("")))
 			}),
 		),
 	)
@@ -506,7 +503,7 @@ func TestBodyLeak(t *testing.T) {
 					}
 				}
 				req.Item = Item{Seq: seq}
-				return µ.Status.OK(µ.WithJSON(req.Item))
+				return ø.Status.OK(ø.Send(req.Item))
 			},
 		)
 	}

@@ -24,20 +24,35 @@ import (
 	"github.com/fogfish/gouldian/internal/optics"
 )
 
-/*
+// Params lifts all Query parameters to struct
+//
+//	type MyRequest struct {
+//		Params MyType `content:"form"`
+//	}
+//	var params = µ.Optics1[MyRequest, MyType]()
+//	µ.GET(µ.Params(params))
+func Params(lens Lens) Endpoint {
+	return func(ctx *Context) error {
+		if ctx.params == nil {
+			ctx.params = Query(ctx.Request.URL.Query())
+		}
 
+		return ctx.Put(lens, ctx.Request.URL.RawQuery)
+	}
+}
+
+/*
 Param combinator defines primitives to match query param in the HTTP requests.
 
-  endpoint := µ.GET(
-    µ.Param("foo", "bar"),
-  )
+	  endpoint := µ.GET(
+	    µ.Param("foo", "bar"),
+	  )
 
-  endpoint(
-    mock.Input(
-			mock.URL("/?foo=bar")
-    )
-  ) == nil
-
+	  endpoint(
+	    mock.Input(
+				mock.URL("/?foo=bar")
+	    )
+	  ) == nil
 */
 func Param[T Pattern](key string, val T) Endpoint {
 	switch v := any(val).(type) {
@@ -51,38 +66,35 @@ func Param[T Pattern](key string, val T) Endpoint {
 }
 
 /*
+ParamAny is a wildcard matcher of param key. It fails if key is not defined.
 
- ParamAny is a wildcard matcher of param key. It fails if key is not defined.
-
-  e := µ.GET( µ.ParamAny("foo") )
-  e(mock.Input(mock.URL("/?foo"))) == nil
-  e(mock.Input(mock.URL("/?foo=bar"))) == nil
-  e(mock.Input(mock.URL("/?foo=baz"))) == nil
-  e(mock.Input()) != nil
+	e := µ.GET( µ.ParamAny("foo") )
+	e(mock.Input(mock.URL("/?foo"))) == nil
+	e(mock.Input(mock.URL("/?foo=bar"))) == nil
+	e(mock.Input(mock.URL("/?foo=baz"))) == nil
+	e(mock.Input()) != nil
 */
 func ParamAny(key string) Endpoint {
 	return param(key).Any
 }
 
 /*
-
 ParamMaybe matches param value to the request context. It uses lens abstraction to
 decode value into Golang type. The Endpoint does not cause no-match
 if header value cannot be decoded to the target type. See optics.Lens type for details.
 
-  type myT struct{ Val string }
+	  type myT struct{ Val string }
 
-  x := µ.Optics1[myT, string]()
-  e := µ.GET( µ.ParamMaybe("foo", x) )
-  e(mock.Input(mock.URL("/?foo=bar"))) == nil
-	e(mock.Input(mock.URL("/?foo"))) == nil
-	e(mock.Input(mock.URL("/"))) == nil
-
+	  x := µ.Optics1[myT, string]()
+	  e := µ.GET( µ.ParamMaybe("foo", x) )
+	  e(mock.Input(mock.URL("/?foo=bar"))) == nil
+		e(mock.Input(mock.URL("/?foo"))) == nil
+		e(mock.Input(mock.URL("/"))) == nil
 */
 func ParamMaybe(key string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
+			ctx.params = Query(ctx.Request.URL.Query())
 		}
 
 		if opt, exists := ctx.params.Get(string(key)); exists {
@@ -93,14 +105,13 @@ func ParamMaybe(key string, lens Lens) Endpoint {
 }
 
 /*
-
 JSON matches a param key to struct.
 It assumes that key holds JSON value as url encoded string
 */
 func ParamJSON(key string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
+			ctx.params = Query(ctx.Request.URL.Query())
 		}
 
 		opt, exists := ctx.params.Get(string(key))
@@ -118,7 +129,6 @@ func ParamJSON(key string, lens Lens) Endpoint {
 }
 
 /*
-
 MaybeJSON matches a param key to closed struct.
 It assumes that key holds JSON value as url encoded string.
 It does not fail if key is not defined.
@@ -126,7 +136,7 @@ It does not fail if key is not defined.
 func ParamMaybeJSON(key string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
+			ctx.params = Query(ctx.Request.URL.Query())
 		}
 
 		opt, exists := ctx.params.Get(string(key))
@@ -148,7 +158,6 @@ func ParamMaybeJSON(key string, lens Lens) Endpoint {
 type param string
 
 /*
-
 Is matches a param key to defined literal value
 */
 func (key param) Is(val string) Endpoint {
@@ -158,7 +167,7 @@ func (key param) Is(val string) Endpoint {
 
 	return func(ctx *Context) error {
 		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
+			ctx.params = Query(ctx.Request.URL.Query())
 		}
 
 		opt, exists := ctx.params.Get(string(key))
@@ -170,12 +179,11 @@ func (key param) Is(val string) Endpoint {
 }
 
 /*
-
 Any is a wildcard matcher of param key. It fails if key is not defined.
 */
 func (key param) Any(ctx *Context) error {
 	if ctx.params == nil {
-		ctx.params = Params(ctx.Request.URL.Query())
+		ctx.params = Query(ctx.Request.URL.Query())
 	}
 
 	_, exists := ctx.params.Get(string(key))
@@ -186,7 +194,6 @@ func (key param) Any(ctx *Context) error {
 }
 
 /*
-
 To matches param value to the request context. It uses lens abstraction to
 decode value into Golang type. The Endpoint causes no-match if param
 value cannot be decoded to the target type. See optics.Lens type for details.
@@ -194,7 +201,7 @@ value cannot be decoded to the target type. See optics.Lens type for details.
 func (key param) To(lens optics.Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.params == nil {
-			ctx.params = Params(ctx.Request.URL.Query())
+			ctx.params = Query(ctx.Request.URL.Query())
 		}
 
 		opt, exists := ctx.params.Get(string(key))

@@ -10,6 +10,6 @@ require (
 )
 
 require (
-	github.com/fogfish/golem v0.9.1
+	github.com/fogfish/golem v0.9.2
 	github.com/fogfish/logger v1.1.0
 )

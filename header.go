@@ -21,6 +21,7 @@ package gouldian
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,12 +30,8 @@ type ReadableHeaderValues interface {
 	int | string | time.Time
 }
 
-type WriteableHeaderValues interface {
-	*int | *string | *time.Time
-}
-
 type MatchableHeaderValues interface {
-	ReadableHeaderValues | WriteableHeaderValues
+	ReadableHeaderValues | Lens
 }
 
 /*
@@ -50,12 +47,16 @@ Header combinator defines primitives to match Headers of HTTP requests.
 	  )
 	) == nil
 */
-func Header[T Pattern](hdr string, val T) Endpoint {
+func Header[T MatchableHeaderValues](hdr string, val T) Endpoint {
 	switch v := any(val).(type) {
 	case string:
-		return header(hdr).Is(v)
+		return HeaderOf[string](hdr).Is(v)
+	case int:
+		return HeaderOf[int](hdr).Is(v)
+	case time.Time:
+		return HeaderOf[time.Time](hdr).Is(v)
 	case Lens:
-		return header(hdr).To(v)
+		return HeaderOf[Lens](hdr).To(v)
 	default:
 		panic("type system failure")
 	}
@@ -70,7 +71,7 @@ HeaderAny is a wildcard matcher of header. It fails if header is not defined.
 	e(mock.Input()) != nil
 */
 func HeaderAny(hdr string) Endpoint {
-	return header(hdr).Any
+	return HeaderOf[string](hdr).Any
 }
 
 /*
@@ -94,44 +95,57 @@ func HeaderMaybe(header string, lens Lens) Endpoint {
 }
 
 // Internal type
-type header string
+type HeaderOf[T MatchableHeaderValues] string
 
-/*
-Is matches a header to defined literal value.
-*/
-func (header header) Is(val string) Endpoint {
-	if val == Any {
-		return header.Any
-	}
-
-	return func(ctx *Context) error {
-		opt := ctx.Request.Header.Get(string(header))
-		if opt != "" && strings.HasPrefix(opt, val) {
-			return nil
-		}
-		return ErrNoMatch
-	}
-}
-
-/*
-Any is a wildcard matcher of header. It fails if header is not defined.
-*/
-func (header header) Any(ctx *Context) error {
-	opt := ctx.Request.Header.Get(string(header))
+// Any is a wildcard matcher of header. It fails if header is not defined.
+func (h HeaderOf[T]) Any(ctx *Context) error {
+	opt := ctx.Request.Header.Get(string(h))
 	if opt != "" {
 		return nil
 	}
 	return ErrNoMatch
 }
 
-/*
-To matches header value to the request context. It uses lens abstraction to
-decode HTTP header into Golang type. The Endpoint causes no-match if header
-value cannot be decoded to the target type. See optics.Lens type for details.
-*/
-func (header header) To(lens Lens) Endpoint {
+// Is matches a header to defined literal value.
+func (h HeaderOf[T]) Is(value T) Endpoint {
+	switch v := any(value).(type) {
+	case string:
+		return func(ctx *Context) error {
+			opt := ctx.Request.Header.Get(string(h))
+			if opt != "" && strings.HasPrefix(opt, v) {
+				return nil
+			}
+			return ErrNoMatch
+		}
+	case int:
+		return func(ctx *Context) error {
+			opt := ctx.Request.Header.Get(string(h))
+			val, err := strconv.Atoi(opt)
+			if err == nil && val == v {
+				return nil
+			}
+			return ErrNoMatch
+		}
+	case time.Time:
+		return func(ctx *Context) error {
+			t := v.UTC().Format(time.RFC1123)
+			opt := ctx.Request.Header.Get(string(h))
+			if opt != "" && t == opt {
+				return nil
+			}
+			return ErrNoMatch
+		}
+	default:
+		panic("invalid type")
+	}
+}
+
+// To matches header value to the request context. It uses lens abstraction to
+// decode HTTP header into Golang type. The Endpoint causes no-match if header
+// value cannot be decoded to the target type. See optics.Lens type for details.
+func (h HeaderOf[T]) To(lens Lens) Endpoint {
 	return func(ctx *Context) error {
-		if opt := ctx.Request.Header.Get(string(header)); opt != "" {
+		if opt := ctx.Request.Header.Get(string(h)); opt != "" {
 			return ctx.Put(lens, opt)
 		}
 		return ErrNoMatch
@@ -171,3 +185,33 @@ func Authorization(f func(string, string) error) Endpoint {
 		return nil
 	}
 }
+
+// List of supported HTTP header constants
+// https://en.wikipedia.org/wiki/List_of_HTTP_header_fields#Request_fields
+const (
+	// Accept            = HeaderEnumContent("Accept")
+	// AcceptCharset     = HeaderOf[string]("Accept-Charset")
+	// AcceptEncoding    = HeaderOf[string]("Accept-Encoding")
+	// AcceptLanguage    = HeaderOf[string]("Accept-Language")
+	// Authorization     = HeaderOf[string]("Authorization")
+	// CacheControl      = HeaderOf[string]("Cache-Control")
+	// Connection        = HeaderEnumConnection("Connection")
+	// ContentEncoding   = HeaderOf[string]("Content-Encoding")
+	// ContentLength     = HeaderEnumContentLength("Content-Length")
+	// ContentType       = HeaderEnumContent("Content-Type")
+	// Cookie            = HeaderOf[string]("Cookie")
+	// Date              = HeaderOf[time.Time]("Date")
+	// From              = HeaderOf[string]("From")
+	// Host              = HeaderOf[string]("Host")
+	// IfMatch           = HeaderOf[string]("If-Match")
+	// IfModifiedSince   = HeaderOf[time.Time]("If-Modified-Since")
+	// IfNoneMatch       = HeaderOf[string]("If-None-Match")
+	// IfRange           = HeaderOf[string]("If-Range")
+	// IfUnmodifiedSince = HeaderOf[time.Time]("If-Unmodified-Since")
+	// Origin            = HeaderOf[string]("Origin")
+	// Range             = HeaderOf[string]("Range")
+	// Referer           = HeaderOf[string]("Referer")
+	// TransferEncoding  = HeaderEnumTransferEncoding("Transfer-Encoding")
+	// UserAgent         = HeaderOf[string]("User-Agent")
+	Upgrade = HeaderOf[string]("Upgrade")
+)
