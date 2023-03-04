@@ -31,16 +31,6 @@ import (
 	itt "github.com/fogfish/it/v2"
 )
 
-// func TestHeaderIs(t *testing.T) {
-// 	foo := µ.Header("X-Value", "some")
-// 	success := mock.Input(mock.Header("X-Value", "some"))
-// 	failure := mock.Input(mock.Header("X-Value", "none"))
-
-// 	it.Ok(t).
-// 		If(foo(success)).Should().Equal(nil).
-// 		If(foo(failure)).ShouldNot().Equal(nil)
-// }
-
 func TestHeaderProduct(t *testing.T) {
 	foo := µ.Endpoints{
 		µ.Header("X-Foo", "Bar"),
@@ -127,30 +117,7 @@ func TestHeaderCoProduct(t *testing.T) {
 	})
 }
 
-// func TestHeaderIsLowerCase(t *testing.T) {
-// 	foo := µ.Header("X-Value", "bar")
-// 	success := mock.Input(mock.Header("x-value", "bar"))
-// 	failure := mock.Input(mock.Header("x-value", "baz"))
-
-// 	it.Ok(t).
-// 		If(foo(success)).Should().Equal(nil).
-// 		If(foo(failure)).ShouldNot().Equal(nil)
-// }
-
-// func TestHeaderAny(t *testing.T) {
-// 	foo := µ.HeaderAny("X-Value")
-
-// 	success1 := mock.Input(mock.Header("X-Value", "bar"))
-// 	success2 := mock.Input(mock.Header("X-Value", "baz"))
-// 	failure := mock.Input()
-
-// 	it.Ok(t).
-// 		If(foo(success1)).Should().Equal(nil).
-// 		If(foo(success2)).Should().Equal(nil).
-// 		If(foo(failure)).ShouldNot().Equal(nil)
-// }
-
-func TestHeaders(t *testing.T) {
+func TestHeadersMatch(t *testing.T) {
 	spec := []struct {
 		Endpoint µ.Endpoint
 		Header   string
@@ -176,9 +143,11 @@ func TestHeaders(t *testing.T) {
 		{µ.Connection.Close, string(µ.Connection), "close"},
 		{µ.ContentEncoding.Is("foo"), string(µ.ContentEncoding), "foo"},
 		{µ.ContentLength.Is(1024), string(µ.ContentLength), "1024"},
+		{µ.Header("Content-Length", 1024), string(µ.ContentLength), "1024"},
 		{µ.ContentType.JSON, string(µ.ContentType), "application/json"},
 		{µ.Cookie.Is("foo"), string(µ.Cookie), "foo"},
 		{µ.Date.Is(time.Date(2023, 02, 01, 10, 20, 30, 0, time.UTC)), string(µ.Date), "Wed, 01 Feb 2023 10:20:30 UTC"},
+		{µ.Header("Date", time.Date(2023, 02, 01, 10, 20, 30, 0, time.UTC)), string(µ.Date), "Wed, 01 Feb 2023 10:20:30 UTC"},
 		{µ.From.Is("foo"), string(µ.From), "foo"},
 		{µ.Host.Is("foo"), string(µ.Host), "foo"},
 		{µ.IfMatch.Is("foo"), string(µ.IfMatch), "foo"},
@@ -195,6 +164,7 @@ func TestHeaders(t *testing.T) {
 		{µ.TransferEncoding.Identity, string(µ.TransferEncoding), "identity"},
 		{µ.UserAgent.Is("foo"), string(µ.UserAgent), "foo"},
 		{µ.Upgrade.Is("foo"), string(µ.Upgrade), "foo"},
+		{µ.HeaderAny("X-Value"), "X-Value", "bar"},
 		{µ.Header("X-Value", "bar"), "X-Value", "bar"},
 		{µ.Header("X-Value", "bar"), "x-value", "bar"},
 	}
@@ -203,6 +173,31 @@ func TestHeaders(t *testing.T) {
 		req := mock.Input(mock.Header(tt.Header, tt.Value))
 		err := tt.Endpoint(req)
 		itt.Then(t).Should(
+			itt.Nil(err),
+		)
+	}
+}
+
+func TestHeadersNoMatch(t *testing.T) {
+	spec := []struct {
+		Endpoint µ.Endpoint
+		Header   string
+		Value    string
+	}{
+		{µ.Accept.Any, string(µ.AcceptEncoding), "*/*"},
+		{µ.ContentLength.Is(1024), string(µ.Accept), "10240"},
+		{µ.ContentLength.Is(1024), string(µ.ContentLength), "text"},
+		{µ.ContentLength.Is(1024), string(µ.ContentLength), "10240"},
+		{µ.Date.Is(time.Date(2023, 02, 01, 10, 20, 30, 0, time.UTC)), string(µ.Accept), "Wed, 01 Feb 2023 10:20:30 UTC"},
+		{µ.Date.Is(time.Date(2023, 02, 01, 10, 20, 30, 0, time.UTC)), string(µ.Date), "text"},
+		{µ.Date.Is(time.Date(2023, 02, 01, 10, 20, 30, 0, time.UTC)), string(µ.Date), "Wed, 11 Feb 2023 10:20:30 UTC"},
+		{µ.HeaderAny("X-Value"), "Y-Value", "bar"},
+	}
+
+	for _, tt := range spec {
+		req := mock.Input(mock.Header(tt.Header, tt.Value))
+		err := tt.Endpoint(req)
+		itt.Then(t).ShouldNot(
 			itt.Nil(err),
 		)
 	}
