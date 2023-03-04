@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"sync"
 
 	"github.com/fogfish/guid"
@@ -76,13 +77,14 @@ func (out *Output) SetHeader(header, value string) {
 		struct {
 			Header string
 			Value  string
-		}{header, value},
+		}{textproto.CanonicalMIMEHeaderKey(header), value},
 	)
 }
 
 func (out *Output) GetHeader(header string) string {
+	h := textproto.CanonicalMIMEHeaderKey(header)
 	for i := 0; i < len(out.Headers); i++ {
-		if out.Headers[i].Header == header {
+		if out.Headers[i].Header == h {
 			return out.Headers[i].Value
 		}
 	}

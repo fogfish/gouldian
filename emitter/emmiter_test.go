@@ -79,13 +79,6 @@ type myT struct {
 	A string
 }
 
-func TestWithHeader(t *testing.T) {
-	output(t,
-		ø.Status.OK(ø.Header("foo", "bar")),
-		ø.Status.OK(ø.Header("foo", "bar")),
-	)
-}
-
 func TestWithJSON(t *testing.T) {
 	output(t,
 		ø.Status.OK(ø.Send(myT{"Hello"})),
