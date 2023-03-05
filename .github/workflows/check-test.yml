@@ -31,7 +31,7 @@ jobs:
     
       - name: go test
         run: |
-          go test -v -coverpkg=$(go list ./... | grep -v /examples/) -coverprofile=profile.cov $(go list ./... | grep -v /examples/)
+          go test -v -coverprofile=profile.cov $(go list ./... | grep -v /examples/)
         env:
           ## GOPATH required to build serverless app inside unittest 
           GOPATH: /home/runner/work/${{ github.event.repository.name }}/go
