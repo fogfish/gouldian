@@ -282,27 +282,6 @@ func TestFMapSuccess(t *testing.T) {
 	)
 }
 
-func TestFMapFailureParse(t *testing.T) {
-	type T struct{ A string }
-
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo"), µ.Path("bar")),
-			µ.FMap(func(ctx *µ.Context, t *T) error {
-				out := µ.NewOutput(http.StatusOK)
-				out.Body = t.A
-				return out
-			}),
-		),
-	)
-	req := mock.Input(mock.URL("/foo/bar"))
-	err := foo(req)
-
-	it.Then(t).ShouldNot(
-		it.Nil(err),
-	)
-}
-
 func TestFMapFailure(t *testing.T) {
 	type T struct{ A string }
 	a := µ.Optics1[T, string]()
