@@ -23,9 +23,8 @@ import (
 	"testing"
 	"time"
 
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/mock"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
 
 	"github.com/fogfish/it"
 	itt "github.com/fogfish/it/v2"
@@ -378,7 +377,7 @@ func TestHeaderContentJSON(t *testing.T) {
 		"text/plain",
 		"text/html",
 	} {
-		foo := µ.Header(headers.ContentType, header)
+		foo := µ.Header(string(µ.ContentType), header)
 		success := mock.Input(mock.Header("Content-Type", header))
 		failure := mock.Input(mock.Header("Content-Type", "some/value"))
 

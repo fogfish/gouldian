@@ -25,10 +25,10 @@ import (
 	"strings"
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 )
 
 //

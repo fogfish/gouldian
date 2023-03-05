@@ -27,7 +27,7 @@ import (
 	"net/url"
 	"strings"
 
-	µ "github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian/v2"
 )
 
 // Mock is an option type to customize mock event

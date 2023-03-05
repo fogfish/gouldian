@@ -23,9 +23,9 @@ import (
 	"reflect"
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
-	"github.com/fogfish/gouldian/mock"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
+	ø "github.com/fogfish/gouldian/v2/output"
 	"github.com/fogfish/it"
 )
 

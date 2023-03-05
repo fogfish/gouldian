@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
+	µ "github.com/fogfish/gouldian/v2"
 	"github.com/fogfish/it"
 )
 

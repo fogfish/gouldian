@@ -3,11 +3,12 @@ package gouldian_test
 import (
 	"encoding/json"
 	"errors"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/it/v2"
 	"net/http"
 	"testing"
+
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
+	"github.com/fogfish/it/v2"
 )
 
 func TestHTTP(t *testing.T) {

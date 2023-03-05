@@ -23,10 +23,10 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
 
-	"github.com/fogfish/gouldian/server/aws/apigateway"
+	"github.com/fogfish/gouldian/v2/server/aws/apigateway"
 	"github.com/fogfish/it"
 )
 

@@ -23,7 +23,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/fogfish/gouldian/internal/optics"
+	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
 /*

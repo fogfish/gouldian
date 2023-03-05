@@ -19,9 +19,9 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 

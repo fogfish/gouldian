@@ -19,12 +19,12 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
 
 	"net/http"
 
-	"github.com/fogfish/gouldian/server/httpd"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 )
 
 func main() {

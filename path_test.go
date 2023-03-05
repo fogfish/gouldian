@@ -19,10 +19,11 @@
 package gouldian_test
 
 import (
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/it"
 	"testing"
+
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
+	"github.com/fogfish/it"
 )
 
 func TestPathIs(t *testing.T) {

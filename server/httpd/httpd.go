@@ -21,8 +21,8 @@ package httpd
 import (
 	"context"
 	"fmt"
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
 	"github.com/fogfish/logger"
 	"net/http"
 	"sync"

@@ -21,7 +21,7 @@ package gouldian
 import (
 	"net/url"
 
-	"github.com/fogfish/gouldian/internal/optics"
+	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
 // Params lifts all Query parameters to struct

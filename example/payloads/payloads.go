@@ -19,10 +19,9 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	ø "github.com/fogfish/gouldian/emitter"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 
@@ -64,7 +63,7 @@ var lensText = µ.Optics1[reqText, string]()
 func text() µ.Routable {
 	return µ.POST(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.ContentType, headers.TextPlain),
+		µ.ContentType.TextPlain,
 		µ.Body(lensText),
 		µ.FMap(func(ctx *µ.Context, req *reqText) error {
 			return ø.Status.OK(
@@ -92,7 +91,7 @@ var lensJSON = µ.Optics1[reqJSON, myJSON]()
 func json() µ.Routable {
 	return µ.POST(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.ContentType, headers.ApplicationJSON),
+		µ.ContentType.ApplicationJSON,
 		µ.Body(lensJSON),
 		µ.FMap(func(ctx *µ.Context, req *reqJSON) error {
 			return ø.Status.OK(
@@ -115,7 +114,7 @@ var lensForm = µ.Optics1[reqForm, myJSON]()
 func form() µ.Routable {
 	return µ.POST(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.ContentType, headers.ApplicationForm),
+		µ.ContentType.Form,
 		µ.Body(lensForm),
 		µ.FMap(func(ctx *µ.Context, req *reqForm) error {
 			return ø.Status.OK(
