@@ -20,7 +20,7 @@ package httpd_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -41,7 +41,7 @@ func TestServeMatch(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -61,7 +61,7 @@ func TestServeNoMatch(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -84,7 +84,7 @@ func TestServeUnknownError(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -109,7 +109,7 @@ func TestServeAndCommit(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).

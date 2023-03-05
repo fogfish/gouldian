@@ -20,7 +20,7 @@ package gouldian
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/fogfish/gouldian/internal/optics"
@@ -96,7 +96,7 @@ func FromContext[S any](ctx *Context, val *S) error {
 
 func (ctx *Context) cacheBody() error {
 	if ctx.Request.Body != nil {
-		buf, err := ioutil.ReadAll(ctx.Request.Body)
+		buf, err := io.ReadAll(ctx.Request.Body)
 		if err != nil {
 			return err
 		}
