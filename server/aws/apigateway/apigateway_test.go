@@ -23,9 +23,10 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/server/aws/apigateway"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+
+	"github.com/fogfish/gouldian/v2/server/aws/apigateway"
 	"github.com/fogfish/it"
 )
 
@@ -115,10 +116,10 @@ func mock(path string) µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path(path)),
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithHeader(headers.Server, "echo"),
-				µ.WithText("echo"),
+			return ø.Status.OK(
+				ø.Server.Set("echo"),
+				ø.ContentType.TextPlain,
+				ø.Send("echo"),
 			)
 		},
 	)

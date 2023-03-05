@@ -19,6 +19,9 @@
 package gouldian
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"unsafe"
 )
 
@@ -28,7 +31,6 @@ const (
 )
 
 /*
-
 Route converts sequence ot Endpoints into Routable element
 */
 func Route(
@@ -43,14 +45,14 @@ func Route(
 }
 
 /*
-
 DELETE composes Endpoints into Routable that matches HTTP DELETE request.
-  e := µ.DELETE(
-    µ.URI(µ.Path("foo"), µ.Path("bar")),
-    ...
-  )
-  e(mock.Input(mock.Method("DELETE"))) == nil
-  e(mock.Input(mock.Method("OTHER"))) != nil
+
+	e := µ.DELETE(
+	  µ.URI(µ.Path("foo"), µ.Path("bar")),
+	  ...
+	)
+	e(mock.Input(mock.Method("DELETE"))) == nil
+	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func DELETE(path Routable, arrows ...Endpoint) Routable {
 	seq := append(Endpoints{Method("DELETE")}, arrows...)
@@ -58,14 +60,14 @@ func DELETE(path Routable, arrows ...Endpoint) Routable {
 }
 
 /*
-
 GET composes Endpoints into Routable that matches HTTP GET request.
-  e := µ.GET(
-    µ.URI(µ.Path("foo"), µ.Path("bar")),
-    ...
-  )
-  e(mock.Input(mock.Method("GET"))) == nil
-  e(mock.Input(mock.Method("OTHER"))) != nil
+
+	e := µ.GET(
+	  µ.URI(µ.Path("foo"), µ.Path("bar")),
+	  ...
+	)
+	e(mock.Input(mock.Method("GET"))) == nil
+	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func GET(path Routable, arrows ...Endpoint) Routable {
 	seq := append(Endpoints{Method("GET")}, arrows...)
@@ -73,14 +75,14 @@ func GET(path Routable, arrows ...Endpoint) Routable {
 }
 
 /*
-
 PATCH composes Endpoints into Routable that matches HTTP PATCH request.
-  e := µ.PATCH(
-    µ.URI(µ.Path("foo"), µ.Path("bar")),
-    ...
-  )
-  e(mock.Input(mock.Method("PATCH"))) == nil
-  e(mock.Input(mock.Method("OTHER"))) != nil
+
+	e := µ.PATCH(
+	  µ.URI(µ.Path("foo"), µ.Path("bar")),
+	  ...
+	)
+	e(mock.Input(mock.Method("PATCH"))) == nil
+	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func PATCH(path Routable, arrows ...Endpoint) Routable {
 	seq := append(Endpoints{Method("PATCH")}, arrows...)
@@ -88,14 +90,14 @@ func PATCH(path Routable, arrows ...Endpoint) Routable {
 }
 
 /*
-
 POST composes Endpoints into Routable that matches HTTP POST request.
-  e := µ.POST(
-    µ.URI(µ.Path("foo"), µ.Path("bar")),
-    ...
-  )
-  e(mock.Input(mock.Method("POST"))) == nil
-  e(mock.Input(mock.Method("OTHER"))) != nil
+
+	e := µ.POST(
+	  µ.URI(µ.Path("foo"), µ.Path("bar")),
+	  ...
+	)
+	e(mock.Input(mock.Method("POST"))) == nil
+	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func POST(path Routable, arrows ...Endpoint) Routable {
 	seq := append(Endpoints{Method("POST")}, arrows...)
@@ -103,14 +105,14 @@ func POST(path Routable, arrows ...Endpoint) Routable {
 }
 
 /*
-
 PUT composes Endpoints into Routable that matches HTTP PUT request.
-  e := µ.PUT(
-    µ.URI(µ.Path("foo"), µ.Path("bar")),
-    ...
-  )
-  e(mock.Input(mock.Method("PUT"))) == nil
-  e(mock.Input(mock.Method("OTHER"))) != nil
+
+	e := µ.PUT(
+	  µ.URI(µ.Path("foo"), µ.Path("bar")),
+	  ...
+	)
+	e(mock.Input(mock.Method("PUT"))) == nil
+	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func PUT(path Routable, arrows ...Endpoint) Routable {
 	seq := append(Endpoints{Method("PUT")}, arrows...)
@@ -118,24 +120,27 @@ func PUT(path Routable, arrows ...Endpoint) Routable {
 }
 
 /*
-
 ANY composes Endpoints into Routable that matches HTTP any request.
-  e := µ.ANY(
-    µ.URI(µ.Path("foo"), µ.Path("bar")),
-    ...
-  )
-  e(mock.Input(mock.Method("PUT"))) == nil
-  e(mock.Input(mock.Method("OTHER"))) == nil
+
+	e := µ.ANY(
+	  µ.URI(µ.Path("foo"), µ.Path("bar")),
+	  ...
+	)
+	e(mock.Input(mock.Method("PUT"))) == nil
+	e(mock.Input(mock.Method("OTHER"))) == nil
 */
 func ANY(path Routable, arrows ...Endpoint) Routable {
 	seq := append(Endpoints{Method(Any)}, arrows...)
 	return Route(path, seq...)
 }
 
-/*
+// HTTP composes Endpoints into Routable
+func HTTP(verb string, path Routable, arrows ...Endpoint) Routable {
+	seq := append(Endpoints{Method(verb)}, arrows...)
+	return Route(path, seq...)
+}
 
-Method is an endpoint to match HTTP verb request
-*/
+// Method is an endpoint to match HTTP verb request
 func Method(verb string) Endpoint {
 	if verb == Any {
 		return func(ctx *Context) error {
@@ -156,10 +161,7 @@ func Method(verb string) Endpoint {
 	}
 }
 
-/*
-
-Body decodes HTTP request body and lifts it to the structure
-*/
+// Body decodes HTTP request body and lifts it to the structure
 func Body(lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.payload == nil {
@@ -178,33 +180,31 @@ func Body(lens Lens) Endpoint {
 	}
 }
 
-/*
-
-FMap applies clojure to matched HTTP request,
-taking the execution context as the input to closure
-*/
+// FMap applies clojure to matched HTTP request,
+// taking the execution context as the input to closure
 func FMap[A any](f func(*Context, *A) error) Endpoint {
 	return func(req *Context) error {
 		var a A
 		if err := FromContext(req, &a); err != nil {
-			return Status.BadRequest(WithIssue(err))
+			out := NewOutput(http.StatusBadRequest)
+			out.SetIssue(err)
+			return out
 		}
 
 		return f(req, &a)
 	}
 }
 
-/*
-
-Map applies clojure to matched HTTP request,
-taking the execution context and matched parameters as the input to closure.
-The output is always returned as JSON.
-*/
+// Map applies clojure to matched HTTP request,
+// taking the execution context and matched parameters as the input to closure.
+// The output is always returned as JSON.
 func Map[A, B any](f func(*Context, *A) (*B, error)) Endpoint {
 	return func(req *Context) error {
 		var a A
 		if err := FromContext(req, &a); err != nil {
-			return Status.BadRequest(WithIssue(err))
+			out := NewOutput(http.StatusBadRequest)
+			out.SetIssue(err)
+			return out
 		}
 
 		b, err := f(req, &a)
@@ -212,9 +212,16 @@ func Map[A, B any](f func(*Context, *A) (*B, error)) Endpoint {
 			return err
 		}
 
-		return Status.OK(
-			WithHeader("Content-Type", "application/json"),
-			WithJSON(b),
-		)
+		out := NewOutput(http.StatusOK)
+
+		val, err := json.Marshal(b)
+		if err != nil {
+			out.SetIssue(fmt.Errorf("serialization is failed for <%T>", val))
+			return out
+		}
+
+		out.SetHeader("Content-Type", "application/json")
+		out.Body = string(val)
+		return out
 	}
 }

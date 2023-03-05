@@ -19,9 +19,9 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 
@@ -52,7 +52,6 @@ curl -v http://localhost:8080/echo \
 */
 
 /*
-
 matches string payload
 */
 type reqText struct {
@@ -64,19 +63,18 @@ var lensText = µ.Optics1[reqText, string]()
 func text() µ.Routable {
 	return µ.POST(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.ContentType, headers.TextPlain),
+		µ.ContentType.TextPlain,
 		µ.Body(lensText),
 		µ.FMap(func(ctx *µ.Context, req *reqText) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithText(req.Value),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(req.Value),
 			)
 		}),
 	)
 }
 
 /*
-
 matches JSON payload
 */
 type reqJSON struct {
@@ -93,19 +91,18 @@ var lensJSON = µ.Optics1[reqJSON, myJSON]()
 func json() µ.Routable {
 	return µ.POST(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.ContentType, headers.ApplicationJSON),
+		µ.ContentType.ApplicationJSON,
 		µ.Body(lensJSON),
 		µ.FMap(func(ctx *µ.Context, req *reqJSON) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
-				µ.WithJSON(req.Value),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(req.Value),
 			)
 		}),
 	)
 }
 
 /*
-
 matches Form payload
 */
 type reqForm struct {
@@ -117,12 +114,12 @@ var lensForm = µ.Optics1[reqForm, myJSON]()
 func form() µ.Routable {
 	return µ.POST(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.ContentType, headers.ApplicationForm),
+		µ.ContentType.Form,
 		µ.Body(lensForm),
 		µ.FMap(func(ctx *µ.Context, req *reqForm) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
-				µ.WithJSON(req.Value),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(req.Value),
 			)
 		}),
 	)

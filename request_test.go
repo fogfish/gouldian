@@ -1,233 +1,162 @@
-/*
-
-  Copyright 2019 Dmitry Kolesnikov, All Rights Reserved
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-*/
-
 package gouldian_test
 
 import (
-	"fmt"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
+	"github.com/fogfish/it/v2"
 )
 
-func TestVerbAny(t *testing.T) {
-	endpoint := mock.Endpoint(
-		µ.ANY(µ.URI()),
-	)
-
-	success1 := mock.Input(mock.Method("GET"))
-	success2 := mock.Input(mock.Method("OTHER"))
-
-	it.Ok(t).
-		If(endpoint(success1)).Should().Equal(nil).
-		If(endpoint(success2)).Should().Equal(nil)
-}
-
-func TestVerbDelete(t *testing.T) {
-	endpoint := mock.Endpoint(
-		µ.DELETE(µ.URI()),
-	)
-	success := mock.Input(mock.Method("DELETE"))
-	failure := mock.Input(mock.Method("OTHER"))
-
-	it.Ok(t).
-		If(endpoint(success)).Should().Equal(nil).
-		If(endpoint(failure)).ShouldNot().Equal(nil)
-}
-
-func TestVerbGet(t *testing.T) {
-	endpoint := mock.Endpoint(
-		µ.GET(µ.URI()),
-	)
-	success := mock.Input(mock.Method("GET"))
-	failure := mock.Input(mock.Method("OTHER"))
-
-	it.Ok(t).
-		If(endpoint(success)).Should().Equal(nil).
-		If(endpoint(failure)).ShouldNot().Equal(nil)
-}
-
-func TestVerbPatch(t *testing.T) {
-	endpoint := mock.Endpoint(
-		µ.PATCH(µ.URI()),
-	)
-	success := mock.Input(mock.Method("PATCH"))
-	failure := mock.Input(mock.Method("OTHER"))
-
-	it.Ok(t).
-		If(endpoint(success)).Should().Equal(nil).
-		If(endpoint(failure)).ShouldNot().Equal(nil)
-}
-
-func TestVerbPost(t *testing.T) {
-	endpoint := mock.Endpoint(
-		µ.POST(µ.URI()),
-	)
-	success := mock.Input(mock.Method("POST"))
-	failure := mock.Input(mock.Method("OTHER"))
-
-	it.Ok(t).
-		If(endpoint(success)).Should().Equal(nil).
-		If(endpoint(failure)).ShouldNot().Equal(nil)
-}
-
-func TestVerbPut(t *testing.T) {
-	endpoint := mock.Endpoint(
-		µ.PUT(µ.URI()),
-	)
-	success := mock.Input(mock.Method("PUT"))
-	failure := mock.Input(mock.Method("OTHER"))
-
-	it.Ok(t).
-		If(endpoint(success)).Should().Equal(nil).
-		If(endpoint(failure)).ShouldNot().Equal(nil)
-}
-
-func TestPath(t *testing.T) {
+func TestHTTP(t *testing.T) {
 	foo := mock.Endpoint(
-		µ.GET(µ.URI(µ.Path("foo"))),
+		µ.HTTP(
+			http.MethodGet,
+			µ.URI(µ.Path("foo")),
+		),
 	)
-	bar := mock.Endpoint(
-		µ.GET(µ.URI(µ.Path("bar"))),
-	)
-	foobar := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"), µ.Path("bar"))))
 
 	req := mock.Input(mock.URL("/foo"))
-
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(bar(req)).ShouldNot().Equal(nil).
-		If(foobar(req)).ShouldNot().Equal(nil)
+	err := foo(req)
+	it.Then(t).Should(
+		it.Nil(err),
+	)
 }
 
-func TestPathRoot(t *testing.T) {
-	root := mock.Endpoint(
-		µ.GET(µ.URI()),
-	)
+func TestMethod(t *testing.T) {
+	spec := []struct {
+		Verb func(µ.Routable, ...µ.Endpoint) µ.Routable
+		Mock mock.Mock
+	}{
+		{µ.GET, mock.Method("GET")},
+		{µ.PUT, mock.Method("PUT")},
+		{µ.POST, mock.Method("POST")},
+		{µ.DELETE, mock.Method("DELETE")},
+		{µ.PATCH, mock.Method("PATCH")},
+		{µ.ANY, mock.Method("GET")},
+		{µ.ANY, mock.Method("PUT")},
+	}
 
-	success := mock.Input(mock.URL("/"))
-	failure := mock.Input(mock.URL("/foo"))
+	for _, tt := range spec {
+		foo := mock.Endpoint(
+			tt.Verb(
+				µ.URI(µ.Path("foo")),
+			),
+		)
 
-	it.Ok(t).
-		If(root(success)).Should().Equal(nil).
-		If(root(failure)).ShouldNot().Equal(nil)
+		req := mock.Input(tt.Mock, mock.URL("/foo"))
+		err := foo(req)
+		it.Then(t).Should(
+			it.Nil(err),
+		)
+	}
 }
 
-func TestParam(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(),
-			µ.Param("foo", "bar"),
-		),
-	)
-	bar := mock.Endpoint(
-		µ.GET(
-			µ.URI(),
-			µ.Param("bar", "foo"),
-		),
-	)
-	foobar := mock.Endpoint(
-		µ.GET(
-			µ.URI(),
-			µ.Param("foo", "bar"),
-			µ.Param("bar", "foo"),
-		),
-	)
+func TestMethodNoMatch(t *testing.T) {
+	spec := []struct {
+		Verb func(µ.Routable, ...µ.Endpoint) µ.Routable
+		Mock mock.Mock
+	}{
+		{µ.GET, mock.Method("OTHER")},
+		{µ.PUT, mock.Method("OTHER")},
+		{µ.POST, mock.Method("OTHER")},
+		{µ.DELETE, mock.Method("OTHER")},
+		{µ.PATCH, mock.Method("OTHER")},
+	}
 
-	req := mock.Input(mock.URL("/?foo=bar"))
+	for _, tt := range spec {
+		foo := mock.Endpoint(
+			tt.Verb(
+				µ.URI(µ.Path("foo")),
+			),
+		)
 
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(bar(req)).ShouldNot().Equal(nil).
-		If(foobar(req)).ShouldNot().Equal(nil)
+		req := mock.Input(tt.Mock, mock.URL("/foo"))
+		err := foo(req)
+		it.Then(t).ShouldNot(
+			it.Nil(err),
+		)
+	}
 }
 
-func TestHeader(t *testing.T) {
-	foo1 := mock.Endpoint(
-		µ.GET(
-			µ.URI(),
-			µ.Header("foo", "bar"),
-		),
-	)
-
-	bar := mock.Endpoint(
-		µ.GET(
-			µ.URI(),
-			µ.Header("bar", "foo"),
-		),
-	)
-	foobar := mock.Endpoint(
-		µ.GET(
-			µ.URI(),
-			µ.Header("foo", "bar"),
-			µ.Header("bar", "foo"),
-		),
-	)
-
-	req := mock.Input(mock.Header("foo", "bar"))
-
-	it.Ok(t).
-		If(foo1(req)).Should().Equal(nil).
-		If(bar(req)).ShouldNot().Equal(nil).
-		If(foobar(req)).ShouldNot().Equal(nil)
-}
-
-func TestBodyJSON(t *testing.T) {
+func TestBodyJson(t *testing.T) {
 	type foobar struct {
 		Foo string `json:"foo"`
 		Bar int    `json:"bar"`
 	}
 
+	spec := []struct {
+		Mock   *µ.Context
+		Expect foobar
+	}{
+		{
+			mock.Input(
+				mock.Header("Content-Type", "application/json"),
+				mock.JSON(foobar{"foo1", 10}),
+			),
+			foobar{"foo1", 10},
+		},
+		{
+			mock.Input(
+				mock.Header("Content-Type", "application/json"),
+				mock.Text(`{"foo":"foo1","bar":10}`),
+			),
+			foobar{"foo1", 10},
+		},
+	}
+
 	type request struct {
-		FooBar foobar
+		FooBar foobar `content:"json"`
 	}
 	var lens = µ.Optics1[request, foobar]()
 
-	var value request
-	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
-	success1 := mock.Input(
-		mock.JSON(foobar{"foo1", 10}),
-	)
-	success2 := mock.Input(
-		mock.Header("content-type", "application/json"),
-		mock.Text("{\"foo\":\"foo2\",\"bar\":10}"),
-	)
-	failure1 := mock.Input(
-		mock.Header("Content-Type", "application/json"),
-		mock.Text("foobar"),
-	)
-	failure2 := mock.Input()
+	for _, tt := range spec {
+		var req request
+		foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+		err := foo(tt.Mock)
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(µ.FromContext(success1, &value)).Should().Equal(nil).
-		If(value.FooBar).Should().Equal(foobar{"foo1", 10}).
-		//
-		If(foo(success2)).Should().Equal(nil).
-		If(µ.FromContext(success2, &value)).Should().Equal(nil).
-		If(value.FooBar).Should().Equal(foobar{"foo2", 10}).
-		//
-		If(foo(failure1)).Should().Equal(nil).
-		If(µ.FromContext(failure1, &value)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
+		it.Then(t).Should(
+			it.Nil(err),
+			it.Nil(µ.FromContext(tt.Mock, &req)),
+			it.Equiv(req.FooBar, tt.Expect),
+		)
+	}
+}
+
+func TestBodyJsonNoMatch(t *testing.T) {
+	type foobar struct {
+		Foo string `json:"foo"`
+		Bar int    `json:"bar"`
+	}
+
+	spec := []struct {
+		Mock *µ.Context
+	}{
+		{
+			mock.Input(
+				mock.Header("Content-Type", "application/json"),
+				mock.Text(`{"foo:"foo1,"bar":10}`),
+			),
+		},
+	}
+
+	type request struct {
+		FooBar foobar `content:"json"`
+	}
+	var lens = µ.Optics1[request, foobar]()
+
+	for _, tt := range spec {
+		var req request
+		foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+		err := foo(tt.Mock)
+
+		it.Then(t).
+			Should(it.Nil(err)).
+			ShouldNot(it.Nil(µ.FromContext(tt.Mock, &req)))
+	}
 }
 
 func TestBodyForm(t *testing.T) {
@@ -236,91 +165,100 @@ func TestBodyForm(t *testing.T) {
 		Bar int    `json:"bar"`
 	}
 
+	spec := []struct {
+		Mock   *µ.Context
+		Expect foobar
+	}{
+		{
+			mock.Input(
+				mock.Header("Content-Type", "application/x-www-form-urlencoded"),
+				mock.Text("foo=foo1&bar=10"),
+			),
+			foobar{"foo1", 10},
+		},
+	}
+
 	type request struct {
 		FooBar foobar `content:"form"`
 	}
 	var lens = µ.Optics1[request, foobar]()
 
-	var value request
-	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+	for _, tt := range spec {
+		var req request
+		foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+		err := foo(tt.Mock)
 
-	success1 := mock.Input(
-		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
-		mock.Text("foo=foo1&bar=10"),
-	)
-	success2 := mock.Input(
-		mock.Header("content-type", "application/x-www-form-urlencoded"),
-		mock.Text("foo=foo2&bar=10"),
-	)
-	failure1 := mock.Input(
-		mock.Header("Content-Type", "application/x-www-form-urlencoded"),
-		mock.Text("foobar"),
-	)
-	failure2 := mock.Input()
-
-	it.Ok(t).
-		//
-		If(foo(success1)).Should().Equal(nil).
-		If(µ.FromContext(success1, &value)).Should().Equal(nil).
-		If(value.FooBar).Should().Equal(foobar{"foo1", 10}).
-		//
-		If(foo(success2)).Should().Equal(nil).
-		If(µ.FromContext(success2, &value)).Should().Equal(nil).
-		If(value.FooBar).Should().Equal(foobar{"foo2", 10}).
-		//
-		If(foo(failure1)).Should().Equal(nil).
-		If(µ.FromContext(failure1, &value)).ShouldNot().Equal(nil).
-		If(foo(failure2)).ShouldNot().Equal(nil)
+		it.Then(t).Should(
+			it.Nil(err),
+			it.Nil(µ.FromContext(tt.Mock, &req)),
+			it.Equiv(req.FooBar, tt.Expect),
+		)
+	}
 }
 
-func TestText(t *testing.T) {
+func TestBodyFormNoMatch(t *testing.T) {
+	type foobar struct {
+		Foo string `json:"foo"`
+		Bar int    `json:"bar"`
+	}
+
+	spec := []struct {
+		Mock *µ.Context
+	}{
+		{
+			mock.Input(
+				mock.Header("Content-Type", "application/x-www-form-urlencoded"),
+				mock.Text("foobar"),
+			),
+		},
+	}
+
+	type request struct {
+		FooBar foobar `content:"form"`
+	}
+	var lens = µ.Optics1[request, foobar]()
+
+	for _, tt := range spec {
+		var req request
+		foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+		err := foo(tt.Mock)
+
+		it.Then(t).
+			Should(it.Nil(err)).
+			ShouldNot(it.Nil(µ.FromContext(tt.Mock, &req)))
+	}
+}
+
+func TestBodyText(t *testing.T) {
+	spec := []struct {
+		Mock   *µ.Context
+		Expect string
+	}{
+		{
+			mock.Input(
+				mock.Header("Content-Type", "text/plain"),
+				mock.Text("foobar"),
+			),
+			"foobar",
+		},
+	}
+
 	type request struct {
 		FooBar string
 	}
 	var lens = µ.Optics1[request, string]()
 
-	var value request
-	foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
-	success := mock.Input(mock.Text("foobar"))
-	failure := mock.Input()
+	for _, tt := range spec {
+		var req request
+		foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+		err := foo(tt.Mock)
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(µ.FromContext(success, &value)).Should().Equal(nil).
-		If(value.FooBar).Should().Equal("foobar").
-		If(foo(failure)).ShouldNot().Equal(nil)
-}
-
-func TestContextFree(t *testing.T) {
-	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"))))
-	req := mock.Input(mock.URL("/foo"))
-
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil)
-
-	req.Free()
-
-	it.Ok(t).
-		If(foo(req)).ShouldNot().Equal(nil)
-}
-
-func TestHandlerSuccess(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo")),
-			func(*µ.Context) error {
-				return µ.Status.OK(µ.WithText("bar"))
-			},
-		),
-	)
-	req := mock.Input(mock.URL("/foo"))
-
-	it.Ok(t).
-		If(foo(req)).Should().Assert(
-		func(be interface{}) bool {
-			return be.(error).Error() == "bar"
-		},
-	)
+		it.Then(t).Should(
+			it.Nil(err),
+			it.Nil(µ.FromContext(tt.Mock, &req)),
+			it.Equiv(req.FooBar, tt.Expect),
+		)
+	}
 }
 
 func TestFMapSuccess(t *testing.T) {
@@ -331,93 +269,17 @@ func TestFMapSuccess(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.FMap(func(ctx *µ.Context, t *T) error {
-				return µ.Status.OK(µ.WithText(t.A))
+				out := µ.NewOutput(http.StatusOK)
+				out.Body = t.A
+				return out
 			}),
 		),
 	)
 	req := mock.Input(mock.URL("/foo/bar"))
+	err := foo(req)
 
-	it.Ok(t).
-		If(foo(req)).Should().Assert(
-		func(be interface{}) bool {
-			return be.(error).Error() == "bar"
-		},
-	)
-}
-
-func TestMapSuccess(t *testing.T) {
-	type T struct{ A string }
-	a := µ.Optics1[T, string]()
-
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo"), µ.Path(a)),
-			µ.Map(func(ctx *µ.Context, t *T) (*T, error) {
-				return t, nil
-			}),
-		),
-	)
-	req := mock.Input(mock.URL("/foo/bar"))
-
-	it.Ok(t).
-		If(foo(req)).Should().Assert(
-		func(be interface{}) bool {
-			return be.(error).Error() == "{\"A\":\"bar\"}"
-		},
-	)
-}
-
-func TestHandler2Success(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo")),
-			func(*µ.Context) error {
-				return µ.Status.
-					OK(µ.WithText("bar"))
-			},
-		),
-	)
-	bar := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("bar")),
-			func(*µ.Context) error {
-				return µ.Status.
-					OK(µ.WithText("foo"))
-			},
-		),
-	)
-	req := mock.Input(mock.URL("/foo"))
-
-	it.Ok(t).
-		If(µ.Endpoints{foo, bar}.Or(req)).Should().Assert(
-		func(be interface{}) bool {
-			return be.(error).Error() == "bar"
-		},
-	)
-}
-
-func TestHandlerFailure(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo")),
-			func(*µ.Context) error {
-				return µ.Status.
-					Unauthorized(µ.WithIssue(fmt.Errorf("")))
-			},
-		),
-	)
-	req := mock.Input(mock.URL("/foo"))
-
-	it.Ok(t).
-		If(foo(req)).Should().Assert(
-		func(be interface{}) bool {
-			switch v := be.(type) {
-			case *µ.Output:
-				return v.Status == http.StatusUnauthorized
-			default:
-				return false
-			}
-		},
+	it.Then(t).Should(
+		mock.CheckOutput(err, "bar"),
 	)
 }
 
@@ -429,23 +291,122 @@ func TestFMapFailure(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.FMap(func(*µ.Context, *T) error {
-				return µ.Status.
-					Unauthorized(µ.WithIssue(fmt.Errorf("")))
+				out := µ.NewOutput(http.StatusUnauthorized)
+				out.SetIssue(errors.New(""))
+				return out
 			}),
 		),
 	)
 	req := mock.Input(mock.URL("/foo/bar"))
+	err := foo(req)
 
-	it.Ok(t).
-		If(foo(req)).Should().Assert(
-		func(be interface{}) bool {
-			switch v := be.(type) {
-			case *µ.Output:
-				return v.Status == http.StatusUnauthorized
-			default:
-				return false
-			}
-		},
+	it.Then(t).Should(
+		mock.CheckStatusCode(err, http.StatusUnauthorized),
+	)
+}
+
+func TestMapSuccess(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.Map(func(ctx *µ.Context, t *T) (*T, error) { return t, nil }),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
+	err := foo(req)
+
+	it.Then(t).Should(
+		mock.CheckOutput(err, `{"A":"bar"}`),
+	)
+}
+
+func TestContextFree(t *testing.T) {
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"))))
+	req := mock.Input(mock.URL("/foo"))
+	err := foo(req)
+
+	it.Then(t).Should(it.Nil(err))
+
+	req.Free()
+	err = foo(req)
+
+	it.Then(t).ShouldNot(it.Nil(err))
+}
+
+func TestOutputFree(t *testing.T) {
+	out := µ.NewOutput(200)
+	out.SetHeader("X-Foo", "bar")
+	out.Body = "test"
+
+	it.Then(t).Should(
+		it.Equal(out.Status, 200),
+		it.Equal(out.GetHeader("X-Foo"), "bar"),
+		it.Equal(out.Body, "test"),
+	)
+
+	out.Free()
+
+	it.Then(t).Should(
+		it.Equal(out.GetHeader("X-Foo"), ""),
+		it.Equal(out.Body, ""),
+	)
+}
+
+func TestHandlerSuccess(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			mock.Output(http.StatusOK, "bar"),
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+	err := foo(req)
+
+	it.Then(t).Should(
+		mock.CheckOutput(err, "bar"),
+	)
+}
+
+func TestHandler2Success(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			mock.Output(http.StatusOK, "bar"),
+		),
+	)
+	bar := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("bar")),
+			mock.Output(http.StatusOK, "foo"),
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+	err := µ.Endpoints{foo, bar}.Or(req)
+
+	it.Then(t).Should(
+		mock.CheckOutput(err, "bar"),
+	)
+}
+
+func TestHandlerFailure(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			func(*µ.Context) error {
+				out := µ.NewOutput(http.StatusUnauthorized)
+				out.SetIssue(errors.New(""))
+				return out
+			},
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+	err := foo(req)
+
+	it.Then(t).Should(
+		mock.CheckStatusCode(err, http.StatusUnauthorized),
 	)
 }
 
@@ -457,22 +418,17 @@ func TestMapFailure(t *testing.T) {
 		µ.GET(
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.Map(func(*µ.Context, *T) (*T, error) {
-				return nil, µ.Status.Unauthorized(µ.WithIssue(fmt.Errorf("")))
+				out := µ.NewOutput(http.StatusUnauthorized)
+				out.SetIssue(errors.New(""))
+				return nil, out
 			}),
 		),
 	)
 	req := mock.Input(mock.URL("/foo/bar"))
+	err := foo(req)
 
-	it.Ok(t).
-		If(foo(req)).Should().Assert(
-		func(be interface{}) bool {
-			switch v := be.(type) {
-			case *µ.Output:
-				return v.Status == http.StatusUnauthorized
-			default:
-				return false
-			}
-		},
+	it.Then(t).Should(
+		mock.CheckStatusCode(err, http.StatusUnauthorized),
 	)
 }
 
@@ -506,7 +462,11 @@ func TestBodyLeak(t *testing.T) {
 					}
 				}
 				req.Item = Item{Seq: seq}
-				return µ.Status.OK(µ.WithJSON(req.Item))
+				out := µ.NewOutput(http.StatusOK)
+
+				val, _ := json.Marshal(req.Item)
+				out.Body = string(val)
+				return out
 			},
 		)
 	}
@@ -523,6 +483,9 @@ func TestBodyLeak(t *testing.T) {
 			mock.Text(val),
 		)
 		out := foo(req)
-		it.Ok(t).If(out.Error()).Should().Equal(expect)
+
+		it.Then(t).Should(
+			it.Equal(out.Error(), expect),
+		)
 	}
 }

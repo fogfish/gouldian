@@ -19,8 +19,9 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 
@@ -43,22 +44,21 @@ curl http://localhost:8080/file/so/me/va/lue
 */
 
 /*
-
 matches root (/)
 */
 func root() µ.Routable {
 	return µ.GET(
 		µ.URI(),
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(
-				µ.WithText("matches root (/)"),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send("matches root (/)"),
 			)
 		},
 	)
 }
 
 /*
-
 matches path with param (/echo/:text)
 */
 type param struct {
@@ -71,23 +71,24 @@ func path() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("path"), µ.Path(lensEcho)),
 		µ.FMap(func(ctx *µ.Context, req *param) error {
-			return µ.Status.OK(
-				µ.WithText("matches /path/" + req.Text),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send("matches /path/"+req.Text),
 			)
 		}),
 	)
 }
 
 /*
-
 matches root (/file/file+)
 */
 func file() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("file"), µ.PathAll(lensEcho)),
 		µ.FMap(func(ctx *µ.Context, req *param) error {
-			return µ.Status.OK(
-				µ.WithText("matches /file/" + req.Text),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send("matches /file/"+req.Text),
 			)
 		}),
 	)

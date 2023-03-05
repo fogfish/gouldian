@@ -3,8 +3,8 @@ package gouldian_test
 import (
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
 	"github.com/fogfish/it"
 )
 

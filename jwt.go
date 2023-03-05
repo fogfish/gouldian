@@ -21,29 +21,26 @@ package gouldian
 import (
 	"strings"
 
-	"github.com/fogfish/gouldian/internal/optics"
+	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
 /*
-
 JWTClaim is function type to extract claims from token
 */
 type JWTClaim func(Token) string
 
 /*
-
 JWT combinator defines primitives to match JWT token in the HTTP requests.
 
-  endpoint := µ.GET(
-    µ.JWT(µ.Token.Username, "joedoe"),
-  )
+	  endpoint := µ.GET(
+	    µ.JWT(µ.Token.Username, "joedoe"),
+	  )
 
-  endpoint(
-    mock.Input(
-			mock.JWT(µ.Token{"username": "joedoe"})
-    )
-  ) == nil
-
+	  endpoint(
+	    mock.Input(
+				mock.JWT(µ.Token{"username": "joedoe"})
+	    )
+	  ) == nil
 */
 func JWT[T Pattern](claim JWTClaim, val T) Endpoint {
 	switch v := any(val).(type) {
@@ -59,7 +56,6 @@ func JWT[T Pattern](claim JWTClaim, val T) Endpoint {
 type jwtClaim JWTClaim
 
 /*
-
 Is matches a key of JWT to defined literal value
 */
 func (claim jwtClaim) Is(val string) Endpoint {
@@ -77,7 +73,6 @@ func (claim jwtClaim) Is(val string) Endpoint {
 }
 
 /*
-
 To matches key of JWT value to the request context. It uses lens abstraction to
 decode value into Golang type. The Endpoint causes no-match if param
 value cannot be decoded to the target type. See optics.Lens type for details.
@@ -97,17 +92,15 @@ func (claim jwtClaim) To(lens optics.Lens) Endpoint {
 }
 
 /*
-
 JWTMaybe matches key of JWT to the request context. It uses lens abstraction to
 decode value into Golang type. The Endpoint does not cause no-match
 if header value cannot be decoded to the target type. See optics.Lens type for details.
 
-  type MyT struct{ Username string }
+	type MyT struct{ Username string }
 
-  username := µ.Optics1[MyT, string]()
-  e := µ.GET( µ.JWTMaybe(µ.JWT.Sub).Maybe(username) )
-  e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"}))) == nil
-
+	username := µ.Optics1[MyT, string]()
+	e := µ.GET( µ.JWTMaybe(µ.JWT.Sub).Maybe(username) )
+	e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"}))) == nil
 */
 func JWTMaybe(claim JWTClaim, lens optics.Lens) Endpoint {
 	return func(ctx *Context) error {
@@ -124,10 +117,9 @@ func JWTMaybe(claim JWTClaim, lens optics.Lens) Endpoint {
 }
 
 /*
-
 JWTOneOf matches a key of JWT if it contains one of the tokens
 
-  µ.GET( µ.JWTOneOf(µ.JWT.Scope, "ro", "rw") )
+	µ.GET( µ.JWTOneOf(µ.JWT.Scope, "ro", "rw") )
 */
 func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 	return func(ctx *Context) error {
@@ -147,10 +139,9 @@ func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 }
 
 /*
-
 JWTAllOf matches a key of JWT if it contains one of the tokens
 
-  µ.GET( µ.JWTAllOf(µ.JWT.Scope, "ro", "rw") )
+	µ.GET( µ.JWTAllOf(µ.JWT.Scope, "ro", "rw") )
 */
 func JWTAllOf(claim JWTClaim, vals ...string) Endpoint {
 	return func(ctx *Context) error {

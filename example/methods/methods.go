@@ -19,8 +19,9 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 
@@ -69,7 +70,7 @@ func delete() µ.Routable {
 }
 
 func serve(ctx *µ.Context) error {
-	return µ.Status.OK(
-		µ.WithText(ctx.Request.Method + " echo"),
+	return ø.Status.OK(
+		ø.Send(ctx.Request.Method + " echo"),
 	)
 }

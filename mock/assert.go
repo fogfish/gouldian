@@ -6,7 +6,7 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,42 +16,35 @@
 
 */
 
-package main
+package mock
 
 import (
+	"fmt"
 	µ "github.com/fogfish/gouldian/v2"
-	ø "github.com/fogfish/gouldian/v2/output"
-
-	"net/http"
-
-	"github.com/fogfish/gouldian/v2/server/httpd"
 )
 
-func main() {
-	http.ListenAndServe(":8080",
-		httpd.Serve(
-			echo(),
-		),
-	)
+//
+// assert functions for it/v2
+//
 
+func CheckStatusCode(err error, code int) error {
+	switch v := err.(type) {
+	case *µ.Output:
+		if v.Status == code {
+			return nil
+		}
+		return fmt.Errorf("status code %v be equal to %v", v.Status, code)
+
+	default:
+		return fmt.Errorf("type of %T be *µ.Output", err)
+	}
 }
 
-type reqEcho struct {
-	Echo string
-}
+func CheckOutput(err error, expect string) error {
+	assert := fmt.Errorf("%v be equal to %v", err.Error(), expect)
 
-var lensEcho = µ.Optics1[reqEcho, string]()
-
-func echo() µ.Routable {
-	return µ.GET(
-		µ.URI(µ.Path("echo"), µ.Path(lensEcho)),
-		µ.Accept.Text,
-		µ.FMap(func(ctx *µ.Context, req *reqEcho) error {
-			return ø.Status.OK(
-				ø.Server.Set("echo"),
-				ø.ContentType.TextPlain,
-				ø.Send(req.Echo),
-			)
-		}),
-	)
+	if err.Error() != expect {
+		return assert
+	}
+	return nil
 }

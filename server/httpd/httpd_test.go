@@ -20,14 +20,14 @@ package httpd_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"github.com/fogfish/it"
 )
 
@@ -41,7 +41,7 @@ func TestServeMatch(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -61,7 +61,7 @@ func TestServeNoMatch(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -84,7 +84,7 @@ func TestServeUnknownError(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -109,7 +109,7 @@ func TestServeAndCommit(t *testing.T) {
 	out, err2 := http.DefaultClient.Do(req)
 	it.Ok(t).If(err2).Must().Equal(nil)
 
-	msg, err3 := ioutil.ReadAll(out.Body)
+	msg, err3 := io.ReadAll(out.Body)
 	it.Ok(t).If(err3).Must().Equal(nil)
 
 	it.Ok(t).
@@ -124,10 +124,10 @@ func mock() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo")),
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithHeader(headers.Server, "echo"),
-				µ.WithText("echo"),
+			return ø.Status.OK(
+				ø.Server.Set("echo"),
+				ø.ContentType.TextPlain,
+				ø.Send("echo"),
 			)
 		},
 	)

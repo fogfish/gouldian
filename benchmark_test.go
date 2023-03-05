@@ -25,10 +25,10 @@ import (
 	"strings"
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/mock"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 )
 
 //
@@ -183,13 +183,13 @@ var endpoint1 = mock.Endpoint(
 		func(ctx *µ.Context) error {
 			var req MyT1
 			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
+				return ø.Status.BadRequest(ø.Error(err))
 			}
 
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithHeader(headers.Server, "echo"),
-				µ.WithText(req.Name),
+			return ø.Status.OK(
+				ø.Server.Set("echo"),
+				ø.ContentType.TextPlain,
+				ø.Send(req.Name),
 			)
 		},
 	),
@@ -221,13 +221,13 @@ var endpoint5 = mock.Endpoint(
 		func(ctx *µ.Context) error {
 			var req MyT5
 			if err := µ.FromContext(ctx, &req); err != nil {
-				return µ.Status.BadRequest(µ.WithIssue(err))
+				return ø.Status.BadRequest(ø.Error(err))
 			}
 
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithHeader(headers.Server, "echo"),
-				µ.WithText(filepath.Join(req.A, req.B, req.C, req.D, req.E)),
+			return ø.Status.OK(
+				ø.Server.Set("echo"),
+				ø.ContentType.TextPlain,
+				ø.Send(filepath.Join(req.A, req.B, req.C, req.D, req.E)),
 			)
 		},
 	),

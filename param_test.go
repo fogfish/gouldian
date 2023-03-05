@@ -21,10 +21,35 @@ package gouldian_test
 import (
 	"testing"
 
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/mock"
+	µ "github.com/fogfish/gouldian/v2"
+	"github.com/fogfish/gouldian/v2/mock"
 	"github.com/fogfish/it"
+	itt "github.com/fogfish/it/v2"
 )
+
+func TestParams(t *testing.T) {
+	type foobar struct {
+		Foo string `json:"foo"`
+		Bar string `json:"bar"`
+	}
+	type myT struct {
+		Val foobar `content:"form"`
+	}
+	var val myT
+
+	lens := µ.Optics1[myT, foobar]()
+	foo := µ.Params(lens)
+
+	req := mock.Input(mock.URL("/?foo=bar&bar=foo"))
+	err := foo(req)
+
+	itt.Then(t).Should(
+		itt.Nil(err),
+		itt.Nil(µ.FromContext(req, &val)),
+		itt.Equal(val.Val.Foo, "bar"),
+		itt.Equal(val.Val.Bar, "foo"),
+	)
+}
 
 func TestParamIs(t *testing.T) {
 	foo := µ.Param("foo", "bar")

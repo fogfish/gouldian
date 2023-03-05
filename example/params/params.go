@@ -20,8 +20,9 @@ package main
 
 import (
 	"fmt"
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 
@@ -42,7 +43,6 @@ curl http://localhost:8080/echo?v=12345
 */
 
 /*
-
 matches string query parameter /echo?q=text
 */
 type paramString struct {
@@ -56,15 +56,15 @@ func qString() µ.Routable {
 		µ.URI(µ.Path("echo")),
 		µ.Param("q", lensString),
 		µ.FMap(func(ctx *µ.Context, req *paramString) error {
-			return µ.Status.OK(
-				µ.WithText(fmt.Sprintf("query string (%s)", req.Value)),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(fmt.Sprintf("query string (%s)", req.Value)),
 			)
 		}),
 	)
 }
 
 /*
-
 matches integer query parameter /echo?v=number
 */
 type paramInt struct {
@@ -78,8 +78,9 @@ func qInt() µ.Routable {
 		µ.URI(µ.Path("echo")),
 		µ.Param("v", lensInt),
 		µ.FMap(func(ctx *µ.Context, req *paramInt) error {
-			return µ.Status.OK(
-				µ.WithText(fmt.Sprintf("query number (%d)", req.Value)),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send(fmt.Sprintf("query number (%d)", req.Value)),
 			)
 		}),
 	)

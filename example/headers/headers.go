@@ -19,9 +19,9 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian"
-	"github.com/fogfish/gouldian/headers"
-	"github.com/fogfish/gouldian/server/httpd"
+	µ "github.com/fogfish/gouldian/v2"
+	ø "github.com/fogfish/gouldian/v2/output"
+	"github.com/fogfish/gouldian/v2/server/httpd"
 	"net/http"
 )
 
@@ -44,11 +44,11 @@ curl -v http://localhost:8080/echo -H "Accept: application/json"
 func text() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.Accept, headers.TextPlain),
+		µ.Accept.Text,
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.TextPlain),
-				µ.WithText("hello world."),
+			return ø.Status.OK(
+				ø.ContentType.TextPlain,
+				ø.Send("hello world."),
 			)
 		},
 	)
@@ -57,11 +57,15 @@ func text() µ.Routable {
 func json() µ.Routable {
 	return µ.GET(
 		µ.URI(µ.Path("echo")),
-		µ.Header(headers.Accept, headers.ApplicationJSON),
+		µ.Accept.JSON,
 		func(ctx *µ.Context) error {
-			return µ.Status.OK(
-				µ.WithHeader(headers.ContentType, headers.ApplicationJSON),
-				µ.WithText(`{"text": "hellow world."}`),
+			return ø.Status.OK(
+				ø.ContentType.ApplicationJSON,
+				ø.Send(
+					struct {
+						Text string `json:"text"`
+					}{"hellow world."},
+				),
 			)
 		},
 	)

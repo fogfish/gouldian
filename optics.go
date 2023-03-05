@@ -3,7 +3,7 @@ package gouldian
 import (
 	lenses "github.com/fogfish/golem/optics"
 	"github.com/fogfish/golem/pure/hseq"
-	"github.com/fogfish/gouldian/internal/optics"
+	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
 // Lens type

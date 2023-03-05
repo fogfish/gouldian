@@ -20,14 +20,13 @@ package gouldian
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	"github.com/fogfish/gouldian/internal/optics"
+	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
 /*
-
 Context of HTTP request. The context accumulates matched terms of HTTP and
 passes it to destination function.
 */
@@ -36,7 +35,7 @@ type Context struct {
 
 	Request *http.Request
 	values  []string
-	params  Params
+	params  Query
 	payload []byte
 
 	JWT Token
@@ -45,7 +44,6 @@ type Context struct {
 }
 
 /*
-
 NewContext create a new context for HTTP request
 */
 func NewContext(ctx context.Context) *Context {
@@ -57,7 +55,6 @@ func NewContext(ctx context.Context) *Context {
 }
 
 /*
-
 Free the context
 */
 func (ctx *Context) free() {
@@ -66,7 +63,6 @@ func (ctx *Context) free() {
 }
 
 /*
-
 Free the context
 */
 func (ctx *Context) Free() {
@@ -78,10 +74,7 @@ func (ctx *Context) Free() {
 	ctx.morphism = ctx.morphism[:0]
 }
 
-/*
-
-Put injects value to the context
-*/
+// Put injects value to the context
 func (ctx *Context) Put(lens optics.Lens, str string) error {
 	val, err := lens.FromString(str)
 	if err != nil {
@@ -92,10 +85,7 @@ func (ctx *Context) Put(lens optics.Lens, str string) error {
 	return nil
 }
 
-/*
-
-Get decodes context into structure
-*/
+// Get decodes context into structure
 func FromContext[S any](ctx *Context, val *S) error {
 	if err := optics.Morph(ctx.morphism, val); err != nil {
 		return err
@@ -106,7 +96,7 @@ func FromContext[S any](ctx *Context, val *S) error {
 
 func (ctx *Context) cacheBody() error {
 	if ctx.Request.Body != nil {
-		buf, err := ioutil.ReadAll(ctx.Request.Body)
+		buf, err := io.ReadAll(ctx.Request.Body)
 		if err != nil {
 			return err
 		}
