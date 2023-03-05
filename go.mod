@@ -1,6 +1,6 @@
 module github.com/fogfish/gouldian
 
-go 1.18
+go 1.20
 
 require (
 	github.com/ajg/form v1.5.2-0.20200323032839-9aeb3cf462e1
@@ -11,7 +11,6 @@ require (
 
 require (
 	github.com/fogfish/golem v0.9.2
+	github.com/fogfish/it/v2 v2.0.1
 	github.com/fogfish/logger v1.1.0
 )
-
-require github.com/fogfish/it/v2 v2.0.1 // indirect

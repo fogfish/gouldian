@@ -3,8 +3,6 @@ github.com/ajg/form v1.5.2-0.20200323032839-9aeb3cf462e1/go.mod h1:uL1WgH+h2mgNt
 github.com/aws/aws-lambda-go v1.37.0 h1:WXkQ/xhIcXZZ2P5ZBEw+bbAKeCEcb5NtiYpSwVVzIXg=
 github.com/aws/aws-lambda-go v1.37.0/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
-github.com/fogfish/golem v0.9.1 h1:IHBMGrjdOCJOANAVg22BqA7sY8S2Ah/B9M747RjI3Qg=
-github.com/fogfish/golem v0.9.1/go.mod h1:lj7cttUvvjAE4KZU4RzHHw0o2pYozkPqat5ff38u71c=
 github.com/fogfish/golem v0.9.2 h1:tESSlzo+wih7fLfLFFegKOU8l45Ew9A8a9JU84rGtGY=
 github.com/fogfish/golem v0.9.2/go.mod h1:lj7cttUvvjAE4KZU4RzHHw0o2pYozkPqat5ff38u71c=
 github.com/fogfish/guid v1.0.0 h1:Wf19/7IWFAQvuvfJDEc/Jr47OzFm+Mk+zHJnvo6S31k=
