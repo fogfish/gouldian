@@ -336,6 +336,25 @@ func TestContextFree(t *testing.T) {
 	it.Then(t).ShouldNot(it.Nil(err))
 }
 
+func TestOutputFree(t *testing.T) {
+	out := µ.NewOutput(200)
+	out.SetHeader("X-Foo", "bar")
+	out.Body = "test"
+
+	it.Then(t).Should(
+		it.Equal(out.Status, 200),
+		it.Equal(out.GetHeader("X-Foo"), "bar"),
+		it.Equal(out.Body, "test"),
+	)
+
+	out.Free()
+
+	it.Then(t).Should(
+		it.Equal(out.GetHeader("X-Foo"), ""),
+		it.Equal(out.Body, ""),
+	)
+}
+
 func TestHandlerSuccess(t *testing.T) {
 	foo := mock.Endpoint(
 		µ.GET(
