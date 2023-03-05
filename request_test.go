@@ -278,122 +278,28 @@ func TestFMapSuccess(t *testing.T) {
 	err := foo(req)
 
 	it.Then(t).Should(
-		it.Be(func() bool {
-			return err.Error() == "bar"
-		}),
+		mock.CheckOutput(err, "bar"),
 	)
 }
 
-func TestMapSuccess(t *testing.T) {
+func TestFMapFailureParse(t *testing.T) {
 	type T struct{ A string }
-	a := µ.Optics1[T, string]()
 
 	foo := mock.Endpoint(
 		µ.GET(
-			µ.URI(µ.Path("foo"), µ.Path(a)),
-			µ.Map(func(ctx *µ.Context, t *T) (*T, error) {
-				return t, nil
+			µ.URI(µ.Path("foo"), µ.Path("bar")),
+			µ.FMap(func(ctx *µ.Context, t *T) error {
+				out := µ.NewOutput(http.StatusOK)
+				out.Body = t.A
+				return out
 			}),
 		),
 	)
 	req := mock.Input(mock.URL("/foo/bar"))
 	err := foo(req)
 
-	it.Then(t).Should(
-		it.Be(func() bool {
-			return err.Error() == "{\"A\":\"bar\"}"
-		}),
-	)
-}
-
-func TestContextFree(t *testing.T) {
-	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"))))
-	req := mock.Input(mock.URL("/foo"))
-	err := foo(req)
-
-	it.Then(t).Should(it.Nil(err))
-
-	req.Free()
-	err = foo(req)
-
-	it.Then(t).ShouldNot(it.Nil(err))
-}
-
-func TestHandlerSuccess(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo")),
-			func(*µ.Context) error {
-				out := µ.NewOutput(http.StatusOK)
-				out.Body = "bar"
-				return out
-			},
-		),
-	)
-	req := mock.Input(mock.URL("/foo"))
-	err := foo(req)
-
-	it.Then(t).Should(
-		it.Be(func() bool {
-			return err.Error() == "bar"
-		}),
-	)
-}
-
-func TestHandler2Success(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo")),
-			func(*µ.Context) error {
-				out := µ.NewOutput(http.StatusOK)
-				out.Body = "bar"
-				return out
-			},
-		),
-	)
-	bar := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("bar")),
-			func(*µ.Context) error {
-				out := µ.NewOutput(http.StatusOK)
-				out.Body = "foo"
-				return out
-			},
-		),
-	)
-	req := mock.Input(mock.URL("/foo"))
-	err := µ.Endpoints{foo, bar}.Or(req)
-
-	it.Then(t).Should(
-		it.Be(func() bool {
-			return err.Error() == "bar"
-		}),
-	)
-}
-
-func TestHandlerFailure(t *testing.T) {
-	foo := mock.Endpoint(
-		µ.GET(
-			µ.URI(µ.Path("foo")),
-			func(*µ.Context) error {
-				out := µ.NewOutput(http.StatusUnauthorized)
-				out.SetIssue(errors.New(""))
-				return out
-			},
-		),
-	)
-	req := mock.Input(mock.URL("/foo"))
-	err := foo(req)
-
-	it.Then(t).Should(
-		it.Be(func() bool {
-			switch v := err.(type) {
-			case *µ.Output:
-				return v.Status == http.StatusUnauthorized
-			default:
-				return false
-			}
-		}),
+	it.Then(t).ShouldNot(
+		it.Nil(err),
 	)
 }
 
@@ -415,14 +321,93 @@ func TestFMapFailure(t *testing.T) {
 	err := foo(req)
 
 	it.Then(t).Should(
-		it.Be(func() bool {
-			switch v := err.(type) {
-			case *µ.Output:
-				return v.Status == http.StatusUnauthorized
-			default:
-				return false
-			}
-		}),
+		mock.CheckStatusCode(err, http.StatusUnauthorized),
+	)
+}
+
+func TestMapSuccess(t *testing.T) {
+	type T struct{ A string }
+	a := µ.Optics1[T, string]()
+
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo"), µ.Path(a)),
+			µ.Map(func(ctx *µ.Context, t *T) (*T, error) { return t, nil }),
+		),
+	)
+	req := mock.Input(mock.URL("/foo/bar"))
+	err := foo(req)
+
+	it.Then(t).Should(
+		mock.CheckOutput(err, `{"A":"bar"}`),
+	)
+}
+
+func TestContextFree(t *testing.T) {
+	foo := mock.Endpoint(µ.GET(µ.URI(µ.Path("foo"))))
+	req := mock.Input(mock.URL("/foo"))
+	err := foo(req)
+
+	it.Then(t).Should(it.Nil(err))
+
+	req.Free()
+	err = foo(req)
+
+	it.Then(t).ShouldNot(it.Nil(err))
+}
+
+func TestHandlerSuccess(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			mock.Output(http.StatusOK, "bar"),
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+	err := foo(req)
+
+	it.Then(t).Should(
+		mock.CheckOutput(err, "bar"),
+	)
+}
+
+func TestHandler2Success(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			mock.Output(http.StatusOK, "bar"),
+		),
+	)
+	bar := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("bar")),
+			mock.Output(http.StatusOK, "foo"),
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+	err := µ.Endpoints{foo, bar}.Or(req)
+
+	it.Then(t).Should(
+		mock.CheckOutput(err, "bar"),
+	)
+}
+
+func TestHandlerFailure(t *testing.T) {
+	foo := mock.Endpoint(
+		µ.GET(
+			µ.URI(µ.Path("foo")),
+			func(*µ.Context) error {
+				out := µ.NewOutput(http.StatusUnauthorized)
+				out.SetIssue(errors.New(""))
+				return out
+			},
+		),
+	)
+	req := mock.Input(mock.URL("/foo"))
+	err := foo(req)
+
+	it.Then(t).Should(
+		mock.CheckStatusCode(err, http.StatusUnauthorized),
 	)
 }
 
@@ -444,14 +429,7 @@ func TestMapFailure(t *testing.T) {
 	err := foo(req)
 
 	it.Then(t).Should(
-		it.Be(func() bool {
-			switch v := err.(type) {
-			case *µ.Output:
-				return v.Status == http.StatusUnauthorized
-			default:
-				return false
-			}
-		}),
+		mock.CheckStatusCode(err, http.StatusUnauthorized),
 	)
 }
 

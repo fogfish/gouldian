@@ -111,3 +111,11 @@ func JWT(token µ.Token) Mock {
 		return mock
 	}
 }
+
+func Output(code int, body string) µ.Endpoint {
+	return func(*µ.Context) error {
+		out := µ.NewOutput(code)
+		out.Body = body
+		return out
+	}
+}
