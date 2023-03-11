@@ -24,7 +24,7 @@ import (
 	µ "github.com/fogfish/gouldian/v2"
 	"github.com/fogfish/gouldian/v2/mock"
 	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/guid"
+	"github.com/fogfish/guid/v2"
 	"github.com/fogfish/it/v2"
 	"io"
 	"strings"
@@ -32,10 +32,7 @@ import (
 )
 
 func TestPayloads(t *testing.T) {
-	guid.Clock = guid.NewLClock(
-		guid.ConfNodeID(0),
-		guid.ConfClock(func() uint64 { return 0 }),
-	)
+	µ.Sequence = guid.NewClockMock()
 
 	spec := []struct {
 		Result µ.Result
