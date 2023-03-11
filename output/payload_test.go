@@ -47,7 +47,7 @@ func TestPayloads(t *testing.T) {
 		{ø.Send(struct {
 			T string `json:"t"`
 		}{"test"}), `{"t":"test"}`},
-		{ø.Error(errors.New("test")), `{"instance":"N..............1","type":"https://httpstatuses.com/200","status":200,"title":"OK"}`},
+		{ø.Error(errors.New("test")), `{"instance":"N...............","type":"https://httpstatuses.com/200","status":200,"title":"OK"}`},
 	}
 
 	for _, tt := range spec {
