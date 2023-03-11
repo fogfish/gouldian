@@ -25,7 +25,7 @@ import (
 	"net/textproto"
 	"sync"
 
-	"github.com/fogfish/guid"
+	"github.com/fogfish/guid/v2"
 )
 
 // Global pools
@@ -132,6 +132,9 @@ func (out *Output) SetIssue(failure error, title ...string) {
 //		)
 type Result func(*Output) error
 
+// Sequence for generating unique identity
+var Sequence = guid.NewClock()
+
 // Issue implements RFC 7807: Problem Details for HTTP APIs
 type Issue struct {
 	ID     string `json:"instance"`
@@ -143,7 +146,7 @@ type Issue struct {
 // NewIssue creates instance of Issue
 func NewIssue(status int) Issue {
 	return Issue{
-		ID:     guid.G.K(guid.Clock).String(),
+		ID:     guid.G(Sequence).String(),
 		Type:   fmt.Sprintf("https://httpstatuses.com/%d", status),
 		Status: status,
 		Title:  http.StatusText(status),

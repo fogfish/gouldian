@@ -24,7 +24,7 @@ import (
 	µ "github.com/fogfish/gouldian/v2"
 	"github.com/fogfish/gouldian/v2/mock"
 	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/guid"
+	"github.com/fogfish/guid/v2"
 	"github.com/fogfish/it/v2"
 	"io"
 	"strings"
@@ -32,10 +32,7 @@ import (
 )
 
 func TestPayloads(t *testing.T) {
-	guid.Clock = guid.NewLClock(
-		guid.ConfNodeID(0),
-		guid.ConfClock(func() uint64 { return 0 }),
-	)
+	µ.Sequence = guid.NewClockMock()
 
 	spec := []struct {
 		Result µ.Result
@@ -50,7 +47,7 @@ func TestPayloads(t *testing.T) {
 		{ø.Send(struct {
 			T string `json:"t"`
 		}{"test"}), `{"t":"test"}`},
-		{ø.Error(errors.New("test")), `{"instance":"N..............1","type":"https://httpstatuses.com/200","status":200,"title":"OK"}`},
+		{ø.Error(errors.New("test")), `{"instance":"N...............","type":"https://httpstatuses.com/200","status":200,"title":"OK"}`},
 	}
 
 	for _, tt := range spec {
