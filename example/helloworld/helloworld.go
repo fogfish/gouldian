@@ -36,8 +36,8 @@ func hello() µ.Routable {
 		µ.URI(µ.Path("hello")),
 		func(ctx *µ.Context) error {
 			return ø.Status.OK(
-				ø.ContentType.TextPlain,
-				ø.Send("Hello World!"),
+				ø.ContentType.JSON,
+				ø.Send(struct{Text string}{"Hello World!"}),
 			)
 		},
 	)
