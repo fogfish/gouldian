@@ -28,8 +28,8 @@ import (
 	"strconv"
 
 	"github.com/ajg/form"
+	"github.com/fogfish/golem/hseq"
 	"github.com/fogfish/golem/optics"
-	"github.com/fogfish/golem/pure/hseq"
 )
 
 // Value is co-product types matchable by patterns

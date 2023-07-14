@@ -1,8 +1,8 @@
 package gouldian
 
 import (
+	"github.com/fogfish/golem/hseq"
 	lenses "github.com/fogfish/golem/optics"
-	"github.com/fogfish/golem/pure/hseq"
 	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
