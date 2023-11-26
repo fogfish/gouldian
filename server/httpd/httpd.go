@@ -38,7 +38,6 @@ func Serve(endpoints ...µ.Routable) http.Handler {
 		endpoint: µ.NewRoutes(endpoints...).Endpoint(),
 	}
 
-	// root.Println()
 	routes.pool.New = func() interface{} {
 		return µ.NewContext(context.Background())
 	}

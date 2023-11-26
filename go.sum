@@ -3,10 +3,8 @@ github.com/ajg/form v1.5.2-0.20200323032839-9aeb3cf462e1/go.mod h1:uL1WgH+h2mgNt
 github.com/aws/aws-lambda-go v1.41.0 h1:l/5fyVb6Ud9uYd411xdHZzSf2n86TakxzpvIoz7l+3Y=
 github.com/aws/aws-lambda-go v1.41.0/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
-github.com/fogfish/golem/hseq v1.0.2 h1:d3IYa6M2z8fdcNtpoQud7HkvmqVLR8vhQOn7qwm5va4=
-github.com/fogfish/golem/hseq v1.0.2/go.mod h1:N5y7RLLJyL8iNxFOcD6mkciIBx5TJ9mT1fRszr+ByhQ=
-github.com/fogfish/golem/optics v0.10.1 h1:6R5F1N5Djk3kuk/dOZHxZdhQCn6DTeX0s/iviWK6pwU=
-github.com/fogfish/golem/optics v0.10.1/go.mod h1:N497Ekw9jrg6cIZ4ZgJTNkhkwah686Aq11IKGJMtHiM=
+github.com/fogfish/golem/hseq v1.1.2 h1:jgmMSo+d3KUAQr87U6coQtrTHNL4RTd0/qTocn4ReAQ=
+github.com/fogfish/golem/hseq v1.1.2/go.mod h1:N5y7RLLJyL8iNxFOcD6mkciIBx5TJ9mT1fRszr+ByhQ=
 github.com/fogfish/guid/v2 v2.0.4 h1:EZiPlM4UAghqf7DU5/nLEF+iRH7ODe0AiFuYOMRvITQ=
 github.com/fogfish/guid/v2 v2.0.4/go.mod h1:KkZ5T4EE3BqWQJFZBPLSHV/tBe23Xq4KvuPfwtNtepU=
 github.com/fogfish/it v0.9.1/go.mod h1:NQJG4Ygvek85y7zGj0Gny8+6ygAnHjfBORhI7TdQhp4=

@@ -238,7 +238,12 @@ func BenchmarkEndpoint5(mb *testing.B) {
 	mb.ResetTimer()
 
 	for i := 0; i < mb.N; i++ {
-		endpoint5(req5)
+		switch v := endpoint5(req5).(type) {
+		case *µ.Output:
+			v.Free()
+		default:
+			panic(v)
+		}
 	}
 }
 
@@ -544,10 +549,11 @@ func loadRouter(routes []struct{ method, path string }) http.Handler {
 			case seg[0] == ':':
 				segs = append(segs, µ.Path(lens[0]))
 				lens = lens[1:]
-			case len(seq) != 0:
+			case len(seg) != 0:
 				segs = append(segs, µ.Path(seg))
 			}
 		}
+
 		seq = append(seq,
 			µ.Route(
 				µ.URI(segs...),
