@@ -10,11 +10,9 @@ require (
 
 require (
 	github.com/fogfish/golem/hseq v1.1.2
-	github.com/fogfish/golem/optics v0.11.2
+	github.com/fogfish/golem/optics v0.11.1
 	github.com/fogfish/it/v2 v2.0.1
 	github.com/fogfish/logger v1.1.0
 )
-
-replace github.com/fogfish/golem/optics => ../golem/optics
 
 require github.com/fogfish/guid/v2 v2.0.4
