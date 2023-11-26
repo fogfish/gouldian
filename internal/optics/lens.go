@@ -16,9 +16,7 @@
 
 */
 
-/*
-Package optics is an internal, see golem.optics for public api
-*/
+// Package optics is an internal, see golem.optics for public api
 package optics
 
 import (
@@ -26,6 +24,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"unsafe"
 
 	"github.com/ajg/form"
 	"github.com/fogfish/golem/hseq"
@@ -33,7 +32,7 @@ import (
 )
 
 // Value is co-product types matchable by patterns
-// Note: do not extend the structure, optimal size for performance
+// Note: extend it with caution, the structure size is optimized for performance
 // See https://goinbigdata.com/golang-pass-by-pointer-vs-pass-by-value/
 type Value struct {
 	String string
@@ -44,7 +43,7 @@ type Value struct {
 // Lens is composable setter of Value to "some" struct
 type Lens interface {
 	FromString(string) (Value, error)
-	Put(reflect.Value, Value) error
+	Put(any, Value) error
 }
 
 // Morphism is product of Lens and Value
@@ -57,10 +56,8 @@ type Morphism struct {
 type Morphisms []Morphism
 
 func Morph[S any](m Morphisms, s *S) error {
-	g := reflect.ValueOf(s)
-
 	for _, arrow := range m {
-		if err := arrow.Lens.Put(g, arrow.Value); err != nil {
+		if err := arrow.Lens.Put(s, arrow.Value); err != nil {
 			return err
 		}
 	}
@@ -68,39 +65,46 @@ func Morph[S any](m Morphisms, s *S) error {
 	return nil
 }
 
-// Lens to deal with string type
-type lensString[S any] struct{ optics.Reflector[string] }
+// Lens to deal with custom string type
+type lensString[S, A any] struct{ optics.Reflector[A] }
 
-func (l *lensString[S]) Put(s reflect.Value, a Value) error {
-	return l.Reflector.PutValue(s, a.String)
+func (l *lensString[S, A]) Put(s any, a Value) error {
+	var t A
+	*(*string)(unsafe.Pointer(uintptr(unsafe.Pointer(&t)))) = a.String
+
+	l.Reflector.Putt(s, t)
+	return nil
 }
 
-func (l *lensString[S]) FromString(a string) (Value, error) {
+func (l *lensString[S, A]) FromString(a string) (Value, error) {
 	return Value{String: a}, nil
 }
 
 // Lens to deal with custom string type
-type lensStringTyped[S, A any] struct{ optics.Reflector[A] }
+type lensStringPointer[S, A any] struct{ optics.Reflector[A] }
 
-func (l *lensStringTyped[S, A]) Put(s reflect.Value, a Value) error {
+func (l *lensStringPointer[S, A]) Put(s any, a Value) error {
 	var t A
-	r := reflect.ValueOf(&t).Elem()
-	r.SetString(a.String)
-	return l.Reflector.PutValue(s, t)
+	*(**string)(unsafe.Pointer(uintptr(unsafe.Pointer(&t)))) = &a.String
+	l.Reflector.Putt(s, t)
+	return nil
 }
 
-func (l *lensStringTyped[S, A]) FromString(a string) (Value, error) {
+func (l *lensStringPointer[S, A]) FromString(a string) (Value, error) {
 	return Value{String: a}, nil
 }
 
-// Lens to deal with number type
-type lensNumber[S any] struct{ optics.Reflector[int] }
+// Lens to deal with custom number type
+type lensNumber[S, A any] struct{ optics.Reflector[A] }
 
-func (l *lensNumber[S]) Put(s reflect.Value, a Value) error {
-	return l.Reflector.PutValue(s, a.Number)
+func (l *lensNumber[S, A]) Put(s any, a Value) error {
+	var t A
+	*(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(&t)))) = a.Number
+	l.Reflector.Putt(s, t)
+	return nil
 }
 
-func (l *lensNumber[S]) FromString(a string) (Value, error) {
+func (l *lensNumber[S, A]) FromString(a string) (Value, error) {
 	val, err := strconv.Atoi(a)
 	if err != nil {
 		return Value{}, err
@@ -110,16 +114,16 @@ func (l *lensNumber[S]) FromString(a string) (Value, error) {
 }
 
 // Lens to deal with custom number type
-type lensNumberTyped[S, A any] struct{ optics.Reflector[A] }
+type lensNumberPointer[S, A any] struct{ optics.Reflector[A] }
 
-func (l *lensNumberTyped[S, A]) Put(s reflect.Value, a Value) error {
+func (l *lensNumberPointer[S, A]) Put(s any, a Value) error {
 	var t A
-	r := reflect.ValueOf(&t).Elem()
-	r.SetInt(int64(a.Number))
-	return l.Reflector.PutValue(s, t)
+	*(**int)(unsafe.Pointer(uintptr(unsafe.Pointer(&t)))) = &a.Number
+	l.Reflector.Putt(s, t)
+	return nil
 }
 
-func (l *lensNumberTyped[S, A]) FromString(a string) (Value, error) {
+func (l *lensNumberPointer[S, A]) FromString(a string) (Value, error) {
 	val, err := strconv.Atoi(a)
 	if err != nil {
 		return Value{}, err
@@ -128,14 +132,17 @@ func (l *lensNumberTyped[S, A]) FromString(a string) (Value, error) {
 	return Value{Number: val}, nil
 }
 
-// Lens to deal with double type
-type lensDouble[S any] struct{ optics.Reflector[float64] }
+// Lens to deal with custom double type
+type lensDouble[S, A any] struct{ optics.Reflector[A] }
 
-func (l *lensDouble[S]) Put(s reflect.Value, a Value) error {
-	return l.Reflector.PutValue(s, a.Double)
+func (l *lensDouble[S, A]) Put(s any, a Value) error {
+	var t A
+	*(*float64)(unsafe.Pointer(uintptr(unsafe.Pointer(&t)))) = a.Double
+	l.Reflector.Putt(s, t)
+	return nil
 }
 
-func (l *lensDouble[S]) FromString(a string) (Value, error) {
+func (l *lensDouble[S, A]) FromString(a string) (Value, error) {
 	val, err := strconv.ParseFloat(a, 64)
 	if err != nil {
 		return Value{}, err
@@ -145,22 +152,39 @@ func (l *lensDouble[S]) FromString(a string) (Value, error) {
 }
 
 // Lens to deal with custom double type
-type lensDoubleTyped[S, A any] struct{ optics.Reflector[A] }
+type lensDoublePointer[S, A any] struct{ optics.Reflector[A] }
 
-func (l *lensDoubleTyped[S, A]) Put(s reflect.Value, a Value) error {
+func (l *lensDoublePointer[S, A]) Put(s any, a Value) error {
 	var t A
-	r := reflect.ValueOf(&t).Elem()
-	r.SetFloat(a.Double)
-	return l.Reflector.PutValue(s, t)
+	*(**float64)(unsafe.Pointer(uintptr(unsafe.Pointer(&t)))) = &a.Double
+	l.Reflector.Putt(s, t)
+	return nil
 }
 
-func (l *lensDoubleTyped[S, A]) FromString(a string) (Value, error) {
+func (l *lensDoublePointer[S, A]) FromString(a string) (Value, error) {
 	val, err := strconv.ParseFloat(a, 64)
 	if err != nil {
 		return Value{}, err
 	}
 
 	return Value{Double: val}, nil
+}
+
+// Lens to deal with string type
+type lensParser[S any] struct{ optics.Reflector[string] }
+
+func (l *lensParser[S]) Put(s any, a Value) error {
+	val := l.Reflector.Putt(s, a.String)
+	switch err := (val).(type) {
+	case error:
+		return err
+	default:
+		return nil
+	}
+}
+
+func (l *lensParser[S]) FromString(a string) (Value, error) {
+	return Value{String: a}, nil
 }
 
 // lensStructJSON implements lens for complex "product" type
@@ -170,18 +194,18 @@ func newLensStructJSON[A any](r optics.Reflector[A]) optics.Reflector[string] {
 	return &lensStructJSON[A]{r}
 }
 
-func (lens *lensStructJSON[A]) PutValue(s reflect.Value, a string) error {
+func (lens *lensStructJSON[A]) Putt(s any, a string) any {
 	var o A
 
 	if err := json.Unmarshal([]byte(a), &o); err != nil {
 		return err
 	}
 
-	return lens.Reflector.PutValue(s, o)
+	return lens.Reflector.Putt(s, o)
 }
 
-func (lens *lensStructJSON[A]) GetValue(s reflect.Value) string {
-	v, err := json.Marshal(lens.Reflector.GetValue(s))
+func (lens *lensStructJSON[A]) Gett(s any) string {
+	v, err := json.Marshal(lens.Reflector.Gett(s))
 	if err != nil {
 		panic(err)
 	}
@@ -196,18 +220,18 @@ func newLensStructForm[A any](r optics.Reflector[A]) optics.Reflector[string] {
 	return &lensStructForm[A]{r}
 }
 
-func (lens *lensStructForm[A]) PutValue(s reflect.Value, a string) error {
+func (lens *lensStructForm[A]) Putt(s any, a string) any {
 	var o A
 
 	if err := form.DecodeString(&o, a); err != nil {
 		return err
 	}
 
-	return lens.Reflector.PutValue(s, o)
+	return lens.Reflector.Putt(s, o)
 }
 
-func (lens *lensStructForm[A]) GetValue(s reflect.Value) string {
-	v, err := form.EncodeToString(lens.Reflector.GetValue(s))
+func (lens *lensStructForm[A]) Gett(s any) string {
+	v, err := form.EncodeToString(lens.Reflector.Gett(s))
 	if err != nil {
 		panic(err)
 	}
@@ -221,32 +245,32 @@ func NewLens[S, A any](fln func(t hseq.Type[S]) optics.Lens[S, A]) func(t hseq.T
 		ln := fln(t)
 		switch t.PureType.Kind() {
 		case reflect.String:
-			if t.PureType.Name() == "string" {
-				return &lensString[S]{ln.(optics.Reflector[string])}
+			if t.StructField.Type.Kind() == reflect.Pointer {
+				return &lensStringPointer[S, A]{ln.(optics.Reflector[A])}
 			}
-			return &lensStringTyped[S, A]{ln.(optics.Reflector[A])}
+			return &lensString[S, A]{ln.(optics.Reflector[A])}
 		case reflect.Int:
-			if t.PureType.Name() == "int" {
-				return &lensNumber[S]{ln.(optics.Reflector[int])}
+			if t.StructField.Type.Kind() == reflect.Pointer {
+				return &lensNumberPointer[S, A]{ln.(optics.Reflector[A])}
 			}
-			return &lensNumberTyped[S, A]{ln.(optics.Reflector[A])}
+			return &lensNumber[S, A]{ln.(optics.Reflector[A])}
 		case reflect.Float64:
-			if t.PureType.Name() == "float64" {
-				return &lensDouble[S]{ln.(optics.Reflector[float64])}
+			if t.StructField.Type.Kind() == reflect.Pointer {
+				return &lensDoublePointer[S, A]{ln.(optics.Reflector[A])}
 			}
-			return &lensDoubleTyped[S, A]{ln.(optics.Reflector[A])}
+			return &lensDouble[S, A]{ln.(optics.Reflector[A])}
 		case reflect.Struct:
 			switch t.Tag.Get("content") {
 			case "form":
-				return &lensString[S]{newLensStructForm(ln.(optics.Reflector[A]))}
+				return &lensParser[S]{newLensStructForm(ln.(optics.Reflector[A]))}
 			case "application/x-www-form-urlencoded":
-				return &lensString[S]{newLensStructForm(ln.(optics.Reflector[A]))}
+				return &lensParser[S]{newLensStructForm(ln.(optics.Reflector[A]))}
 			case "json":
-				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
+				return &lensParser[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
 			case "application/json":
-				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
+				return &lensParser[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
 			default:
-				return &lensString[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
+				return &lensParser[S]{newLensStructJSON(ln.(optics.Reflector[A]))}
 			}
 		default:
 			panic(fmt.Errorf("type %v is not supported", t.Type))

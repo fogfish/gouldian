@@ -24,81 +24,52 @@ import (
 	"github.com/fogfish/golem/hseq"
 	lenses "github.com/fogfish/golem/optics"
 	"github.com/fogfish/gouldian/v2/internal/optics"
-	"github.com/fogfish/it"
+	"github.com/fogfish/it/v2"
 )
 
-func TestLensStructString(t *testing.T) {
-	type String string
+func structTest[A any](t *testing.T, given string, expect A) {
+	t.Helper()
+
 	type T struct {
-		A string
-		B *string
-		C String
+		A A
+		B *A
 	}
 
-	a, b, c := hseq.FMap3(
-		hseq.New[T]("A", "B", "C"),
-		optics.NewLens(lenses.NewLens[T, string]),
-		optics.NewLens(lenses.NewLens[T, string]),
-		optics.NewLens(lenses.NewLens[T, String]),
+	a, b := hseq.FMap2(
+		hseq.New[T]("A", "B"),
+		optics.NewLens(lenses.NewLens[T, A]),
+		optics.NewLens(lenses.NewLens[T, *A]),
 	)
-	x, _ := a.FromString("a")
-	y, _ := b.FromString("b")
-	z, _ := c.FromString("c")
-
-	t.Run("ByVal", func(t *testing.T) {
-		var v T
-
-		m := optics.Morphisms{
-			{Lens: a, Value: x},
-			{Lens: b, Value: y},
-			{Lens: c, Value: z},
-		}
-		e := optics.Morph(m, &v)
-
-		it.Ok(t).
-			IfNil(e).
-			If(v.A).Equal("a").
-			If(*v.B).Equal("b").
-			If(v.C).Equal(String("c"))
-	})
-}
-
-func TestLensStructInt(t *testing.T) {
-	type Int int
-	type T struct {
-		A int
-		B *int
-		C Int
-	}
-	a, b, c := hseq.FMap3(
-		hseq.New[T]("A", "B", "C"),
-		optics.NewLens(lenses.NewLens[T, int]),
-		optics.NewLens(lenses.NewLens[T, int]),
-		optics.NewLens(lenses.NewLens[T, Int]),
-	)
-	x, err := a.FromString("100")
-	it.Ok(t).If(err).Must().Equal(nil)
-
-	y, err := b.FromString("100")
-	it.Ok(t).If(err).Must().Equal(nil)
-
-	z, err := c.FromString("100")
-	it.Ok(t).If(err).Must().Equal(nil)
+	x, _ := a.FromString(given)
+	y, _ := b.FromString(given)
 
 	var v T
 
 	m := optics.Morphisms{
 		{Lens: a, Value: x},
 		{Lens: b, Value: y},
-		{Lens: c, Value: z},
 	}
-	err = optics.Morph(m, &v)
+	e := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal(100).
-		If(*v.B).Equal(100).
-		If(v.C).Equal(Int(100))
+	it.Then(t).Should(
+		it.Nil(e),
+		it.Equiv(v.A, expect),
+		it.Equiv(*v.B, expect),
+	)
+}
+
+func TestLensStructString(t *testing.T) {
+	type String string
+
+	structTest[string](t, "a", "a")
+	structTest[String](t, "a", "a")
+}
+
+func TestLensStructInt(t *testing.T) {
+	type Int int
+
+	structTest[int](t, "100", 100)
+	structTest[Int](t, "100", 100)
 }
 
 func TestLensStructIntFail(t *testing.T) {
@@ -109,46 +80,16 @@ func TestLensStructIntFail(t *testing.T) {
 		optics.NewLens(lenses.NewLens[T, int]),
 	)
 	_, err := a.FromString("abc")
-	it.Ok(t).If(err).MustNot().Equal(nil)
+	it.Then(t).ShouldNot(
+		it.Nil(err),
+	)
 }
 
 func TestLensStructFloat(t *testing.T) {
 	type Float64 float64
-	type T struct {
-		A float64
-		B *float64
-		C Float64
-	}
-	a, b, c := hseq.FMap3(
-		hseq.New[T]("A", "B", "C"),
-		optics.NewLens(lenses.NewLens[T, float64]),
-		optics.NewLens(lenses.NewLens[T, float64]),
-		optics.NewLens(lenses.NewLens[T, Float64]),
-	)
 
-	x, err := a.FromString("100.0")
-	it.Ok(t).If(err).Must().Equal(nil)
-
-	y, err := b.FromString("100.0")
-	it.Ok(t).If(err).Must().Equal(nil)
-
-	z, err := c.FromString("100.0")
-	it.Ok(t).If(err).Must().Equal(nil)
-
-	var v T
-
-	m := optics.Morphisms{
-		{Lens: a, Value: x},
-		{Lens: b, Value: y},
-		{Lens: c, Value: z},
-	}
-	err = optics.Morph(m, &v)
-
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal(100.0).
-		If(*v.B).Equal(100.0).
-		If(v.C).Equal(Float64(100.0))
+	structTest[float64](t, "100.101", 100.101)
+	structTest[Float64](t, "100.101", 100.101)
 }
 
 func TestLensStructFloatFail(t *testing.T) {
@@ -159,10 +100,20 @@ func TestLensStructFloatFail(t *testing.T) {
 		optics.NewLens(lenses.NewLens[T, float64]),
 	)
 	_, err := a.FromString("abc")
-	it.Ok(t).If(err).MustNot().Equal(nil)
+	it.Then(t).ShouldNot(
+		it.Nil(err),
+	)
 }
 
 func TestLensStructJSON(t *testing.T) {
+	type J struct {
+		X string `json:"x"`
+	}
+
+	structTest[J](t, "{\"x\":\"abc\"}", J{"abc"})
+}
+
+func TestLensStructJSONFailt(t *testing.T) {
 	type J struct {
 		X string `json:"x"`
 	}
@@ -171,15 +122,17 @@ func TestLensStructJSON(t *testing.T) {
 		hseq.New[T]("A"),
 		optics.NewLens(lenses.NewLens[T, J]),
 	)
-	x, _ := a.FromString("{\"x\":\"abc\"}")
-	m := optics.Morphisms{{Lens: a, Value: x}}
+	x, _ := a.FromString("{x:abc}")
 
 	var v T
-	err := optics.Morph(m, &v)
+	m := optics.Morphisms{
+		{Lens: a, Value: x},
+	}
+	e := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A.X).Equal("abc")
+	it.Then(t).ShouldNot(
+		it.Nil(e),
+	)
 }
 
 func TestLensStructForm(t *testing.T) {
@@ -199,23 +152,11 @@ func TestLensStructForm(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A.X).Equal("abc")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A.X, "abc"),
+	)
 }
-
-// func TestLensStructSeq(t *testing.T) {
-// 	type T struct{ A []string }
-// 	a := optics.Lenses1(T{})
-// 	m := optics.Morphism{a: []string{"a", "b", "c"}}
-
-// 	var x T
-// 	err := m.Apply(&x)
-
-// 	it.Ok(t).
-// 		IfNil(err).
-// 		If(x.A).Equal([]string{"a", "b", "c"})
-// }
 
 func TestLenses1(t *testing.T) {
 	type T struct{ A string }
@@ -229,9 +170,10 @@ func TestLenses1(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+	)
 }
 
 func TestLenses2(t *testing.T) {
@@ -255,10 +197,11 @@ func TestLenses2(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+	)
 }
 
 func TestLenses3(t *testing.T) {
@@ -286,11 +229,12 @@ func TestLenses3(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+	)
 }
 
 func TestLenses4(t *testing.T) {
@@ -322,12 +266,13 @@ func TestLenses4(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+		it.Equal(v.D, "d"),
+	)
 }
 
 func TestLenses5(t *testing.T) {
@@ -363,13 +308,14 @@ func TestLenses5(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+		it.Equal(v.D, "d"),
+		it.Equal(v.E, "e"),
+	)
 }
 
 func TestLenses6(t *testing.T) {
@@ -409,14 +355,15 @@ func TestLenses6(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+		it.Equal(v.D, "d"),
+		it.Equal(v.E, "e"),
+		it.Equal(v.F, "f"),
+	)
 }
 
 func TestLenses7(t *testing.T) {
@@ -460,15 +407,16 @@ func TestLenses7(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+		it.Equal(v.D, "d"),
+		it.Equal(v.E, "e"),
+		it.Equal(v.F, "f"),
+		it.Equal(v.G, "g"),
+	)
 }
 
 func TestLenses8(t *testing.T) {
@@ -516,16 +464,17 @@ func TestLenses8(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g").
-		If(v.H).Equal("h")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+		it.Equal(v.D, "d"),
+		it.Equal(v.E, "e"),
+		it.Equal(v.F, "f"),
+		it.Equal(v.G, "g"),
+		it.Equal(v.H, "h"),
+	)
 }
 
 func TestLenses9(t *testing.T) {
@@ -577,15 +526,16 @@ func TestLenses9(t *testing.T) {
 	var v T
 	err := optics.Morph(m, &v)
 
-	it.Ok(t).
-		IfNil(err).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g").
-		If(v.H).Equal("h").
-		If(v.I).Equal("i")
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Equal(v.A, "a"),
+		it.Equal(v.B, "b"),
+		it.Equal(v.C, "c"),
+		it.Equal(v.D, "d"),
+		it.Equal(v.E, "e"),
+		it.Equal(v.F, "f"),
+		it.Equal(v.G, "g"),
+		it.Equal(v.H, "h"),
+		it.Equal(v.I, "i"),
+	)
 }
