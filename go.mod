@@ -1,10 +1,10 @@
 module github.com/fogfish/gouldian/v2
 
-go 1.20
+go 1.21
 
 require (
 	github.com/ajg/form v1.5.2-0.20200323032839-9aeb3cf462e1
-	github.com/aws/aws-lambda-go v1.41.0
+	github.com/aws/aws-lambda-go v1.46.0
 	github.com/fogfish/it v1.0.0
 )
 
