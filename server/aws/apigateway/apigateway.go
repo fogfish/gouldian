@@ -20,6 +20,7 @@ package apigateway
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,14 +32,10 @@ import (
 	"github.com/fogfish/logger"
 )
 
-/*
-Request is events.APIGatewayProxyRequest ⟼ µ.Input
-*/
+// Request is events.APIGatewayProxyRequest ⟼ µ.Input
 func Request(r *events.APIGatewayProxyRequest) *µ.Context {
 	ctx := µ.NewContext(context.Background())
-	body := io.NopCloser(strings.NewReader(r.Body))
-
-	req, err := http.NewRequest(r.HTTPMethod, r.Path, body)
+	req, err := http.NewRequest(r.HTTPMethod, r.Path, requestBody(r))
 	if err != nil {
 		return nil
 	}
@@ -59,15 +56,35 @@ func Request(r *events.APIGatewayProxyRequest) *µ.Context {
 	return ctx
 }
 
+func requestBody(r *events.APIGatewayProxyRequest) io.ReadCloser {
+	reader := strings.NewReader(r.Body)
+
+	if r.IsBase64Encoded {
+		return io.NopCloser(
+			base64.NewDecoder(base64.StdEncoding, reader),
+		)
+	}
+
+	return io.NopCloser(reader)
+}
+
 func jwtFromAuthorizer(r *events.APIGatewayProxyRequest) µ.Token {
-	if r.RequestContext.Authorizer == nil {
+	if r.RequestContext.Authorizer != nil {
+		if jwt, isJwt := r.RequestContext.Authorizer["claims"]; isJwt {
+			switch tkn := jwt.(type) {
+			case map[string]interface{}:
+				return µ.NewToken(tkn)
+			}
+		}
+
 		return nil
 	}
 
-	if jwt, isJwt := r.RequestContext.Authorizer["claims"]; isJwt {
-		switch tkn := jwt.(type) {
-		case map[string]interface{}:
-			return µ.NewToken(tkn)
+	if r.RequestContext.Identity.UserArn != "" {
+		return µ.Token{
+			"iss":      "https://aws.amazon.com/iam",
+			"sub":      r.RequestContext.Identity.User,
+			"username": r.RequestContext.Identity.UserArn,
 		}
 	}
 

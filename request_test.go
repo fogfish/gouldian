@@ -261,6 +261,39 @@ func TestBodyText(t *testing.T) {
 	}
 }
 
+func TestBodyOctetStream(t *testing.T) {
+	spec := []struct {
+		Mock   *µ.Context
+		Expect string
+	}{
+		{
+			mock.Input(
+				mock.Header("Content-Type", "application/octet-stream"),
+				mock.Text("foobar"),
+			),
+			"foobar",
+		},
+	}
+
+	type request struct {
+		FooBar string
+	}
+	var lens = µ.Optics1[request, string]()
+
+	for _, tt := range spec {
+		var req request
+		foo := mock.Endpoint(µ.GET(µ.URI(), µ.Body(lens)))
+		err := foo(tt.Mock)
+
+		it.Then(t).Should(
+			it.Nil(err),
+			it.Nil(µ.FromContext(tt.Mock, &req)),
+			it.Equiv(req.FooBar, tt.Expect),
+		)
+	}
+
+}
+
 func TestFMapSuccess(t *testing.T) {
 	type T struct{ A string }
 	a := µ.Optics1[T, string]()
