@@ -5,10 +5,7 @@ import (
 	"strings"
 )
 
-/*
-
-Node of trie
-*/
+// Node of trie
 type Node struct {
 	Path string   // substring from the route "owned" by the node
 	Heir []*Node  // heir nodes
@@ -38,10 +35,7 @@ func NewRoutes(seq ...Routable) *Node {
 	return root
 }
 
-/*
-
-lookup is hot-path discovery of node at the path
-*/
+// lookup is hot-path discovery of node at the path
 func (root *Node) lookup(path string, values *[]string) (at int, node *Node) {
 	node = root
 lookup:
@@ -58,9 +52,13 @@ lookup:
 				continue
 			}
 
-			if path[at] != heir.Path[0] {
+			if path[at] != heir.Path[0] && heir.Path[0] != ':' {
 				// No match, path cannot match node
 				// this is micro-optimization to reduce overhead of memequal
+				//
+				// Note: (:) exception is added to support variable capture.
+				// This is a special case when same segment is exposed as path and variable,
+				// /a/b, /a/:id/status, /a/:id/*, etc.
 				continue
 			}
 
@@ -72,6 +70,7 @@ lookup:
 				return
 			}
 
+			// The length of heir.Path equal 2 when it is a variable or whildcard matching segment
 			if len(heir.Path) == 2 && (heir.Path[1] == ':' || heir.Path[1] == '_' || heir.Path[1] == '*') {
 				// the node is a wild-card that matches any path segment
 				// let's skip the path until next segment and re-call the value
@@ -83,6 +82,26 @@ lookup:
 
 				if heir.Path[1] == ':' {
 					*values = append(*values, path[at+1:at+p])
+				}
+
+				at = at + p
+				node = heir
+				continue lookup
+			}
+
+			// The length of heir.Path equal 1 when it is a variable or whildcard matching segment
+			// but there is another route that captures same segment as literal, for example /a/:id/status and /a/b
+			if len(heir.Path) == 1 && (heir.Path[0] == ':' || heir.Path[0] == '_' || heir.Path[0] == '*') {
+				// the node is a wild-card that matches any path segment
+				// let's skip the path until next segment and re-call the value
+				p := 1
+				max := len(path[at:])
+				for p < max && path[at+p] != '/' {
+					p++
+				}
+
+				if heir.Path[0] == ':' {
+					*values = append(*values, path[at:at+p])
 				}
 
 				at = at + p
@@ -102,12 +121,9 @@ lookup:
 	}
 }
 
-/*
-
-appendEndpoint to trie under the path.
-Input path is a collection of segments, each segment is either path literal or
-wildcard symbol `:` reserved for lenses
-*/
+// appendEndpoint to trie under the path.
+// Input path is a collection of segments, each segment is either path literal or
+// wildcard symbol `:` reserved for lenses
 func (root *Node) appendEndpoint(path []string, endpoint Endpoint) {
 	if len(path) == 0 {
 		_, n := root.appendTo("/")
@@ -148,11 +164,8 @@ func (root *Node) appendEndpoint(path []string, endpoint Endpoint) {
 	}
 }
 
-/*
-
-appendTo finds the node in trie where to add path (or segment).
-It returns the candidate node and length of "consumed" path
-*/
+// appendTo finds the node in trie where to add path (or segment).
+// It returns the candidate node and length of "consumed" path
 func (root *Node) appendTo(path string) (at int, node *Node) {
 	node = root
 lookup:
@@ -215,10 +228,7 @@ func (root *Node) heirByPath(path string) *Node {
 	return nil
 }
 
-/*
-
-Walk through trie, use for debug purposes only
-*/
+// Walk through trie, use for debug purposes only
 func (root *Node) Walk(f func(int, *Node)) {
 	walk(root, 0, f)
 }

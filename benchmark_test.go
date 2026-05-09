@@ -571,18 +571,18 @@ func benchRoutes(b *testing.B, router http.Handler, routes []struct{ method, pat
 	r, _ := http.NewRequest("GET", "/", nil)
 	u := r.URL
 	rq := u.RawQuery
+	n := len(routes)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		for _, route := range routes {
-			r.Method = route.method
-			r.RequestURI = route.path
-			u.Path = route.path
-			u.RawQuery = rq
-			router.ServeHTTP(w, r)
-		}
+		route := routes[i%n]
+		r.Method = route.method
+		r.RequestURI = route.path
+		u.Path = route.path
+		u.RawQuery = rq
+		router.ServeHTTP(w, r)
 	}
 }
 
