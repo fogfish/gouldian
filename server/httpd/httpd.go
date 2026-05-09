@@ -34,11 +34,12 @@ Serve builds http.Handler for sequence of endpoints
 	http.ListenAndServe(":8080", httpd.Server( ... ))
 */
 func Serve(endpoints ...µ.Routable) http.Handler {
+	rts := µ.NewRoutes(endpoints...)
 	routes := &routes{
-		endpoint: µ.NewRoutes(endpoints...).Endpoint(),
+		endpoint: rts.Endpoint(),
 	}
 
-	routes.pool.New = func() interface{} {
+	routes.pool.New = func() any {
 		return µ.NewContext(context.Background())
 	}
 
