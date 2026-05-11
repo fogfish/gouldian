@@ -18,9 +18,7 @@
 
 package gouldian
 
-/*
-Pattern is a union type of allowed params to matcher functions
-*/
+// Pattern is a union type of allowed params to matcher functions
 type Pattern interface{ string | Lens }
 
 // Query of HTTP request
@@ -36,9 +34,7 @@ func (query Query) Get(key string) (string, bool) {
 	return v[0], exists
 }
 
-/*
-Token is a container for access token
-*/
+// Token is a container for access token
 type Token map[string]string
 
 // Jti is unique JWT token identity
@@ -62,9 +58,7 @@ func (t Token) Username() string { return t["username"] }
 // ClientID associated with token
 func (t Token) ClientID() string { return t["client_id"] }
 
-/*
-NewToken creates access token object
-*/
+// NewToken creates access token object
 func NewToken(raw map[string]interface{}) Token {
 	asString := func(id string) string {
 		if val, ok := raw[id]; ok {
@@ -73,13 +67,12 @@ func NewToken(raw map[string]interface{}) Token {
 		return ""
 	}
 
-	return Token{
-		"jti":       asString("jti"),
-		"iss":       asString("iss"),
-		"exp":       asString("exp"),
-		"sub":       asString("sub"),
-		"scope":     asString("scope"),
-		"username":  asString("username"),
-		"client_id": asString("client_id"),
+	t := make(Token)
+	for k := range raw {
+		if v := asString(k); v != "" {
+			t[k] = v
+		}
 	}
+
+	return t
 }
