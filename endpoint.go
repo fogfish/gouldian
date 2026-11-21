@@ -64,8 +64,11 @@ func (a Endpoint) Then(b Endpoint) Endpoint {
 // Or builds co-product Endpoint
 func (a Endpoint) Or(b Endpoint) Endpoint {
 	return func(http *Context) (err error) {
+		// bindings captured by a rejected branch must not reach the next one
+		mark := len(http.morphism)
 		switch err := a(http).(type) {
 		case NoMatch:
+			http.morphism = http.morphism[:mark]
 			return b(http)
 		default:
 			return err
@@ -123,10 +126,13 @@ func (seq Endpoints) Join(ctx *Context) (err error) {
 Or builds co-product endpoint from sequence
 */
 func (seq Endpoints) Or(ctx *Context) (err error) {
+	// bindings captured by a rejected branch must not reach the next one
+	mark := len(ctx.morphism)
 	for _, f := range seq {
 		x := f(ctx)
 		switch err := x.(type) {
 		case NoMatch:
+			ctx.morphism = ctx.morphism[:mark]
 			continue
 		default:
 			return err

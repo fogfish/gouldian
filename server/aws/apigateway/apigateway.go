@@ -134,7 +134,8 @@ func Serve(endpoints ...µ.Routable) func(events.APIGatewayProxyRequest) (events
 
 func output(out *µ.Output, req *µ.Context) (events.APIGatewayProxyResponse, error) {
 	if out.Failure != nil && req != nil && req.Request != nil {
-		logger.Error("%s %v", req.Request.URL, out.Failure)
+		// never log the query string, it may carry tokens or personal data
+		logger.Error("%s %v", req.Request.URL.Path, out.Failure)
 	}
 
 	evt := events.APIGatewayProxyResponse{
