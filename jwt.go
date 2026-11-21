@@ -19,6 +19,7 @@
 package gouldian
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/fogfish/gouldian/v2/internal/optics"
@@ -117,7 +118,9 @@ func JWTMaybe(claim JWTClaim, lens optics.Lens) Endpoint {
 }
 
 /*
-JWTOneOf matches a key of JWT if it contains one of the tokens
+JWTOneOf matches a key of JWT if it contains one of the tokens.
+The claim is a space-delimited list (e.g. OAuth scope), tokens are compared
+as whole words, `ro` does not match `prod:write`.
 
 	µ.GET( µ.JWTOneOf(µ.JWT.Scope, "ro", "rw") )
 */
@@ -127,9 +130,9 @@ func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 			return ErrNoMatch
 		}
 
-		val := claim(ctx.JWT)
+		val := strings.Fields(claim(ctx.JWT))
 		for _, x := range vals {
-			if strings.Contains(val, x) {
+			if slices.Contains(val, x) {
 				return nil
 			}
 		}
@@ -139,7 +142,9 @@ func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 }
 
 /*
-JWTAllOf matches a key of JWT if it contains one of the tokens
+JWTAllOf matches a key of JWT if it contains all of the tokens.
+The claim is a space-delimited list (e.g. OAuth scope), tokens are compared
+as whole words, `ro` does not match `prod:write`.
 
 	µ.GET( µ.JWTAllOf(µ.JWT.Scope, "ro", "rw") )
 */
@@ -149,9 +154,9 @@ func JWTAllOf(claim JWTClaim, vals ...string) Endpoint {
 			return ErrNoMatch
 		}
 
-		val := claim(ctx.JWT)
+		val := strings.Fields(claim(ctx.JWT))
 		for _, x := range vals {
-			if !strings.Contains(val, x) {
+			if !slices.Contains(val, x) {
 				return ErrNoMatch
 			}
 		}

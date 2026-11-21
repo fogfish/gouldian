@@ -18,6 +18,11 @@
 
 package gouldian
 
+import (
+	"encoding/json"
+	"strconv"
+)
+
 // Pattern is a union type of allowed params to matcher functions
 type Pattern interface{ string | Lens }
 
@@ -58,19 +63,31 @@ func (t Token) Username() string { return t["username"] }
 // ClientID associated with token
 func (t Token) ClientID() string { return t["client_id"] }
 
-// NewToken creates access token object
+// NewToken creates access token object.
+// Non-string claims (e.g. numeric exp, iat, nbf) are converted to
+// their string form, they never cause a panic. Claims of other types
+// (objects, arrays, null) are ignored.
 func NewToken(raw map[string]interface{}) Token {
-	asString := func(id string) string {
-		if val, ok := raw[id]; ok {
-			return val.(string)
-		}
-		return ""
-	}
-
 	t := make(Token)
-	for k := range raw {
-		if v := asString(k); v != "" {
-			t[k] = v
+	for k, v := range raw {
+		var s string
+		switch x := v.(type) {
+		case string:
+			s = x
+		case float64:
+			s = strconv.FormatFloat(x, 'f', -1, 64)
+		case int:
+			s = strconv.Itoa(x)
+		case int64:
+			s = strconv.FormatInt(x, 10)
+		case json.Number:
+			s = x.String()
+		case bool:
+			s = strconv.FormatBool(x)
+		}
+
+		if s != "" {
+			t[k] = s
 		}
 	}
 

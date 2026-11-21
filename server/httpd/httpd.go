@@ -92,7 +92,8 @@ func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (routes *routes) output(w http.ResponseWriter, r *http.Request, out *µ.Output) {
 	if out.Failure != nil {
-		logger.Error("%s %v", r.RequestURI, out.Failure)
+		// never log the query string, it may carry tokens or personal data
+		logger.Error("%s %v", r.URL.Path, out.Failure)
 	}
 
 	for _, h := range out.Headers {
