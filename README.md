@@ -1,7 +1,8 @@
 <p align="center">
   <img src="./doc/gouldian-v2.svg" height="120" />
   <h3 align="center">µ-Gouldian</h3>
-  <p align="center"><strong>Go combinator library for building containerized and serverless HTTP services.</strong></p>
+  <p align="center"><strong>A typed, declarative HTTP router for Go that runs the same code on net/http and AWS Lambda. 87 ns per request on a 203-route API, zero allocations, within 1.4× of the fastest router, while binding parameters into structs.</strong></p>
+  <p align="center">You don't pay for correctness: 404/405/406/415, RFC 9457 problems and safe defaults are built in.</p>
 
   <p align="center">
     <!-- Version -->

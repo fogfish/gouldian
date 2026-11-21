@@ -191,7 +191,7 @@ func (s *Server) safeHandle(c *Context) (out *Output) {
 	if s.recover {
 		defer func() {
 			if r := recover(); r != nil {
-				out = NewOutput(http.StatusInternalServerError)
+				out = c.output(http.StatusInternalServerError)
 				out.Failure = fmt.Errorf("panic: %v", r)
 				out.stack = string(debug.Stack())
 				out.render = true
@@ -216,7 +216,7 @@ func (s *Server) handle(c *Context) *Output {
 			if req.URL.RawQuery != "" {
 				target += "?" + req.URL.RawQuery
 			}
-			out := NewOutput(http.StatusPermanentRedirect)
+			out := c.output(http.StatusPermanentRedirect)
 			out.SetHeader("Location", target)
 			return out
 		case Ignore:
@@ -233,7 +233,7 @@ func (s *Server) handle(c *Context) *Output {
 func (s *Server) output(c *Context, err error) *Output {
 	switch v := err.(type) {
 	case nil:
-		return NewOutput(http.StatusNoContent)
+		return c.output(http.StatusNoContent)
 	case *Output:
 		return v
 	case *Failure:
@@ -241,7 +241,7 @@ func (s *Server) output(c *Context, err error) *Output {
 		if status == 0 {
 			status = http.StatusBadRequest
 		}
-		out := NewOutput(status)
+		out := c.output(status)
 		out.Failure = v
 		out.render = true
 		for key, vals := range v.Header {
@@ -258,7 +258,7 @@ func (s *Server) output(c *Context, err error) *Output {
 			return o
 		}
 
-		out := NewOutput(http.StatusInternalServerError)
+		out := c.output(http.StatusInternalServerError)
 		out.Failure = err
 		out.render = true
 		return out
@@ -271,12 +271,12 @@ func (s *Server) noMatch(c *Context, reason NoMatch) *Output {
 	case NoMatchMethod:
 		allow := allowed(c.allow)
 		if c.Request.Method == http.MethodOptions {
-			out := NewOutput(http.StatusNoContent)
+			out := c.output(http.StatusNoContent)
 			out.SetHeader("Allow", strings.Join(allow, ", "))
 			out.preflight = allow
 			return out
 		}
-		out := NewOutput(http.StatusMethodNotAllowed)
+		out := c.output(http.StatusMethodNotAllowed)
 		out.SetHeader("Allow", strings.Join(allow, ", "))
 		out.reason = reason
 		out.render = true
@@ -289,7 +289,7 @@ func (s *Server) noMatch(c *Context, reason NoMatch) *Output {
 		status = http.StatusNotFound
 	}
 
-	out := NewOutput(status)
+	out := c.output(status)
 	out.reason = reason
 	out.render = true
 	return out
