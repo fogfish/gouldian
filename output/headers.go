@@ -16,13 +16,13 @@
 
 */
 
-package emitter
+package output
 
 import (
 	"strconv"
 	"time"
 
-	µ "github.com/fogfish/gouldian/v2"
+	µ "github.com/fogfish/gouldian/v3"
 )
 
 // Header defines HTTP headers to the request

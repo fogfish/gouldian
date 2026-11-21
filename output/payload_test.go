@@ -16,15 +16,14 @@
 
 */
 
-package emitter_test
+package output_test
 
 import (
 	"bytes"
 	"errors"
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/guid/v2"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	ø "github.com/fogfish/gouldian/v3/output"
 	"github.com/fogfish/it/v2"
 	"io"
 	"strings"
@@ -32,8 +31,6 @@ import (
 )
 
 func TestPayloads(t *testing.T) {
-	µ.Sequence = guid.NewClockMock()
-
 	spec := []struct {
 		Result µ.Result
 		Body   string
@@ -47,7 +44,6 @@ func TestPayloads(t *testing.T) {
 		{ø.Send(struct {
 			T string `json:"t"`
 		}{"test"}), `{"t":"test"}`},
-		{ø.Error(errors.New("test")), `{"instance":"N...............","type":"https://httpstatuses.com/200","status":200,"title":"OK"}`},
 	}
 
 	for _, tt := range spec {
@@ -57,7 +53,7 @@ func TestPayloads(t *testing.T) {
 
 		it.Then(t).Should(
 			it.True(ok),
-			it.Equal(out.Body, tt.Body),
+			it.Equal(string(out.Body), tt.Body),
 		)
 	}
 }
@@ -90,7 +86,41 @@ func TestPayloadCodecs(t *testing.T) {
 
 		it.Then(t).Should(
 			it.True(ok),
-			it.Equal(out.Body, tt.Body),
+			it.Equal(string(out.Body), tt.Body),
 		)
 	}
+}
+
+func TestErrorAttachesCause(t *testing.T) {
+	cause := errors.New("test")
+	out := ø.Status.BadRequest(ø.Error(cause)).(*µ.Output)
+
+	it.Then(t).
+		Should(it.Equal(out.Status, 400)).
+		Should(it.True(errors.Is(out, cause))).
+		Should(it.Equal(len(out.Body), 0))
+}
+
+func TestSendBinary(t *testing.T) {
+	png := []byte{0x89, 'P', 'N', 'G', 0, 0xff, 0xfe}
+	out := ø.Status.OK(ø.ContentType.Set("image/png"), ø.Send(png)).(*µ.Output)
+
+	it.Then(t).
+		Should(it.Equiv(out.Body, png)).
+		Should(it.Equal(out.GetHeader("Content-Length"), "7"))
+}
+
+func TestResultErrorPropagates(t *testing.T) {
+	boom := errors.New("boom")
+	err := ø.Status.OK(func(*µ.Output) error { return boom })
+
+	it.Then(t).Should(it.Equal(err, boom))
+}
+
+func TestSerializationFailureIs500(t *testing.T) {
+	out := ø.Status.OK(ø.Send(make(chan int))).(*µ.Output)
+
+	it.Then(t).
+		Should(it.Equal(out.Status, 500)).
+		ShouldNot(it.Nil(out.Failure))
 }

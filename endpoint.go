@@ -19,16 +19,20 @@
 package gouldian
 
 /*
-
 Endpoint is a composable function that abstract HTTP endpoint.
 The function takes HTTP request and returns value of some type:
 `Context => Output`.
 
 ↣ `Context` is a wrapper over HTTP request with additional context.
 
-↣ `Output` is sum type that represents if it is matched on a given input
-or not. The library uses `error` type to represent both valid and invalid
-variants.
+↣ `Output` is sum type that represents the outcome of the endpoint:
+
+	nil       matched, continue the product
+	NoMatch   not my route, Or tries the next endpoint (zero allocation)
+	*Failure  my route, bad input (malformed value, empty body, ...),
+	          terminal, Or does not try other endpoints
+	*Output   terminal response of the handler
+	error     any other error, it is 500
 
 Any `Endpoint A` can be composed with `Endpoint B` into new `Endpoint C`.
 It supports two combinators: and-then, or-else.
@@ -37,17 +41,8 @@ It supports two combinators: and-then, or-else.
 if each composed function successfully matches it.
 
 ↣ Use `or-else` to build co-product Endpoint. The co-product is also known
-as sum-type matches first successful function.
-
-Endpoint life-cycle - each incoming HTTP request is wrapped with `Input`
-and applied to an endpoint. A returned error-like results is checked
-against successful Output or NoMatch error. All these machinery is handled
-by the libray, you should only dare to declare Endpoint from ready made
-primitives.
-
-gouldian library delivers set of built-in endpoints to deal with HTTP
-request processing.
-
+as sum-type matches first successful function. A branch that does not match
+leaves no traces in the context.
 */
 type Endpoint func(*Context) error
 
@@ -63,54 +58,28 @@ func (a Endpoint) Then(b Endpoint) Endpoint {
 
 // Or builds co-product Endpoint
 func (a Endpoint) Or(b Endpoint) Endpoint {
-	return func(http *Context) (err error) {
+	return func(http *Context) error {
 		// bindings captured by a rejected branch must not reach the next one
 		mark := len(http.morphism)
-		switch err := a(http).(type) {
-		case NoMatch:
-			http.morphism = http.morphism[:mark]
-			return b(http)
-		default:
+		err := a(http)
+		na, isNoMatch := err.(NoMatch)
+		if !isNoMatch {
 			return err
 		}
+
+		http.rollback(mark)
+		err = b(http)
+		if nb, ok := err.(NoMatch); ok && na > nb {
+			return na
+		}
+		return err
 	}
 }
 
-/*
-
-Routable is endpoint with routing metadata
-*/
-type Routable func() ([]string, Endpoint)
-
-/*
-
-Router is data structure that holds routing information,
-convertable to Endpoint
-*/
-type Router interface {
-	Endpoint() Endpoint
-}
-
-// NoMatch is returned by Endpoint if Context is not matched.
-type NoMatch int
-
-func (err NoMatch) Error() string {
-	return "No Match"
-}
-
-// ErrNoMatch constant
-var ErrNoMatch error = NoMatch(255)
-
-/*
-
-Endpoints is sequence of Endpoints
-*/
+// Endpoints is sequence of Endpoints
 type Endpoints []Endpoint
 
-/*
-
-Join builds product endpoint from sequence
-*/
+// Join builds product endpoint from sequence
 func (seq Endpoints) Join(ctx *Context) (err error) {
 	for _, f := range seq {
 		err = f(ctx)
@@ -121,34 +90,25 @@ func (seq Endpoints) Join(ctx *Context) (err error) {
 	return nil
 }
 
-/*
-
-Or builds co-product endpoint from sequence
-*/
-func (seq Endpoints) Or(ctx *Context) (err error) {
+// Or builds co-product endpoint from sequence
+func (seq Endpoints) Or(ctx *Context) error {
 	// bindings captured by a rejected branch must not reach the next one
 	mark := len(ctx.morphism)
+	reason := NoMatchAny
 	for _, f := range seq {
-		x := f(ctx)
-		switch err := x.(type) {
-		case NoMatch:
-			ctx.morphism = ctx.morphism[:mark]
-			continue
-		default:
+		err := f(ctx)
+		no, isNoMatch := err.(NoMatch)
+		if !isNoMatch {
 			return err
 		}
+		ctx.rollback(mark)
+		reason = max(reason, no)
 	}
-	return ErrNoMatch
+	return reason
 }
 
-/*
-
-Join builds product endpoint from sequence
-*/
+// Join builds product endpoint from sequence
 func Join(seq ...Endpoint) Endpoint { return Endpoints(seq).Join }
 
-/*
-
-Or builds co-product endpoint from sequence
-*/
+// Or builds co-product endpoint from sequence
 func Or(seq ...Endpoint) Endpoint { return Endpoints(seq).Or }

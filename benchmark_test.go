@@ -25,10 +25,10 @@ import (
 	"strings"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/gouldian/v2/server/httpd"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	ø "github.com/fogfish/gouldian/v3/output"
+	"github.com/fogfish/gouldian/v3/server/httpd"
 )
 
 //
@@ -555,9 +555,8 @@ func loadRouter(routes []struct{ method, path string }) http.Handler {
 		}
 
 		seq = append(seq,
-			µ.Route(
+			µ.HTTP(ep.method,
 				µ.URI(segs...),
-				µ.Method(ep.method),
 				µ.FMap(githubHandle),
 			),
 		)

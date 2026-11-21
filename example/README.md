@@ -4,7 +4,7 @@ The folders contains number of ready-to-run examples. Use the following command 
 
 ```bash
 cd name-of-example
-go run name-of-example.go
+go run name-of-example.go   # logs the mounted routes at start (µ.WithLogRoutes(true))
 ```
 
 Each of the following example becomes available at `http://localhost:8080`, use `curl` to evaluate behavior. 

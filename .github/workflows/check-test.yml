@@ -19,22 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+      - uses: actions/checkout@v4
+
+      ## the toolchain is defined by go.mod, CI never drifts from the module
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version-file: go.mod
 
-      - uses: actions/checkout@v4
-     
       - name: go build
-        run: |
-          go build ./...
-    
+        run: go build ./...
+
+      ## the examples (directory example/) are tested too
       - name: go test
-        run: |
-          go test -v -coverprofile=profile.cov $(go list ./... | grep -v /examples/)
-        env:
-          ## GOPATH required to build serverless app inside unittest 
-          GOPATH: /home/runner/work/${{ github.event.repository.name }}/go
+        run: go test -race -coverpkg=./... -coverprofile=profile.cov ./...
+
+      ## internal/optics writes struct fields through unsafe.Pointer
+      - name: go test checkptr
+        run: go test -gcflags=all=-d=checkptr ./internal/... .
 
       - uses: shogo82148/actions-goveralls@v1
         continue-on-error: true

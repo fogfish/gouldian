@@ -3,9 +3,9 @@ package gouldian_test
 import (
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	"github.com/fogfish/it/v2"
 )
 
 func TestLenses1(t *testing.T) {
@@ -16,10 +16,10 @@ func TestLenses1(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a"))
 }
 
 func TestLenses2(t *testing.T) {
@@ -30,11 +30,11 @@ func TestLenses2(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b"))
 }
 
 func TestLenses3(t *testing.T) {
@@ -45,12 +45,12 @@ func TestLenses3(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c"))
 }
 
 func TestLenses4(t *testing.T) {
@@ -61,13 +61,13 @@ func TestLenses4(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c/d"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c")).
+		Should(it.Equal(v.D, "d"))
 }
 
 func TestLenses5(t *testing.T) {
@@ -78,14 +78,14 @@ func TestLenses5(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c/d/e"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c")).
+		Should(it.Equal(v.D, "d")).
+		Should(it.Equal(v.E, "e"))
 }
 
 func TestLenses6(t *testing.T) {
@@ -96,15 +96,15 @@ func TestLenses6(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c/d/e/f"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c")).
+		Should(it.Equal(v.D, "d")).
+		Should(it.Equal(v.E, "e")).
+		Should(it.Equal(v.F, "f"))
 }
 
 func TestLenses7(t *testing.T) {
@@ -115,16 +115,16 @@ func TestLenses7(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c/d/e/f/g"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c")).
+		Should(it.Equal(v.D, "d")).
+		Should(it.Equal(v.E, "e")).
+		Should(it.Equal(v.F, "f")).
+		Should(it.Equal(v.G, "g"))
 }
 
 func TestLenses8(t *testing.T) {
@@ -135,17 +135,17 @@ func TestLenses8(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c/d/e/f/g/h"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g").
-		If(v.H).Equal("h")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c")).
+		Should(it.Equal(v.D, "d")).
+		Should(it.Equal(v.E, "e")).
+		Should(it.Equal(v.F, "f")).
+		Should(it.Equal(v.G, "g")).
+		Should(it.Equal(v.H, "h"))
 }
 
 func TestLenses9(t *testing.T) {
@@ -156,16 +156,16 @@ func TestLenses9(t *testing.T) {
 	req := mock.Input(mock.URL("/t/a/b/c/d/e/f/g/h/i"))
 
 	var v T
-	it.Ok(t).
-		If(foo(req)).Should().Equal(nil).
-		If(µ.FromContext(req, &v)).Should().Equal(nil).
-		If(v.A).Equal("a").
-		If(v.B).Equal("b").
-		If(v.C).Equal("c").
-		If(v.D).Equal("d").
-		If(v.E).Equal("e").
-		If(v.F).Equal("f").
-		If(v.G).Equal("g").
-		If(v.H).Equal("h").
-		If(v.I).Equal("i")
+	it.Then(t).
+		Should(it.Equal(foo(req), nil)).
+		Should(it.Equal(µ.FromContext(req, &v), nil)).
+		Should(it.Equal(v.A, "a")).
+		Should(it.Equal(v.B, "b")).
+		Should(it.Equal(v.C, "c")).
+		Should(it.Equal(v.D, "d")).
+		Should(it.Equal(v.E, "e")).
+		Should(it.Equal(v.F, "f")).
+		Should(it.Equal(v.G, "g")).
+		Should(it.Equal(v.H, "h")).
+		Should(it.Equal(v.I, "i"))
 }

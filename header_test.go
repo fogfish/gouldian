@@ -23,11 +23,10 @@ import (
 	"testing"
 	"time"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
 
-	"github.com/fogfish/it"
-	itt "github.com/fogfish/it/v2"
+	"github.com/fogfish/it/v2"
 )
 
 func TestHeaderProduct(t *testing.T) {
@@ -42,8 +41,8 @@ func TestHeaderProduct(t *testing.T) {
 			mock.Header("X-Bar", "Foo"),
 		)
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil))
 	})
 
 	t.Run("incorrect", func(t *testing.T) {
@@ -52,8 +51,8 @@ func TestHeaderProduct(t *testing.T) {
 			mock.Header("X-Bar", "Foo"),
 		)
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("some", func(t *testing.T) {
@@ -61,15 +60,15 @@ func TestHeaderProduct(t *testing.T) {
 			mock.Header("X-Foo", "Bar"),
 		)
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("none", func(t *testing.T) {
 		req := mock.Input()
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -85,8 +84,8 @@ func TestHeaderCoProduct(t *testing.T) {
 			mock.Header("X-Bar", "Foo"),
 		)
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil))
 	})
 
 	t.Run("incorrect", func(t *testing.T) {
@@ -95,8 +94,8 @@ func TestHeaderCoProduct(t *testing.T) {
 			mock.Header("X-Bar", "Foo"),
 		)
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil))
 	})
 
 	t.Run("some", func(t *testing.T) {
@@ -104,15 +103,15 @@ func TestHeaderCoProduct(t *testing.T) {
 			mock.Header("X-Foo", "Bar"),
 		)
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil))
 	})
 
 	t.Run("none", func(t *testing.T) {
 		req := mock.Input()
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -171,8 +170,8 @@ func TestHeadersMatch(t *testing.T) {
 	for _, tt := range spec {
 		req := mock.Input(mock.Header(tt.Header, tt.Value))
 		err := tt.Endpoint(req)
-		itt.Then(t).Should(
-			itt.Nil(err),
+		it.Then(t).Should(
+			it.Nil(err),
 		)
 	}
 }
@@ -196,8 +195,8 @@ func TestHeadersNoMatch(t *testing.T) {
 	for _, tt := range spec {
 		req := mock.Input(mock.Header(tt.Header, tt.Value))
 		err := tt.Endpoint(req)
-		itt.Then(t).ShouldNot(
-			itt.Nil(err),
+		it.Then(t).ShouldNot(
+			it.Nil(err),
 		)
 	}
 }
@@ -212,27 +211,27 @@ func TestHeaderString(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Value", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("bar")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "bar"))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Value", "1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("1")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "1"))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.Header("X-Foo", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -246,20 +245,20 @@ func TestHeaderMaybeString(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Value", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("bar")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "bar"))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Foo", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, ""))
 	})
 }
 
@@ -272,25 +271,25 @@ func TestHeaderInt(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.Header("X-Value", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Value", "1024"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1024)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1024))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.Header("X-Foo", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -304,30 +303,30 @@ func TestHeaderMaybeInt(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Value", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(0)
+		it.Then(t).
+			Should(it.True(isFailure(foo(req)))).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 0))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Value", "1024"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1024)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1024))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.Header("X-Foo", "bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(0)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 0))
 	})
 }
 
@@ -343,29 +342,29 @@ func TestHeaderAuthorize(t *testing.T) {
 	t.Run("bearer", func(t *testing.T) {
 		req := mock.Input(mock.Header("Authorization", "Bearer foo"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil))
 	})
 
 	t.Run("invalid", func(t *testing.T) {
 		req := mock.Input(mock.Header("Authorization", "Digest_foo"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.Header("Authorization", "Bearer bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("noheader", func(t *testing.T) {
 		req := mock.Input()
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 }
@@ -381,8 +380,8 @@ func TestHeaderContentJSON(t *testing.T) {
 		success := mock.Input(mock.Header("Content-Type", header))
 		failure := mock.Input(mock.Header("Content-Type", "some/value"))
 
-		it.Ok(t).
-			If(foo(success)).Should().Equal(nil).
-			If(foo(failure)).ShouldNot().Equal(nil)
+		it.Then(t).
+			Should(it.Equal(foo(success), nil)).
+			ShouldNot(it.Equal(foo(failure), nil))
 	}
 }

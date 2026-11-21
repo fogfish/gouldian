@@ -17,58 +17,56 @@
 */
 
 /*
-
 Package gouldian is Go combinator library for building HTTP services.
 The library is a thin layer of purely functional abstractions to
 building simple and declarative api implementations in the absence
 of pattern matching for traditional and serverless applications.
 
-
-Inspiration
+# Inspiration
 
 The library is heavily inspired by Scala Finch https://github.com/finagle/finch.
 
-
-Getting started
+# Getting started
 
 Here is minimal "Hello World!" example that matches any HTTP requests
 to /hello endpoint.
 
-  package main
+	package main
 
-  import (
-    µ "github.com/fogfish/gouldian"
-    "github.com/fogfish/gouldian/server/httpd"
-    "net/http"
-  )
+	import (
+	  µ "github.com/fogfish/gouldian/v3"
+	  ø "github.com/fogfish/gouldian/v3/output"
+	  "github.com/fogfish/gouldian/v3/server/httpd"
+	  "net/http"
+	)
 
-  func main() {
-    http.ListenAndServe(":8080",
-      httpd.Serve(hello()),
-    )
-  }
+	func main() {
+	  http.ListenAndServe(":8080",
+	    httpd.Serve(hello()),
+	  )
+	}
 
-  func hello() µ.Endpoint {
-    return µ.GET(
-      µ.URI(µ.Path("hello")),
-      func(ctx µ.Context) error {
-        return µ.Status.OK(µ.WithText("Hello World!"))
-      },
-    )
-  }
+	func hello() µ.Routable {
+	  return µ.GET(
+	    µ.URI(µ.Path("hello")),
+	    func(ctx *µ.Context) error {
+	      return ø.Status.OK(ø.ContentType.TextPlain, ø.Send("Hello World!"))
+	    },
+	  )
+	}
 
 See examples folder for advanced use-case.
 
-Next steps
+# Next steps
 
 ↣ Study Endpoint type and its composition, see User Guide
 
 ↣ Check build-in collection of endpoints to deal with HTTP request.
 See types: HTTP, APIGateway
 
-↣ Endpoint always returns some `Output` that defines HTTP response.
-There are three cases of output: HTTP Success, HTTP Failure and general
-error. See Output, Issue types.
-
+↣ Endpoint returns one of the outcomes: nil (matched), NoMatch (not my route),
+Failure (my route, bad input), Output (the response) or error. The Server turns
+the outcomes into HTTP responses (404, 405, 400, RFC 9457 problems, ...).
+See Server, Failure, Output, Issue types and MIGRATION-v3.md.
 */
 package gouldian

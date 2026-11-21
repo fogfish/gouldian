@@ -27,7 +27,7 @@ import (
 	"net/url"
 	"strings"
 
-	µ "github.com/fogfish/gouldian/v2"
+	µ "github.com/fogfish/gouldian/v3"
 )
 
 // Mock is an option type to customize mock event
@@ -115,7 +115,7 @@ func JWT(token µ.Token) Mock {
 func Output(code int, body string) µ.Endpoint {
 	return func(*µ.Context) error {
 		out := µ.NewOutput(code)
-		out.Body = body
+		out.Body = []byte(body)
 		return out
 	}
 }

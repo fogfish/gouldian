@@ -16,17 +16,17 @@
 
 */
 
-package emitter_test
+package output_test
 
 import (
 	"net/http"
 	"reflect"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	ø "github.com/fogfish/gouldian/v3/output"
+	"github.com/fogfish/it/v2"
 )
 
 func TestSuccess(t *testing.T) {
@@ -103,8 +103,8 @@ func TestWithBytes(t *testing.T) {
 func TestErrorOnJSON(t *testing.T) {
 	output := ø.Status.OK(ø.Send(make(chan int))).(*µ.Output)
 
-	it.Ok(t).
-		If(output.Status).Should().Equal(http.StatusInternalServerError)
+	it.Then(t).
+		Should(it.Equal(output.Status, http.StatusInternalServerError))
 }
 
 func output(t *testing.T, a, b error) {
@@ -112,21 +112,11 @@ func output(t *testing.T, a, b error) {
 	foo := func(*µ.Context) error { return a }
 	req := mock.Input()
 
-	it.Ok(t).
-		If(foo(req)).Should().
-		Assert(
-			func(be interface{}) bool {
-				switch out := be.(type) {
-				case error:
-					eq := reflect.DeepEqual(b, out)
-					a.(*µ.Output).Free()
-					b.(*µ.Output).Free()
-					return eq
-				}
-
-				return false
-			},
-		)
+	out, ok := foo(req).(*µ.Output)
+	it.Then(t).Should(it.True(ok))
+	it.Then(t).Should(it.True(reflect.DeepEqual(b, out)))
+	a.(*µ.Output).Free()
+	b.(*µ.Output).Free()
 }
 
 func TestHeaderOutput(t *testing.T) {
@@ -134,7 +124,7 @@ func TestHeaderOutput(t *testing.T) {
 		ø.Header("foo", "bar"),
 	).(*µ.Output)
 
-	it.Ok(t).
-		If(out.Status).Should().Equal(200) //.
+	it.Then(t).
+		Should(it.Equal(out.Status, 200)) //.
 	// If(out.Headers["foo"]).Should().Equal("bar")
 }

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
 	"github.com/fogfish/it/v2"
 )
 
@@ -154,8 +154,8 @@ func TestBodyJsonNoMatch(t *testing.T) {
 		err := foo(tt.Mock)
 
 		it.Then(t).
-			Should(it.Nil(err)).
-			ShouldNot(it.Nil(µ.FromContext(tt.Mock, &req)))
+			Should(it.True(isFailure(err))).
+			Should(it.Equal(µ.FromContext(tt.Mock, &req), nil))
 	}
 }
 
@@ -208,7 +208,7 @@ func TestBodyFormNoMatch(t *testing.T) {
 		{
 			mock.Input(
 				mock.Header("Content-Type", "application/x-www-form-urlencoded"),
-				mock.Text("foobar"),
+				mock.Text("%zz"),
 			),
 		},
 	}
@@ -224,8 +224,8 @@ func TestBodyFormNoMatch(t *testing.T) {
 		err := foo(tt.Mock)
 
 		it.Then(t).
-			Should(it.Nil(err)).
-			ShouldNot(it.Nil(µ.FromContext(tt.Mock, &req)))
+			Should(it.True(isFailure(err))).
+			Should(it.Equal(µ.FromContext(tt.Mock, &req), nil))
 	}
 }
 
@@ -303,7 +303,7 @@ func TestFMapSuccess(t *testing.T) {
 			µ.URI(µ.Path("foo"), µ.Path(a)),
 			µ.FMap(func(ctx *µ.Context, t *T) error {
 				out := µ.NewOutput(http.StatusOK)
-				out.Body = t.A
+				out.Body = []byte(t.A)
 				return out
 			}),
 		),
@@ -372,19 +372,19 @@ func TestContextFree(t *testing.T) {
 func TestOutputFree(t *testing.T) {
 	out := µ.NewOutput(200)
 	out.SetHeader("X-Foo", "bar")
-	out.Body = "test"
+	out.Body = []byte("test")
 
 	it.Then(t).Should(
 		it.Equal(out.Status, 200),
 		it.Equal(out.GetHeader("X-Foo"), "bar"),
-		it.Equal(out.Body, "test"),
+		it.Equal(string(out.Body), "test"),
 	)
 
 	out.Free()
 
 	it.Then(t).Should(
 		it.Equal(out.GetHeader("X-Foo"), ""),
-		it.Equal(out.Body, ""),
+		it.Equal(len(out.Body), 0),
 	)
 }
 
@@ -498,7 +498,7 @@ func TestBodyLeak(t *testing.T) {
 				out := µ.NewOutput(http.StatusOK)
 
 				val, _ := json.Marshal(req.Item)
-				out.Body = string(val)
+				out.Body = val
 				return out
 			},
 		)

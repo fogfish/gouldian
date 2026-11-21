@@ -9,7 +9,7 @@
       <img src="https://img.shields.io/github/v/tag/fogfish/gouldian?label=version" />
     </a>
     <!-- Documentation -->
-    <a href="https://pkg.go.dev/github.com/fogfish/gouldian">
+    <a href="https://pkg.go.dev/github.com/fogfish/gouldian/v3">
       <img src="https://pkg.go.dev/badge/github.com/gouldian/dynamo" />
     </a>
     <!-- Build Status  -->
@@ -23,10 +23,6 @@
     <!-- Coverage -->
     <a href="https://coveralls.io/github/fogfish/gouldian?branch=main">
       <img src="https://coveralls.io/repos/github/fogfish/gouldian/badge.svg?branch=main" />
-    </a>
-    <!-- Go Card -->
-    <a href="https://goreportcard.com/report/github.com/fogfish/gouldian">
-      <img src="https://goreportcard.com/badge/github.com/fogfish/gouldian" />
     </a>
   </p>
 </p>
@@ -48,28 +44,28 @@ Microservices have become a design style to evolve system architecture in parall
 The library solves few practical problems of HTTP service development in Golang:
 * The library support opaque migration of HTTP service between traditional, containers and serverless environments. The api implementation remains source compatible regardless the execution environment; The library supports integration with
   * Golang standard HTTP server: [`http.Request`](https://pkg.go.dev/net/http)
-  * AWS API Gateway: [`APIGatewayProxyRequest`](https://github.com/aws/aws-lambda-go/blob/master/events/apigw.go).
-* The library enforces a type safe, pattern-based approach for api definition.
+  * AWS API Gateway REST API (payload 1.0): [`APIGatewayProxyRequest`](https://github.com/aws/aws-lambda-go/blob/master/events/apigw.go)
+  * AWS API Gateway HTTP API and Lambda Function URL (payload 2.0): `APIGatewayV2HTTPRequest`
+* The library enforces a type safe, pattern-based approach for api definition: handlers receive a typed struct and never touch the raw request.
+* A request has three outcomes, not two: *not my route* (`404`/`405`/`406`/`415`), *my route, bad input* (`400` RFC 9457 problem naming the invalid value) and *success*.
 * Fast, zero allocation routing 
 
 
 ## Installing
 
-The library requires **Go 1.18** or later.
-
-The latest version of the library is available at `main` branch. All development, including new features and bug fixes, take place on the `main` branch using forking and pull requests as described in contribution guidelines. The stable version is available via Golang modules.
+The library requires **Go 1.27** or later. v3 is a major version, see [MIGRATION-v3.md](MIGRATION-v3.md) if you come from v2.
 
 1. Use `go get` to retrieve the library and add it as dependency to your application.
 
 ```bash
-go get -u github.com/fogfish/gouldian
+go get -u github.com/fogfish/gouldian/v3
 ```
 
 2. Import it in your code
 
 ```go
 import (
-  µ "github.com/fogfish/gouldian"
+  µ "github.com/fogfish/gouldian/v3"
 )
 ```
 
@@ -82,9 +78,11 @@ to `/hello` endpoint. You can run this example locally see the [instructions](ex
 package main
 
 import (
-  µ "github.com/fogfish/gouldian"
-  "github.com/fogfish/gouldian/server/httpd"
   "net/http"
+
+  µ "github.com/fogfish/gouldian/v3"
+  ø "github.com/fogfish/gouldian/v3/output"
+  "github.com/fogfish/gouldian/v3/server/httpd"
 )
 
 func main() {
@@ -96,24 +94,29 @@ func main() {
 func hello() µ.Routable {
   return µ.GET(
     µ.URI(µ.Path("hello")),
-    func(ctx µ.Context) error {
-      return µ.Status.OK(µ.WithText("Hello World!"))
+    func(ctx *µ.Context) error {
+      return ø.Status.OK(
+        ø.ContentType.TextPlain,
+        ø.Send("Hello World!"),
+      )
     },
   )
 }
 ```
 
+The same routes run in AWS Lambda:
+
+```go
+api := µ.NewServer(µ.WithCORS(&µ.CORS{Origins: []string{"https://app.example"}})).Mount(hello())
+
+lambda.Start(apigatewayv2.Handler(api)) // HTTP API, Function URL
+lambda.Start(apigateway.Handler(api))   // REST API
+http.ListenAndServe(":8080", httpd.Handler(api))
+```
+
 ## Benchmark
 
-The library uses [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark) methodology for benchmarking, using structure of GitHub API as primary benchmark. The results are obtained on the reference hardware such as AWS m6i.large and a1.large instances.
-
-**m6i.large** 3.5 GHz 3rd generation Intel Xeon Scalable processors:
-* It takes **10.9M** routing decisions per second, taking about **110 ns/op** and consuming about **0 allocs/ops**.
-* It performs **7.4M** requests/responses for the single endpoint with one parameter, taking about **162 ns/op** and consuming **24 B/op** with **2 allocs/op**.
-
-**a1.large** AWS Graviton Processor with 64-bit Arm Neoverse cores:
-* It takes **2M** routing decisions per second, taking about **520 ns/op** and consuming about **0 allocs/ops**.
-* It performs **1.5M** requests/responses for the single endpoint with one parameter, taking about **763 ns/op** and consuming **24 B/op** with **2 allocs/op**.
+The library uses [go-http-routing-benchmark](https://github.com/julienschmidt/go-http-routing-benchmark) methodology for benchmarking, using structure of GitHub API as primary benchmark. See [bench](bench) for the v2 baseline, the v3 results and the comparison script (`python3 bench/compare.py`).
 
 
 ## Next steps
@@ -140,14 +143,14 @@ The library is [Apache 2.0](LICENSE) licensed and accepts contributions via GitH
 5. Create new Pull Request
 
 
-The build and testing process requires [Go](https://golang.org) version 1.13 or later.
+The build and testing process requires [Go](https://golang.org) version 1.27 or later.
 
 **Build** and **run** in your development console.
 
 ```bash
 git clone https://github.com/fogfish/gouldian
 cd gouldian
-go test
+go test -race ./...
 go test -run=^$ -bench=. -cpu 1
 ```
 

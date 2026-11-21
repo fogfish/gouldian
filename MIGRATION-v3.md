@@ -1,0 +1,99 @@
+# Migration guide: v2 → v3
+
+v3 fixes the defects found while adopting the library by the SaaS. The cure is a change of defaults: correct behaviour is the default, there are no opt-in shims. This guide lists every behaviour change with *before* and *after*. If you are on v2, upgrade to **v2.0.10** first, it carries the security fixes (JWT scopes, binding leaks, query string in logs) without API changes.
+
+- [Migration guide: v2 → v3](#migration-guide-v2--v3)
+  - [Mechanical steps](#mechanical-steps)
+  - [Behaviour changes](#behaviour-changes)
+  - [API changes](#api-changes)
+  - [New in v3](#new-in-v3)
+  - [Dependencies](#dependencies)
+
+## Mechanical steps
+
+```bash
+# 1. import path, go 1.27
+go get github.com/fogfish/gouldian/v3@latest
+find . -name '*.go' | xargs sed -i '' 's#fogfish/gouldian/v2#fogfish/gouldian/v3#g'     # GNU sed: -i without ''
+
+# 2. Output.Body is []byte
+find . -name '*.go' | xargs perl -pi -e 's/(\b\w+\.Body = )(?!\[\]byte)(.+)$/$1\[\]byte($2)/'   # review the diff: it rewrites every `x.Body = y`
+
+# 3. the `output` package declared `package emitter`, it is `package output` now.
+#    The ø alias keeps working: ø "github.com/fogfish/gouldian/v3/output"
+
+# 4. Lambda handlers take context.Context, see "Adapters"
+```
+
+Then fix the compile errors with the table of [API changes](#api-changes).
+
+## Behaviour changes
+
+| #   | Area                                                    | v2                                                                                                         | v3                                                                                                                                                                                                                                                                    |
+| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Malformed value (`?limit=abc`, header, JWT claim, body) | `NoMatch` → `501`, or silently ignored by `*Maybe`                                                         | `*Failure` → `400` `problem+json` that names the source and the key. `*Maybe` endpoints: absent → matches, present but malformed → failure                                                                                                                            |
+| 2   | `Or` and failures                                       | a failure was a `NoMatch`, so the next branch was tried                                                    | the **first failure is terminal**, a later branch does not hide it. Path segments are the exception: a segment that cannot be decoded is `NoMatch`, so `/user/:id` (int) and `/user/:id` (string) still overload. `µ.Lenient(e)` restores v2 for one endpoint         |
+| 3   | No route                                                | `501 Not Implemented`                                                                                      | `404` (no such path), `405` + `Allow` (path known, verb not), `406` (`Accept` mismatch), `415` (`Content-Type` mismatch). `HEAD` is derived from `GET`, `OPTIONS` is answered with `Allow`                                                                            |
+| 4   | Response of a failure                                   | JSON `{instance: <random id>, type: httpstatuses.com/…, status, title}`                                    | RFC 9457: `application/problem+json` `{type: "about:blank", title, status, detail, instance: <request path>, errors: [{source, pointer, detail}]}`. The application can replace it with `WithIssue`                                                                   |
+| 5   | Handler returns `nil`                                   | `httpd`: 200, empty body; `apigateway`: 500                                                                | `204 No Content` everywhere                                                                                                                                                                                                                                           |
+| 6   | Handler returns a plain `error`                         | `500`, the cause is lost                                                                                   | `500`, the cause is **logged**, never exposed to the client                                                                                                                                                                                                           |
+| 7   | Panic in a handler                                      | the invocation aborts (Lambda), the connection drops (`net/http`)                                          | recovered: `500` problem, stack in the log. `WithRecover(false)` disables it                                                                                                                                                                                          |
+| 8   | CORS                                                    | the adapter reflected **any** `Origin`, endpoint headers could not override                                | **off by default**. `WithCORS(&µ.CORS{...})`: origin allow-list, automatic preflight, endpoint headers win                                                                                                                                                            |
+| 9   | Logging                                                 | global `logger.Error` of `fogfish/logger`                                                                  | `slog`, injectable (`WithLogger`). `5xx` at error level, `4xx` at debug level; method, path, status, request id, cause. Never the query string                                                                                                                        |
+| 10  | Request context                                         | `context.Background()`                                                                                     | the `http.Request` context, the Lambda invocation context                                                                                                                                                                                                             |
+| 11  | Header literal                                          | prefix match (`application/jsonx` matched `application/json`), case-sensitive                              | exact, case-insensitive. `µ.ContentType.X` compares the media type (charset ignored). `µ.Accept.X` negotiates (lists, `q`, `*/*`, `type/*`; a missing header accepts anything)                                                                                        |
+| 12  | Content-Type / Accept mismatch                          | `NoMatch`                                                                                                  | `NoMatch` with a reason → `415` / `406` if no other route matches. Alternatives with different content types on one path keep working                                                                                                                                 |
+| 13  | Body                                                    | empty → `NoMatch`; the first `Body` consumed it, a second `Body` or a second route got `NoMatch`; no limit | read once and shared. Empty → `400 body is required` (`BodyMaybe` for optional bodies). Over the limit (default **6 MiB**, `WithBodyLimit`) → `413`. A JSON error carries the JSON pointer                                                                            |
+| 14  | JSON body                                               | unknown fields ignored                                                                                     | still ignored; `content:"json,strict"` rejects them with a pointer                                                                                                                                                                                                    |
+| 15  | Form body (`content:"form"`)                            | `ajg/form`                                                                                                 | `net/url` + the codec layer. Field name: tag `form`, then `json`, then the field name. Nested structs and maps are **not** supported (panic at start-up)                                                                                                              |
+| 16  | Lens targets                                            | `string`, `int`, `float64`, struct only; anything else panicked                                            | `string`, `bool`, `int*`, `uint*`, `float*`, `time.Duration`, `time.Time`, `[]byte`, `json.RawMessage`, slices of scalars, pointers, any `encoding.TextUnmarshaler` (it validates itself), registered codecs. Unsupported → panic at start-up naming struct and field |
+| 17  | `OpticsN` with repeated types                           | `Optics3[T, acc, string, acc]` bound the **first** `acc` field twice                                       | ordered: the n-th occurrence binds the n-th field. A type requested once that is not unique, or requested more often than it exists, panics at start-up                                                                                                               |
+| 18  | Repeated query param                                    | only the first value                                                                                       | slice lenses take all values (`?a=1&a=2`) or split by `sep:","`                                                                                                                                                                                                       |
+| 19  | Trailing slash                                          | `/a/` was `501`                                                                                            | policy of the server: `Strict` (default, `404`), `Redirect` (`308`), `Ignore`                                                                                                                                                                                         |
+| 20  | `PathAny` (`µ.Path("_")`) in a routed server            | never matched                                                                                              | matches any segment                                                                                                                                                                                                                                                   |
+| 21  | Routes sharing a prefix                                 | the first matching node was executed, no backtracking                                                      | literal → variable → any → rest are tried in this order; a route whose endpoints do not accept the request lets the next candidate run                                                                                                                                |
+| 22  | Response headers                                        | `Set` collapsed duplicates; API Gateway sent a single value; `SetIssue` appended a second `Content-Type`   | `SetHeader` replaces, `AddHeader` appends. `Set-Cookie` and multi-value headers survive every adapter (`MultiValueHeaders`, `cookies`)                                                                                                                                |
+| 23  | Binary responses                                        | corrupted by API Gateway (never base64)                                                                    | base64 encoded (`isBase64Encoded`) when the media type is not textual or the body is not UTF-8                                                                                                                                                                        |
+| 24  | `Map` serialization failure                             | `200` with an issue body                                                                                   | `500`                                                                                                                                                                                                                                                                 |
+| 25  | `Authorization` header                                  | `Basic␣␣token` failed                                                                                      | whitespace separated, any number of spaces                                                                                                                                                                                                                            |
+| 26  | JWT numeric claims                                      | panic                                                                                                      | kept as numbers, `Token.Exp()` is a string, `Token.Number("exp")` a number. Scopes are matched as whole tokens, an array claim is joined by space                                                                                                                     |
+| 27  | AWS adapter request path                                | `http.NewRequest(method, path)`: a `?` or `%zz` in the path broke the request                              | the path is used as is; the query comes from the query parameters only                                                                                                                                                                                                |
+
+## API changes
+
+| v2                                                                               | v3                                                                                                                                        |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `github.com/fogfish/gouldian/v2`                                                 | `github.com/fogfish/gouldian/v3`                                                                                                          |
+| `type Routable func() ([]string, Endpoint)`                                      | `type Routable func() Route`, `Route{Method, Path, Endpoint}`                                                                             |
+| `µ.Route(path, µ.Method("GET"), endpoints...)`                                   | `µ.HTTP("GET", path, endpoints...)` (or `µ.GET`). The verb is routing metadata. `µ.Method(verb)` remains as a guard inside a route        |
+| `µ.NewRoutes(...) *Node`, `Node.Walk`, `Node.Println`                            | `µ.NewRoutes(...) *Routes`; use `µ.NewServer().Mount(...)`                                                                                |
+| `µ.NoMatch int`, `err == µ.ErrNoMatch`                                           | `µ.NoMatch uint8` with reason codes (`NoMatchPath`, `NoMatchHeader`, …). Compare with a type assertion: `_, ok := err.(µ.NoMatch)`        |
+| `Output.Body string`                                                             | `Output.Body []byte`                                                                                                                      |
+| `Output.SetHeader` appended                                                      | `SetHeader` replaces, `AddHeader` appends                                                                                                 |
+| `Output.SetIssue(err, title...)` rendered the body immediately                   | attaches the cause; the **server** renders the body. A bare endpoint call shows `Failure`, not a body                                     |
+| `Output` pooled, returned anywhere                                               | only outputs from `NewOutput` are pooled. A global constant must be a literal: `&µ.Output{Status: 200}` (`Free` ignores it)               |
+| `µ.Issue{ID, Type, Status, Title}`, `µ.Sequence`, `NewIssue`                     | `µ.Issue{Type, Title, Status, Detail, Instance, Errors}`; `Sequence` is removed                                                           |
+| `ø.Status.X(results...)` ignored the errors of a result                          | the error of a `Result` is returned (→ `500`)                                                                                             |
+| `Token map[string]string`                                                        | `Token map[string]any` with typed accessors. `µ.Token{"sub": "x"}` literals still compile                                                 |
+| `ContentType.Is(value string)`                                                   | `Is(values ...string)`                                                                                                                    |
+| `apigateway.Serve(routes...)` returned `func(events.APIGatewayProxyRequest) (…)` | `func(context.Context, events.APIGatewayProxyRequest) (…)`. `apigateway.Request(r) *µ.Context` → `Request(ctx, r) (*http.Request, error)` |
+| `httpd.Serve`, `ServeAndCommit`                                                  | unchanged. New: `httpd.Handler(server)`                                                                                                   |
+| `Lens` internals (`FromString`, `Put`, `Value{String, Number int, Double}`)      | internal, `Value` is `{String, Number int64, Ptr unsafe.Pointer}`, still 32 bytes                                                         |
+| `ReadableHeaderValues`, `Pattern`                                                | unchanged                                                                                                                                 |
+| `output` package name `emitter`                                                  | `output`                                                                                                                                  |
+| `ctx.Put(lens, string)` returned `NoMatch` on a decode error                     | returns `*Failure`                                                                                                                        |
+
+## New in v3
+
+* `µ.NewServer(options...).Mount(routes...)`: `WithLogger`, `WithIssue`, `WithCORS`, `WithBodyLimit`, `WithRecover`, `WithTrailingSlash`, `WithLogRoutes` (off by default); `Server.Dispatch`.
+* `µ.Failure`, `µ.Lenient`, `µ.Trace`, NoMatch reason codes.
+* `µ.URIf("/users/{id}/files/{path...}{?limit}", lenses...)` URI pattern in a string form (issue #61).
+* `µ.At[T]("Field")` inline lens (issue #58).
+* `µ.RegisterCodec[T](decode)` application codecs, `µ.BodyMaybe`, `Query.GetAll`, `Token.Number/Bool/Strings/Get`.
+* `apigatewayv2` adapter for API Gateway HTTP API and Lambda Function URL (payload 2.0): cookies, JWT / IAM / Lambda authorizers, base64.
+* `µ.Context.RequestID`, request context propagation.
+* More status helpers: `PartialContent`, `MultiStatus`, `UnprocessableEntity`, `TooManyRequests`, …
+
+## Dependencies
+
+Removed: `fogfish/logger`, `fogfish/guid`, `ajg/form`, `fogfish/golem/optics`, `fogfish/it` v1 (tests use `fogfish/it/v2`). Required: `aws-lambda-go`, `golem/hseq`, Go 1.27.

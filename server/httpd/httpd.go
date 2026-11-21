@@ -6,7 +6,7 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,41 +16,29 @@
 
 */
 
+// Package httpd adapts the gouldian server to net/http
 package httpd
 
 import (
-	"context"
-	"fmt"
-	µ "github.com/fogfish/gouldian/v2"
-	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/logger"
 	"net/http"
-	"sync"
+
+	µ "github.com/fogfish/gouldian/v3"
 )
 
 /*
 Serve builds http.Handler for sequence of endpoints
 
-	http.ListenAndServe(":8080", httpd.Server( ... ))
+	http.ListenAndServe(":8080", httpd.Serve( ... ))
 */
 func Serve(endpoints ...µ.Routable) http.Handler {
-	rts := µ.NewRoutes(endpoints...)
-	routes := &routes{
-		endpoint: rts.Endpoint(),
-	}
-
-	routes.pool.New = func() any {
-		return µ.NewContext(context.Background())
-	}
-
-	return routes
+	return Handler(µ.NewServer().Mount(endpoints...))
 }
 
 /*
-Serve builds http.Handler for sequence of endpoints.
+ServeAndCommit builds http.Handler for sequence of endpoints.
 It executes commit function after each request.
 
-	http.ListenAndServe(":8080", httpd.Server( ... ))
+	http.ListenAndServe(":8080", httpd.ServeAndCommit(commit, ... ))
 */
 func ServeAndCommit(commit func(), endpoints ...µ.Routable) http.Handler {
 	h := Serve(endpoints...)
@@ -61,48 +49,34 @@ func ServeAndCommit(commit func(), endpoints ...µ.Routable) http.Handler {
 	})
 }
 
-type routes struct {
-	endpoint µ.Endpoint
-	pool     sync.Pool
-}
+/*
+Handler adapts the server to http.Handler. The context of the request is
+propagated to endpoints.
 
-func (routes *routes) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	req := routes.pool.Get().(*µ.Context)
-	req.Free()
-	req.Request = r
+	api := µ.NewServer(µ.WithCORS(...)).Mount( ... )
+	http.ListenAndServe(":8080", httpd.Handler(api))
+*/
+func Handler(srv *µ.Server) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := srv.NewContext(r.Context(), r)
+		// canonical key, direct lookup avoids the cost of Header.Get
+		if id := r.Header["X-Request-Id"]; len(id) != 0 {
+			ctx.RequestID = id[0]
+		}
+		out := srv.Dispatch(ctx)
 
-	switch v := routes.endpoint(req).(type) {
-	case nil:
-	case *µ.Output:
-		routes.output(w, r, v)
-	case µ.NoMatch:
-		failure := ø.Status.NotImplemented(
-			ø.Error(fmt.Errorf("NoMatch %s", r.URL.Path)),
-		).(*µ.Output)
-		routes.output(w, r, failure)
-	default:
-		failure := ø.Status.InternalServerError(
-			ø.Error(fmt.Errorf("unknown response %s", r.URL.Path)),
-		).(*µ.Output)
-		routes.output(w, r, failure)
-	}
+		if len(out.Headers) != 0 {
+			header := w.Header()
+			for _, h := range out.Headers {
+				header.Add(h.Header, h.Value)
+			}
+		}
+		w.WriteHeader(out.Status)
+		if len(out.Body) > 0 {
+			_, _ = w.Write(out.Body)
+		}
 
-	routes.pool.Put(req)
-}
-
-func (routes *routes) output(w http.ResponseWriter, r *http.Request, out *µ.Output) {
-	if out.Failure != nil {
-		// never log the query string, it may carry tokens or personal data
-		logger.Error("%s %v", r.URL.Path, out.Failure)
-	}
-
-	for _, h := range out.Headers {
-		w.Header().Set(h.Header, h.Value)
-	}
-	w.WriteHeader(int(out.Status))
-
-	if len(out.Body) > 0 {
-		w.Write([]byte(out.Body))
-	}
-	out.Free()
+		out.Free()
+		srv.Release(ctx)
+	})
 }
