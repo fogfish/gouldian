@@ -1,0 +1,144 @@
+package main
+
+import (
+	"net/http"
+	"strings"
+	"testing"
+
+	µ "github.com/fogfish/gouldian/v3"
+	ø "github.com/fogfish/gouldian/v3/output"
+	"github.com/fogfish/gouldian/v3/server/httpd"
+)
+
+// All params are captured by lenses into a struct, the way the library is used.
+type gouldianParams struct {
+	P0, P1, P2, P3, P4, P5, P6, P7, P8, P9      string
+	P10, P11, P12, P13, P14, P15, P16, P17, P18 string
+	P19                                         string
+}
+
+var gouldianLens = func() []µ.Lens {
+	names := []string{"P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9",
+		"P10", "P11", "P12", "P13", "P14", "P15", "P16", "P17", "P18", "P19"}
+	seq := make([]µ.Lens, len(names))
+	for i, n := range names {
+		seq[i] = µ.Optics1[gouldianParams, string](n)
+	}
+	return seq
+}()
+
+func gouldianHandle(*µ.Context) error { return nil }
+
+var gouldianHandleWrite = µ.FMap(func(_ *µ.Context, p *gouldianParams) error {
+	return ø.Status.OK(ø.Send(p.P0))
+})
+
+func gouldianRoute(method, path string, handler µ.Endpoint) µ.Routable {
+	lens := gouldianLens
+	segs := []µ.Segment{}
+	for _, seg := range strings.Split(path, "/")[1:] {
+		switch {
+		case len(seg) == 0:
+		case seg[0] == ':':
+			segs = append(segs, µ.Path(lens[0]))
+			lens = lens[1:]
+		case seg[0] == '*':
+			segs = append(segs, µ.PathAll(lens[0]))
+			lens = lens[1:]
+		default:
+			segs = append(segs, µ.Path(seg))
+		}
+	}
+	return µ.HTTP(method, µ.URI(segs...), handler)
+}
+
+func loadGouldian(routes []route) http.Handler {
+	seq := make([]µ.Routable, 0, len(routes))
+	for _, r := range routes {
+		seq = append(seq, gouldianRoute(r.method, r.path, gouldianHandle))
+	}
+	return httpd.Handler(µ.NewServer().Mount(seq...))
+}
+
+func loadGouldianSingle(method, path string, handler µ.Endpoint) http.Handler {
+	return httpd.Handler(µ.NewServer().Mount(gouldianRoute(method, path, handler)))
+}
+
+var (
+	githubGouldian http.Handler
+	gplusGouldian  http.Handler
+	parseGouldian  http.Handler
+	staticGouldian http.Handler
+)
+
+func init() {
+	githubGouldian = loadGouldian(githubAPI)
+	gplusGouldian = loadGouldian(gplusAPI)
+	parseGouldian = loadGouldian(parseAPI)
+	staticGouldian = loadGouldian(staticRoutes)
+}
+
+func BenchmarkGouldian_Param(b *testing.B) {
+	router := loadGouldianSingle("GET", "/user/:name", gouldianHandle)
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGouldian_Param5(b *testing.B) {
+	router := loadGouldianSingle("GET", fiveColon, gouldianHandle)
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGouldian_Param20(b *testing.B) {
+	router := loadGouldianSingle("GET", twentyColon, gouldianHandle)
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGouldian_ParamWrite(b *testing.B) {
+	router := loadGouldianSingle("GET", "/user/:name", gouldianHandleWrite)
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGouldian_GithubStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/user/repos", nil)
+	benchRequest(b, githubGouldian, req)
+}
+func BenchmarkGouldian_GithubParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/repos/julienschmidt/httprouter/stargazers", nil)
+	benchRequest(b, githubGouldian, req)
+}
+func BenchmarkGouldian_GithubAll(b *testing.B) {
+	benchRoutes(b, githubGouldian, githubAPI)
+}
+func BenchmarkGouldian_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusGouldian, req)
+}
+func BenchmarkGouldian_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusGouldian, req)
+}
+func BenchmarkGouldian_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusGouldian, req)
+}
+func BenchmarkGouldian_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusGouldian, gplusAPI)
+}
+func BenchmarkGouldian_ParseStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/users", nil)
+	benchRequest(b, parseGouldian, req)
+}
+func BenchmarkGouldian_ParseParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/classes/go", nil)
+	benchRequest(b, parseGouldian, req)
+}
+func BenchmarkGouldian_Parse2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/classes/go/123456789", nil)
+	benchRequest(b, parseGouldian, req)
+}
+func BenchmarkGouldian_ParseAll(b *testing.B) {
+	benchRoutes(b, parseGouldian, parseAPI)
+}
+func BenchmarkGouldian_StaticAll(b *testing.B) {
+	benchRoutes(b, staticGouldian, staticRoutes)
+}

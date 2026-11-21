@@ -16,12 +16,12 @@
 
 */
 
-package emitter_test
+package output_test
 
 import (
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	ø "github.com/fogfish/gouldian/v2/output"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	ø "github.com/fogfish/gouldian/v3/output"
 	"github.com/fogfish/it/v2"
 	"testing"
 	"time"

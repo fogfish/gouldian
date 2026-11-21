@@ -1,14 +1,9 @@
-module github.com/fogfish/gouldian/v2
+module github.com/fogfish/gouldian/v3
 
-go 1.24
+go 1.27
 
 require (
-	github.com/ajg/form v1.5.2-0.20200323032839-9aeb3cf462e1
-	github.com/aws/aws-lambda-go v1.47.0
-	github.com/fogfish/golem/hseq v1.3.0
-	github.com/fogfish/golem/optics v0.14.0
-	github.com/fogfish/guid/v2 v2.0.4
-	github.com/fogfish/it v1.0.0
+	github.com/aws/aws-lambda-go v1.55.1
+	github.com/fogfish/golem/hseq v1.3.2
 	github.com/fogfish/it/v2 v2.2.4
-	github.com/fogfish/logger v1.1.0
 )

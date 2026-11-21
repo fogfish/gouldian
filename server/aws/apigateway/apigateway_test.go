@@ -19,33 +19,36 @@
 package apigateway_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	µ "github.com/fogfish/gouldian/v2"
-	ø "github.com/fogfish/gouldian/v2/output"
+	µ "github.com/fogfish/gouldian/v3"
+	ø "github.com/fogfish/gouldian/v3/output"
 
-	"github.com/fogfish/gouldian/v2/server/aws/apigateway"
-	"github.com/fogfish/it"
+	"github.com/fogfish/gouldian/v3/server/aws/apigateway"
+	"github.com/fogfish/it/v2"
 )
 
 func TestServeMatch(t *testing.T) {
 	api := apigateway.Serve(mock("echo"))
 	req := events.APIGatewayProxyRequest{
-		HTTPMethod: "GET",
-		Path:       "/echo?foo=bar",
-		Headers:    map[string]string{"Accept": "*/*"},
+		HTTPMethod:            "GET",
+		Path:                  "/echo",
+		Headers:               map[string]string{"Accept": "*/*"},
+		QueryStringParameters: map[string]string{"foo": "bar"},
 	}
 
-	out, err1 := api(req)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	out, err1 := api(context.Background(), req)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusOK).
-		If(out.Headers["Server"]).Should().Equal("echo").
-		If(out.Headers["Content-Type"]).Should().Equal("text/plain").
-		If(out.Body).Should().Equal("echo")
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusOK)).
+		Should(it.Equal(out.Headers["Server"], "echo")).
+		Should(it.Equal(out.Headers["Content-Type"], "text/plain")).
+		Should(it.Equal(out.Body, "echo"))
 
 	// 	"Access-Control-Allow-Origin":  "*",
 	// 	"Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
@@ -61,13 +64,14 @@ func TestServeNoMatch(t *testing.T) {
 		Path:       "/foo",
 	}
 
-	out, err1 := api(req)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	out, err1 := api(context.Background(), req)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusNotImplemented).
-		If(out.Headers["Content-Type"]).Should().Equal("application/json").
-		If(out.Body).ShouldNot().Equal("")
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusNotFound)).
+		Should(it.Equal(out.Headers["Content-Type"], "application/problem+json")).
+		ShouldNot(it.Equal(out.Body, ""))
 
 	// "Access-Control-Allow-Origin":  "*",
 	// "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
@@ -75,18 +79,20 @@ func TestServeNoMatch(t *testing.T) {
 	// "Access-Control-Max-Age":       "600",
 }
 
-func TestServeMatchUnescaped(t *testing.T) {
-	api := apigateway.Serve(mock("h%rt"))
+func TestServeInvalidMethod(t *testing.T) {
+	api := apigateway.Serve(mock("echo"))
 	req := events.APIGatewayProxyRequest{
-		HTTPMethod: "GET",
-		Path:       "/h%rt",
+		HTTPMethod: "G E T",
+		Path:       "/echo",
 	}
 
-	out, err1 := api(req)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	out, err1 := api(context.Background(), req)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusBadRequest)
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusBadRequest)).
+		Should(it.Equal(out.Headers["Content-Type"], "application/problem+json"))
 }
 
 func TestServeAndCommit(t *testing.T) {
@@ -96,20 +102,22 @@ func TestServeAndCommit(t *testing.T) {
 		mock("echo"),
 	)
 	req := events.APIGatewayProxyRequest{
-		HTTPMethod: "GET",
-		Path:       "/echo?foo=bar",
-		Headers:    map[string]string{"Accept": "*/*"},
+		HTTPMethod:            "GET",
+		Path:                  "/echo",
+		Headers:               map[string]string{"Accept": "*/*"},
+		QueryStringParameters: map[string]string{"foo": "bar"},
 	}
 
-	out, err1 := api(req)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	out, err1 := api(context.Background(), req)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusOK).
-		If(out.Headers["Server"]).Should().Equal("echo").
-		If(out.Headers["Content-Type"]).Should().Equal("text/plain").
-		If(out.Body).Should().Equal("echo").
-		If(cnt).Should().Equal(1)
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusOK)).
+		Should(it.Equal(out.Headers["Server"], "echo")).
+		Should(it.Equal(out.Headers["Content-Type"], "text/plain")).
+		Should(it.Equal(out.Body, "echo")).
+		Should(it.Equal(cnt, 1))
 }
 
 func mock(path string) µ.Routable {
@@ -123,4 +131,71 @@ func mock(path string) µ.Routable {
 			)
 		},
 	)
+}
+
+func TestRequestMapping(t *testing.T) {
+	type req struct{ Raw []byte }
+	var token µ.Token
+	var accept []string
+	var query string
+	var requestID string
+	var raw []byte
+
+	api := apigateway.Serve(µ.POST(µ.URI(µ.Path("a")),
+		µ.Body(µ.Optics1[req, []byte]()),
+		µ.FMap(func(c *µ.Context, r *req) error {
+			token, raw = c.JWT, r.Raw
+			accept = c.Request.Header.Values("Accept")
+			query = c.Request.URL.RawQuery
+			requestID = c.RequestID
+			return nil
+		})))
+
+	evt := events.APIGatewayProxyRequest{
+		HTTPMethod:                      "POST",
+		Path:                            "/a",
+		MultiValueHeaders:               map[string][]string{"Accept": {"text/html", "application/json"}},
+		MultiValueQueryStringParameters: map[string][]string{"rels": {"a", "b"}},
+		Body:                            "AAEC",
+		IsBase64Encoded:                 true,
+	}
+	evt.RequestContext.RequestID = "rid-1"
+	evt.RequestContext.Authorizer = map[string]interface{}{"claims": map[string]interface{}{"sub": "alice", "exp": 1234.0}}
+
+	out, err := api(context.Background(), evt)
+	it.Then(t).
+		Must(it.Nil(err)).
+		Should(it.Equal(out.StatusCode, http.StatusNoContent)).
+		Should(it.Equal(token.Sub(), "alice")).
+		Should(it.Equal(token.Exp(), "1234")).
+		Should(it.Equiv(accept, []string{"text/html", "application/json"})).
+		Should(it.Equal(query, "rels=a&rels=b")).
+		Should(it.Equal(requestID, "rid-1")).
+		Should(it.Equiv(raw, []byte{0, 1, 2}))
+
+	// IAM identity
+	evt.RequestContext.Authorizer = nil
+	evt.RequestContext.Identity.UserArn = "arn:aws:iam::1:user/a"
+	api(context.Background(), evt)
+	it.Then(t).Should(it.Equal(token.Username(), "arn:aws:iam::1:user/a"))
+}
+
+func TestResponseMapping(t *testing.T) {
+	out := µ.NewOutput(200)
+	out.AddHeader("Set-Cookie", "a=1")
+	out.AddHeader("Set-Cookie", "b=2")
+	out.SetHeader("Content-Type", "image/png")
+	out.Body = []byte{0x89, 'P', 'N', 'G', 0xff}
+
+	evt := apigateway.Response(out)
+	it.Then(t).
+		Should(it.Equiv(evt.MultiValueHeaders["Set-Cookie"], []string{"a=1", "b=2"})).
+		Should(it.Equal(evt.Headers["Content-Type"], "image/png")).
+		Should(it.Equal(evt.IsBase64Encoded, true))
+}
+
+func TestInvalidBase64(t *testing.T) {
+	api := apigateway.Serve()
+	out, _ := api(context.Background(), events.APIGatewayProxyRequest{HTTPMethod: "POST", Path: "/", Body: "***", IsBase64Encoded: true})
+	it.Then(t).Should(it.Equal(out.StatusCode, http.StatusBadRequest))
 }

@@ -1,0 +1,60 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/fogfish/gouldian/v2
+cpu: Apple M2 Pro
+BenchmarkPathParam1-10         	42610671	        25.30 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam1-10         	47556140	        25.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam1-10         	47982645	        25.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam1-10         	47260916	        25.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam1-10         	45970626	        25.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam1-10         	47956119	        25.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam1-10       	33596780	        35.73 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam1-10       	33896667	        35.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam1-10       	33273140	        35.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam1-10       	33902054	        35.68 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam1-10       	33686574	        35.86 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam1-10       	33091314	        35.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam5-10         	24685198	        48.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam5-10         	25258194	        48.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam5-10         	24939037	        48.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam5-10         	25051384	        48.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam5-10         	24953191	        48.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathParam5-10         	25063222	        48.44 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam5-10       	19121308	        70.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam5-10       	19795990	        60.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam5-10       	20067909	        60.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam5-10       	20309064	        59.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam5-10       	20238462	        59.48 ns/op	       0 B/op	       0 allocs/op
+BenchmarkServerParam5-10       	20224803	        59.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct1-10    	52576428	        22.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct1-10    	52528576	        22.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct1-10    	50654461	        22.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct1-10    	51467079	        23.43 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct1-10    	52388115	        22.54 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct1-10    	52269267	        22.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct5-10    	14724008	        79.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct5-10    	14307871	        81.85 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct5-10    	14935287	        79.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct5-10    	15058515	        79.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct5-10    	15194151	        79.41 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLensForProduct5-10    	14952718	        79.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEndpoint1-10          	 8205583	       145.2 ns/op	      32 B/op	       2 allocs/op
+BenchmarkEndpoint1-10          	 8304224	       147.2 ns/op	      32 B/op	       2 allocs/op
+BenchmarkEndpoint1-10          	 8258978	       147.5 ns/op	      32 B/op	       2 allocs/op
+BenchmarkEndpoint1-10          	 7530403	       147.0 ns/op	      32 B/op	       2 allocs/op
+BenchmarkEndpoint1-10          	 8069050	       144.6 ns/op	      32 B/op	       2 allocs/op
+BenchmarkEndpoint1-10          	 7688934	       156.9 ns/op	      32 B/op	       2 allocs/op
+BenchmarkEndpoint5-10          	 4553248	       272.3 ns/op	     112 B/op	       3 allocs/op
+BenchmarkEndpoint5-10          	 4544606	       263.3 ns/op	     112 B/op	       3 allocs/op
+BenchmarkEndpoint5-10          	 4561742	       263.1 ns/op	     112 B/op	       3 allocs/op
+BenchmarkEndpoint5-10          	 4577336	       272.5 ns/op	     112 B/op	       3 allocs/op
+BenchmarkEndpoint5-10          	 4526242	       272.5 ns/op	     112 B/op	       3 allocs/op
+BenchmarkEndpoint5-10          	 4532044	       274.7 ns/op	     112 B/op	       3 allocs/op
+BenchmarkGitHub-10             	 9235732	       137.4 ns/op	     160 B/op	       1 allocs/op
+BenchmarkGitHub-10             	 9166838	       133.9 ns/op	     160 B/op	       1 allocs/op
+BenchmarkGitHub-10             	 9060253	       132.6 ns/op	     160 B/op	       1 allocs/op
+BenchmarkGitHub-10             	 9076712	       132.0 ns/op	     160 B/op	       1 allocs/op
+BenchmarkGitHub-10             	 9088773	       131.7 ns/op	     160 B/op	       1 allocs/op
+BenchmarkGitHub-10             	 8850538	       134.5 ns/op	     160 B/op	       1 allocs/op
+PASS
+ok  	github.com/fogfish/gouldian/v2	71.387s

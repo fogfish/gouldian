@@ -25,10 +25,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/gouldian/v2/server/httpd"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	ø "github.com/fogfish/gouldian/v3/output"
+	"github.com/fogfish/gouldian/v3/server/httpd"
+	"github.com/fogfish/it/v2"
 )
 
 func TestServeMatch(t *testing.T) {
@@ -36,19 +36,22 @@ func TestServeMatch(t *testing.T) {
 	defer ts.Close()
 
 	req, err1 := http.NewRequest("GET", ts.URL+"/echo", nil)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
 	out, err2 := http.DefaultClient.Do(req)
-	it.Ok(t).If(err2).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err2, nil))
 
 	msg, err3 := io.ReadAll(out.Body)
-	it.Ok(t).If(err3).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err3, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusOK).
-		If(out.Header.Get("Server")).Should().Equal("echo").
-		If(out.Header.Get("Content-Type")).Should().Equal("text/plain").
-		If(msg).Should().Equal([]byte("echo"))
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusOK)).
+		Should(it.Equal(out.Header.Get("Server"), "echo")).
+		Should(it.Equal(out.Header.Get("Content-Type"), "text/plain")).
+		Should(it.Equal(string(msg), "echo"))
 }
 
 func TestServeNoMatch(t *testing.T) {
@@ -56,18 +59,21 @@ func TestServeNoMatch(t *testing.T) {
 	defer ts.Close()
 
 	req, err1 := http.NewRequest("GET", ts.URL+"/foo", nil)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
 	out, err2 := http.DefaultClient.Do(req)
-	it.Ok(t).If(err2).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err2, nil))
 
 	msg, err3 := io.ReadAll(out.Body)
-	it.Ok(t).If(err3).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err3, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusNotImplemented).
-		If(out.Header.Get("Content-Type")).Should().Equal("application/json").
-		If(msg).ShouldNot().Equal([]byte{})
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusNotFound)).
+		Should(it.Equal(out.Header.Get("Content-Type"), "application/problem+json")).
+		ShouldNot(it.Equal(len(msg), 0))
 }
 
 func TestServeUnknownError(t *testing.T) {
@@ -79,18 +85,21 @@ func TestServeUnknownError(t *testing.T) {
 	defer ts.Close()
 
 	req, err1 := http.NewRequest("GET", ts.URL+"/", nil)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
 	out, err2 := http.DefaultClient.Do(req)
-	it.Ok(t).If(err2).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err2, nil))
 
 	msg, err3 := io.ReadAll(out.Body)
-	it.Ok(t).If(err3).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err3, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusInternalServerError).
-		If(out.Header.Get("Content-Type")).Should().Equal("application/json").
-		If(msg).ShouldNot().Equal([]byte{})
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusInternalServerError)).
+		Should(it.Equal(out.Header.Get("Content-Type"), "application/problem+json")).
+		ShouldNot(it.Equal(len(msg), 0))
 }
 
 func TestServeAndCommit(t *testing.T) {
@@ -104,20 +113,23 @@ func TestServeAndCommit(t *testing.T) {
 	defer ts.Close()
 
 	req, err1 := http.NewRequest("GET", ts.URL+"/echo", nil)
-	it.Ok(t).If(err1).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err1, nil))
 
 	out, err2 := http.DefaultClient.Do(req)
-	it.Ok(t).If(err2).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err2, nil))
 
 	msg, err3 := io.ReadAll(out.Body)
-	it.Ok(t).If(err3).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err3, nil))
 
-	it.Ok(t).
-		If(out.StatusCode).Should().Equal(http.StatusOK).
-		If(out.Header.Get("Server")).Should().Equal("echo").
-		If(out.Header.Get("Content-Type")).Should().Equal("text/plain").
-		If(msg).Should().Equal([]byte("echo")).
-		If(cnt).Should().Equal(1)
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusOK)).
+		Should(it.Equal(out.Header.Get("Server"), "echo")).
+		Should(it.Equal(out.Header.Get("Content-Type"), "text/plain")).
+		Should(it.Equal(string(msg), "echo")).
+		Should(it.Equal(cnt, 1))
 }
 
 func mock() µ.Routable {

@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	ø "github.com/fogfish/gouldian/v2/output"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	ø "github.com/fogfish/gouldian/v3/output"
+	"github.com/fogfish/it/v2"
 )
 
 // N3: scope is matched by whole tokens, not by substring
@@ -27,7 +27,8 @@ func TestJWTScopeIsNotSubstring(t *testing.T) {
 		"prod:write ro": true,
 	} {
 		err := one(mock.Input(mock.JWT(µ.Token{"scope": scope})))
-		it.Ok(t).If(err == nil).Should().Equal(ok)
+		it.Then(t).
+			Should(it.Equal(err == nil, ok))
 	}
 
 	for scope, ok := range map[string]bool{
@@ -38,39 +39,47 @@ func TestJWTScopeIsNotSubstring(t *testing.T) {
 		"pro prw":    false,
 	} {
 		err := all(mock.Input(mock.JWT(µ.Token{"scope": scope})))
-		it.Ok(t).If(err == nil).Should().Equal(ok)
+		it.Then(t).
+			Should(it.Equal(err == nil, ok))
 	}
 }
 
 // N4: numeric claims do not panic
 func TestNewTokenNonStringClaims(t *testing.T) {
 	var tkn µ.Token
-	it.Ok(t).If(func() error {
-		tkn = µ.NewToken(map[string]any{
-			"sub":   "sub",
-			"exp":   1234.0,
-			"iat":   float64(1700000000),
-			"flag":  true,
-			"obj":   map[string]any{"a": 1},
-			"list":  []any{"a"},
-			"empty": nil,
-		})
-		return nil
-	}()).Should().Equal(nil)
+	it.Then(t).
+		Should(it.Equal(func() error {
+			tkn = µ.NewToken(map[string]any{
+				"sub":   "sub",
+				"exp":   1234.0,
+				"iat":   float64(1700000000),
+				"flag":  true,
+				"obj":   map[string]any{"a": 1},
+				"list":  []any{"a"},
+				"empty": nil,
+			})
+			return nil
+		}(), nil))
 
-	it.Ok(t).
-		If(tkn.Sub()).Should().Equal("sub").
-		If(tkn.Exp()).Should().Equal("1234").
-		If(tkn["iat"]).Should().Equal("1700000000").
-		If(tkn["flag"]).Should().Equal("true")
+	it.Then(t).
+		Should(it.Equal(tkn.Sub(), "sub")).
+		Should(it.Equal(tkn.Exp(), "1234")).
+		Should(it.Equal(tkn.String("iat"), "1700000000")).
+		Should(it.Equal(tkn.String("flag"), "true"))
 
+	exp, hasExp := tkn.Number("exp")
+	flag, hasFlag := tkn.Bool("flag")
 	_, hasObj := tkn["obj"]
-	_, hasList := tkn["list"]
 	_, hasNil := tkn["empty"]
-	it.Ok(t).
-		If(hasObj).Should().Equal(false).
-		If(hasList).Should().Equal(false).
-		If(hasNil).Should().Equal(false)
+	it.Then(t).
+		Should(it.Equal(exp, 1234.0)).
+		Should(it.Equal(hasExp, true)).
+		Should(it.Equal(flag, true)).
+		Should(it.Equal(hasFlag, true)).
+		Should(it.Equal(tkn.String("list"), "a")).
+		Should(it.Equal(hasObj, true)).
+		Should(it.Equal(tkn.String("obj"), "")).
+		Should(it.Equal(hasNil, false))
 }
 
 type sec1 struct{ X string }
@@ -88,11 +97,11 @@ func TestOrDoesNotLeakBindings(t *testing.T) {
 
 		req := mock.Input(mock.URL("/a?x=leak&y=v"))
 		var val sec3
-		it.Ok(t).
-			If(e(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Y).Should().Equal("v").
-			If(val.X).Should().Equal("")
+		it.Then(t).
+			Should(it.Equal(e(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Y, "v")).
+			Should(it.Equal(val.X, ""))
 	})
 
 	t.Run("Or", func(t *testing.T) {
@@ -103,11 +112,11 @@ func TestOrDoesNotLeakBindings(t *testing.T) {
 
 		req := mock.Input(mock.URL("/a?x=leak&y=v"))
 		var val sec3
-		it.Ok(t).
-			If(e(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Y).Should().Equal("v").
-			If(val.X).Should().Equal("")
+		it.Then(t).
+			Should(it.Equal(e(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Y, "v")).
+			Should(it.Equal(val.X, ""))
 	})
 
 	t.Run("accepted branch keeps bindings", func(t *testing.T) {
@@ -118,11 +127,11 @@ func TestOrDoesNotLeakBindings(t *testing.T) {
 
 		req := mock.Input(mock.URL("/a?x=a&y=b"), mock.Header("H", "1"))
 		var val sec3
-		it.Ok(t).
-			If(e(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.X).Should().Equal("a").
-			If(val.Y).Should().Equal("")
+		it.Then(t).
+			Should(it.Equal(e(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.X, "a")).
+			Should(it.Equal(val.Y, ""))
 	})
 }
 
@@ -151,14 +160,15 @@ func TestRoutesDoNotLeakBindings(t *testing.T) {
 	req := mock.Input(mock.URL("/a?x=v"))
 
 	var err error
-	it.Ok(t).If(func() error {
-		err = api(req)
-		return nil
-	}()).Should().Equal(nil) // no panic
+	it.Then(t).
+		Should(it.Equal(func() error {
+			err = api(req)
+			return nil
+		}(), nil)) // no panic
 
 	out, ok := err.(*µ.Output)
-	it.Ok(t).
-		If(ok).Should().Equal(true).
-		If(out.Status).Should().Equal(http.StatusAccepted).
-		If(got.Y).Should().Equal("v")
+	it.Then(t).
+		Should(it.Equal(ok, true)).
+		Should(it.Equal(out.Status, http.StatusAccepted)).
+		Should(it.Equal(got.Y, "v"))
 }

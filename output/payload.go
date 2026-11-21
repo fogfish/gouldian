@@ -16,10 +16,9 @@
 
 */
 
-package emitter
+package output
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,7 +27,7 @@ import (
 	"strconv"
 	"strings"
 
-	µ "github.com/fogfish/gouldian/v2"
+	µ "github.com/fogfish/gouldian/v3"
 )
 
 func Send(data any) µ.Result {
@@ -36,66 +35,32 @@ func Send(data any) µ.Result {
 		chunked := out.GetHeader(string(TransferEncoding)) == "chunked"
 		content := out.GetHeader(string(ContentType))
 
+		var body []byte
 		switch stream := data.(type) {
 		case string:
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(len(stream)))
-			}
-			out.Body = stream
-			return nil
-		case *strings.Reader:
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(stream.Len()))
-			}
-			val, err := io.ReadAll(stream)
-			if err != nil {
-				return err
-			}
-			out.Body = string(val)
+			body = []byte(stream)
 		case []byte:
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(len(stream)))
-			}
-			out.Body = string(stream)
-		case *bytes.Buffer:
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(stream.Len()))
-			}
-			val, err := io.ReadAll(stream)
-			if err != nil {
-				return err
-			}
-			out.Body = string(val)
-		case *bytes.Reader:
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(stream.Len()))
-			}
-			val, err := io.ReadAll(stream)
-			if err != nil {
-				return err
-			}
-			out.Body = string(val)
+			body = stream
 		case io.Reader:
 			val, err := io.ReadAll(stream)
 			if err != nil {
 				return err
 			}
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(len(val)))
-			}
-			out.Body = string(val)
+			body = val
 		default:
 			val, err := encode(content, data)
 			if err != nil {
 				out.Status = http.StatusInternalServerError
-				out.SetIssue(fmt.Errorf("serialization is failed for <%T>", val))
+				out.SetIssue(fmt.Errorf("serialization is failed for <%T>: %w", data, err))
 				return nil
 			}
-			if !chunked {
-				out.SetHeader(string(ContentLength), strconv.Itoa(len(val)))
-			}
-			out.Body = string(val)
+			body = val
 		}
+
+		if !chunked {
+			out.SetHeader(string(ContentLength), strconv.Itoa(len(body)))
+		}
+		out.Body = body
 		return nil
 	}
 }
@@ -139,7 +104,8 @@ func encodeForm(data interface{}) ([]byte, error) {
 	return []byte(payload.Encode()), nil
 }
 
-// Error appends Issue, RFC 7807: Problem Details for HTTP APIs
+// Error attaches the cause of failure to the output. The server logs the cause
+// and renders RFC 9457 Problem Details.
 func Error(failure error, title ...string) µ.Result {
 	return func(out *µ.Output) error {
 		out.SetIssue(failure, title...)

@@ -20,7 +20,7 @@ package mock
 
 import (
 	"fmt"
-	µ "github.com/fogfish/gouldian/v2"
+	µ "github.com/fogfish/gouldian/v3"
 )
 
 //

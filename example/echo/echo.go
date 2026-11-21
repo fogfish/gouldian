@@ -19,18 +19,20 @@
 package main
 
 import (
-	µ "github.com/fogfish/gouldian/v2"
-	ø "github.com/fogfish/gouldian/v2/output"
+	µ "github.com/fogfish/gouldian/v3"
+	ø "github.com/fogfish/gouldian/v3/output"
 
 	"net/http"
 
-	"github.com/fogfish/gouldian/v2/server/httpd"
+	"github.com/fogfish/gouldian/v3/server/httpd"
 )
 
 func main() {
 	http.ListenAndServe(":8080",
-		httpd.Serve(
-			echo(),
+		httpd.Handler(
+			µ.NewServer(µ.WithLogRoutes(true)).Mount(
+				echo(),
+			),
 		),
 	)
 

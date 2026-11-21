@@ -21,8 +21,6 @@ package gouldian
 import (
 	"slices"
 	"strings"
-
-	"github.com/fogfish/gouldian/v2/internal/optics"
 )
 
 /*
@@ -62,11 +60,11 @@ Is matches a key of JWT to defined literal value
 func (claim jwtClaim) Is(val string) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return ErrNoMatch
+			return NoMatchJWT
 		}
 
 		if claim(ctx.JWT) != val {
-			return ErrNoMatch
+			return NoMatchJWT
 		}
 
 		return nil
@@ -75,27 +73,27 @@ func (claim jwtClaim) Is(val string) Endpoint {
 
 /*
 To matches key of JWT value to the request context. It uses lens abstraction to
-decode value into Golang type. The Endpoint causes no-match if param
+decode value into Golang type. The Endpoint fails if the claim
 value cannot be decoded to the target type. See optics.Lens type for details.
 */
-func (claim jwtClaim) To(lens optics.Lens) Endpoint {
+func (claim jwtClaim) To(lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return ErrNoMatch
+			return NoMatchJWT
 		}
 
 		if val := claim(ctx.JWT); val != "" {
-			return ctx.Put(lens, val)
+			return ctx.put(SourceJWT, "", lens, val)
 		}
 
-		return ErrNoMatch
+		return NoMatchJWT
 	}
 }
 
 /*
 JWTMaybe matches key of JWT to the request context. It uses lens abstraction to
-decode value into Golang type. The Endpoint does not cause no-match
-if header value cannot be decoded to the target type. See optics.Lens type for details.
+decode value into Golang type. The Endpoint does not fail if the claim
+is absent, a malformed claim is a failure. See optics.Lens type for details.
 
 	type MyT struct{ Username string }
 
@@ -103,14 +101,14 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 	e := µ.GET( µ.JWTMaybe(µ.JWT.Sub).Maybe(username) )
 	e(mock.Input(mock.JWT(µ.JWT{"username": "joedoe"}))) == nil
 */
-func JWTMaybe(claim JWTClaim, lens optics.Lens) Endpoint {
+func JWTMaybe(claim JWTClaim, lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return ErrNoMatch
+			return NoMatchJWT
 		}
 
 		if val := claim(ctx.JWT); val != "" {
-			ctx.Put(lens, val)
+			return ctx.put(SourceJWT, "", lens, val)
 		}
 
 		return nil
@@ -127,7 +125,7 @@ as whole words, `ro` does not match `prod:write`.
 func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return ErrNoMatch
+			return NoMatchJWT
 		}
 
 		val := strings.Fields(claim(ctx.JWT))
@@ -137,7 +135,7 @@ func JWTOneOf(claim JWTClaim, vals ...string) Endpoint {
 			}
 		}
 
-		return ErrNoMatch
+		return NoMatchJWT
 	}
 }
 
@@ -151,13 +149,13 @@ as whole words, `ro` does not match `prod:write`.
 func JWTAllOf(claim JWTClaim, vals ...string) Endpoint {
 	return func(ctx *Context) error {
 		if ctx.JWT == nil {
-			return ErrNoMatch
+			return NoMatchJWT
 		}
 
 		val := strings.Fields(claim(ctx.JWT))
 		for _, x := range vals {
 			if !slices.Contains(val, x) {
-				return ErrNoMatch
+				return NoMatchJWT
 			}
 		}
 

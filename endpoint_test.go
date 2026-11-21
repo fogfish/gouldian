@@ -22,9 +22,9 @@ import (
 	"errors"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	"github.com/fogfish/it/v2"
 )
 
 func TestEndpointThen(t *testing.T) {
@@ -33,8 +33,8 @@ func TestEndpointThen(t *testing.T) {
 	var b µ.Endpoint = func(x *µ.Context) error { return ok }
 	var c µ.Endpoint = a.Then(b)
 
-	it.Ok(t).
-		If(c(mock.Input())).Should().Equal(ok)
+	it.Then(t).
+		Should(it.Equal(c(mock.Input()), ok))
 }
 
 func TestEndpointOr(t *testing.T) {
@@ -45,15 +45,15 @@ func TestEndpointOr(t *testing.T) {
 	t.Run("a", func(t *testing.T) {
 		var c µ.Endpoint = a.Or(b)
 
-		it.Ok(t).
-			If(c(mock.Input())).Should().Equal(ok)
+		it.Then(t).
+			Should(it.Equal(c(mock.Input()), ok))
 	})
 
 	t.Run("b", func(t *testing.T) {
 		var c µ.Endpoint = b.Or(a)
 
-		it.Ok(t).
-			If(c(mock.Input())).Should().Equal(ok)
+		it.Then(t).
+			Should(it.Equal(c(mock.Input()), ok))
 	})
 
 }

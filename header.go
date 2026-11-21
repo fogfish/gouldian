@@ -6,7 +6,7 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ package gouldian
 
 import (
 	"fmt"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,6 +37,7 @@ type MatchableHeaderValues interface {
 
 /*
 Header combinator defines primitives to match Headers of HTTP requests.
+A literal is matched by exact (case-insensitive) value of the header.
 
 	endpoint := µ.GET(
 	  µ.Header("X-Foo", "Bar"),
@@ -46,6 +48,9 @@ Header combinator defines primitives to match Headers of HTTP requests.
 	    mock.Header("X-Foo", "Bar")
 	  )
 	) == nil
+
+An absent header or differing literal is NoMatch. A header that is present but
+cannot be decoded by the lens is Failure (400).
 */
 func Header[T MatchableHeaderValues](hdr string, val T) Endpoint {
 	switch v := any(val).(type) {
@@ -76,8 +81,8 @@ func HeaderAny(hdr string) Endpoint {
 
 /*
 HeaderMaybe matches header value to the request context. It uses lens abstraction to
-decode HTTP header into Golang type. The Endpoint does not cause no-match
-if header value cannot be decoded to the target type. See optics.Lens type for details.
+decode HTTP header into Golang type. The Endpoint matches if the header is not
+defined. A header that is present but cannot be decoded is Failure.
 
 	type myT struct{ Val string }
 
@@ -87,60 +92,76 @@ if header value cannot be decoded to the target type. See optics.Lens type for d
 */
 func HeaderMaybe(header string, lens Lens) Endpoint {
 	return func(ctx *Context) error {
-		if opt := ctx.Request.Header.Get(string(header)); opt != "" {
-			ctx.Put(lens, opt)
+		if opt := ctx.Request.Header.Get(header); opt != "" {
+			return ctx.put(SourceHeader, header, lens, opt)
 		}
 		return nil
 	}
 }
 
 func isHeaderExists(ctx *Context, header string) error {
-	opt := ctx.Request.Header.Get(string(header))
+	opt := ctx.Request.Header.Get(header)
 	if opt == "" {
-		return ErrNoMatch
+		return NoMatchHeader
 	}
 	return nil
 }
 
 func isHeaderEqString(ctx *Context, header string, value string) error {
-	opt := ctx.Request.Header.Get(string(header))
-	if opt == "" || !strings.HasPrefix(opt, value) {
-		return ErrNoMatch
+	opt := ctx.Request.Header.Get(header)
+	if opt == "" || !strings.EqualFold(strings.TrimSpace(opt), value) {
+		return NoMatchHeader
 	}
 	return nil
 }
 
+// isHeaderHasToken matches the header with the list of tokens (comma
+// separated), e.g. Connection: keep-alive, Upgrade
+func isHeaderHasToken(ctx *Context, header string, token string) error {
+	for _, opt := range ctx.Request.Header.Values(header) {
+		for _, t := range strings.Split(opt, ",") {
+			if strings.EqualFold(strings.TrimSpace(t), token) {
+				return nil
+			}
+		}
+	}
+	return NoMatchHeader
+}
+
 func isHeaderEqInt(ctx *Context, header string, value int) error {
-	opt := ctx.Request.Header.Get(string(header))
+	opt := ctx.Request.Header.Get(header)
 	if opt == "" {
-		return ErrNoMatch
+		return NoMatchHeader
 	}
 
 	val, err := strconv.Atoi(opt)
 	if err != nil {
-		return ErrNoMatch
+		return newFailure(SourceHeader, header, err)
 	}
 
 	if val != value {
-		return ErrNoMatch
+		return NoMatchHeader
 	}
 
 	return nil
 }
 
 func isHeaderEqTime(ctx *Context, header string, value time.Time) error {
-	opt := ctx.Request.Header.Get(string(header))
+	opt := ctx.Request.Header.Get(header)
 	if opt == "" {
-		return ErrNoMatch
+		return NoMatchHeader
 	}
 
 	val, err := time.Parse(time.RFC1123, opt)
 	if err != nil {
-		return ErrNoMatch
+		val, err = http.ParseTime(opt)
+	}
+	if err != nil {
+		return newFailure(SourceHeader, header, err)
 	}
 
 	if !val.Equal(value) {
-		return ErrNoMatch
+		return NoMatchHeader
 	}
 
 	return nil
@@ -175,14 +196,14 @@ func (h HeaderOf[T]) Is(value T) Endpoint {
 }
 
 // To matches header value to the request context. It uses lens abstraction to
-// decode HTTP header into Golang type. The Endpoint causes no-match if header
-// value cannot be decoded to the target type. See optics.Lens type for details.
+// decode HTTP header into Golang type. The Endpoint is NoMatch if the header is
+// absent, it is Failure if the value cannot be decoded to the target type.
 func (h HeaderOf[T]) To(lens Lens) Endpoint {
 	return func(ctx *Context) error {
 		if opt := ctx.Request.Header.Get(string(h)); opt != "" {
-			return ctx.Put(lens, opt)
+			return ctx.put(SourceHeader, string(h), lens, opt)
 		}
-		return ErrNoMatch
+		return NoMatchHeader
 	}
 }
 
@@ -196,46 +217,51 @@ supplied within the request
 */
 func Authorization(f func(string, string) error) Endpoint {
 	return func(ctx *Context) error {
-		auth := ctx.Request.Header.Get("Authorization")
-		if auth == "" {
-			out := NewOutput(http.StatusUnauthorized)
-			out.SetIssue(fmt.Errorf("unauthorized %s", ctx.Request.URL.Path))
-			return out
-		}
-
-		cred := strings.Split(auth, " ")
-		if len(cred) != 2 {
-			out := NewOutput(http.StatusUnauthorized)
-			out.SetIssue(fmt.Errorf("unauthorized %s", ctx.Request.URL.Path))
-			return out
-		}
-
-		if err := f(cred[0], cred[1]); err != nil {
+		unauthorized := func(err error) error {
 			out := NewOutput(http.StatusUnauthorized)
 			out.SetIssue(err)
 			return out
+		}
+
+		cred := strings.Fields(ctx.Request.Header.Get("Authorization"))
+		if len(cred) != 2 {
+			return unauthorized(fmt.Errorf("unauthorized %s", ctx.Request.URL.Path))
+		}
+
+		if err := f(cred[0], cred[1]); err != nil {
+			return unauthorized(err)
 		}
 
 		return nil
 	}
 }
 
-// Type of HTTP Header, Content-Type enumeration
+// Type of HTTP Header, Content-Type and Accept enumeration
 //
 //	const ContentType = HeaderEnumContent("Content-Type")
 //	µ.ContentType.JSON
+//
+// The Content-Type matches by media type, parameters (charset) are ignored,
+// the comparison is case-insensitive. A mismatch is NoMatchContentType, the
+// server responds with 415 if no other endpoint matches.
+//
+// The Accept header is negotiated: comma separated list, q-values, \*/\* and
+// type/\* are supported. A missing header accepts anything. A mismatch is
+// NoMatchAccept, the server responds with 406 if no other endpoint matches.
 type HeaderEnumContent string
+
+func (h HeaderEnumContent) isAccept() bool {
+	return strings.EqualFold(string(h), "Accept")
+}
 
 // Matches header to any value
 func (h HeaderEnumContent) Any(ctx *Context) error {
 	return isHeaderExists(ctx, string(h))
 }
 
-// Matches value of HTTP header
-func (h HeaderEnumContent) Is(value string) Endpoint {
-	return func(ctx *Context) error {
-		return isHeaderEqString(ctx, string(h), value)
-	}
+// Is matches the header to one of media types
+func (h HeaderEnumContent) Is(values ...string) Endpoint {
+	return func(ctx *Context) error { return h.match(ctx, values...) }
 }
 
 // Matches value of HTTP header
@@ -243,40 +269,96 @@ func (h HeaderEnumContent) To(lens Lens) Endpoint {
 	return HeaderOf[string](h).To(lens)
 }
 
-// ApplicationJSON defines header `???: application/json`
-func (h HeaderEnumContent) ApplicationJSON(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "application/json")
+func (h HeaderEnumContent) match(ctx *Context, types ...string) error {
+	if h.isAccept() {
+		return matchAccept(ctx.Request.Header.Values(string(h)), types)
+	}
+
+	opt := ctx.Request.Header.Get(string(h))
+	mt, _, err := mime.ParseMediaType(opt)
+	if err != nil {
+		return NoMatchContentType
+	}
+
+	for _, t := range types {
+		if mediaRange(t, mt) {
+			return nil
+		}
+	}
+	return NoMatchContentType
 }
 
-// JSON defines header `???: application/json`
-func (h HeaderEnumContent) JSON(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "application/json")
+// mediaRange checks if media type `mt` is within the range `rng`
+func mediaRange(rng, mt string) bool {
+	rng = strings.ToLower(strings.TrimSpace(rng))
+	mt = strings.ToLower(mt)
+	switch {
+	case rng == mt || rng == "*/*" || rng == "*":
+		return true
+	case strings.HasSuffix(rng, "/*"):
+		return strings.HasPrefix(mt, rng[:len(rng)-1])
+	default:
+		return false
+	}
 }
+
+func matchAccept(values []string, types []string) error {
+	var seen bool
+	for _, v := range values {
+		for _, item := range strings.Split(v, ",") {
+			if strings.TrimSpace(item) == "" {
+				continue
+			}
+			seen = true
+
+			rng, params, err := mime.ParseMediaType(item)
+			if err != nil {
+				continue
+			}
+			if q, ok := params["q"]; ok {
+				if w, err := strconv.ParseFloat(q, 64); err == nil && w <= 0 {
+					continue
+				}
+			}
+
+			for _, t := range types {
+				if mediaRange(rng, t) || mediaRange(t, rng) {
+					return nil
+				}
+			}
+		}
+	}
+
+	if !seen {
+		return nil
+	}
+	return NoMatchAccept
+}
+
+func (h HeaderEnumContent) is(ctx *Context, mt string) error { return h.match(ctx, mt) }
+
+// ApplicationJSON defines header `???: application/json`
+func (h HeaderEnumContent) ApplicationJSON(ctx *Context) error { return h.is(ctx, "application/json") }
+
+// JSON defines header `???: application/json`
+func (h HeaderEnumContent) JSON(ctx *Context) error { return h.is(ctx, "application/json") }
 
 // Form defined Header `???: application/x-www-form-urlencoded`
 func (h HeaderEnumContent) Form(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "application/x-www-form-urlencoded")
+	return h.is(ctx, "application/x-www-form-urlencoded")
 }
 
 // TextPlain defined Header `???: text/plain`
-func (h HeaderEnumContent) TextPlain(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "text/plain")
-}
+func (h HeaderEnumContent) TextPlain(ctx *Context) error { return h.is(ctx, "text/plain") }
 
 // Text defined Header `???: text/plain`
-func (h HeaderEnumContent) Text(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "text/plain")
-}
+func (h HeaderEnumContent) Text(ctx *Context) error { return h.is(ctx, "text/plain") }
 
 // TextHTML defined Header `???: text/html`
-func (h HeaderEnumContent) TextHTML(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "text/html")
-}
+func (h HeaderEnumContent) TextHTML(ctx *Context) error { return h.is(ctx, "text/html") }
 
 // HTML defined Header `???: text/html`
-func (h HeaderEnumContent) HTML(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "text/html")
-}
+func (h HeaderEnumContent) HTML(ctx *Context) error { return h.is(ctx, "text/html") }
 
 // Type of HTTP Header, Connection enumeration
 //
@@ -292,7 +374,7 @@ func (h HeaderEnumConnection) Any(ctx *Context) error {
 // Matches value of HTTP header
 func (h HeaderEnumConnection) Is(value string) Endpoint {
 	return func(ctx *Context) error {
-		return isHeaderEqString(ctx, string(h), value)
+		return isHeaderHasToken(ctx, string(h), value)
 	}
 }
 
@@ -303,12 +385,12 @@ func (h HeaderEnumConnection) To(lens Lens) Endpoint {
 
 // KeepAlive defines header `???: keep-alive`
 func (h HeaderEnumConnection) KeepAlive(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "keep-alive")
+	return isHeaderHasToken(ctx, string(h), "keep-alive")
 }
 
 // Close defines header `???: close`
 func (h HeaderEnumConnection) Close(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "close")
+	return isHeaderHasToken(ctx, string(h), "close")
 }
 
 // Type of HTTP Header, Transfer-Encoding enumeration
@@ -325,7 +407,7 @@ func (h HeaderEnumTransferEncoding) Any(ctx *Context) error {
 // Matches value of HTTP header
 func (h HeaderEnumTransferEncoding) Is(value string) Endpoint {
 	return func(ctx *Context) error {
-		return isHeaderEqString(ctx, string(h), value)
+		return isHeaderHasToken(ctx, string(h), value)
 	}
 }
 
@@ -336,12 +418,12 @@ func (h HeaderEnumTransferEncoding) To(lens Lens) Endpoint {
 
 // Chunked defines header `Transfer-Encoding: chunked`
 func (h HeaderEnumTransferEncoding) Chunked(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "chunked")
+	return isHeaderHasToken(ctx, string(h), "chunked")
 }
 
 // Identity defines header `Transfer-Encoding: identity`
 func (h HeaderEnumTransferEncoding) Identity(ctx *Context) error {
-	return isHeaderEqString(ctx, string(h), "identity")
+	return isHeaderHasToken(ctx, string(h), "identity")
 }
 
 // List of supported HTTP header constants

@@ -6,7 +6,7 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"unsafe"
 )
 
 const (
@@ -30,17 +29,16 @@ const (
 	Any = "_"
 )
 
-/*
-Route converts sequence ot Endpoints into Routable element
-*/
-func Route(
-	path Routable,
-	seq ...Endpoint,
-) Routable {
-	return func() ([]string, Endpoint) {
-		route, pathEndpoint := path()
-		endpoints := append(Endpoints{pathEndpoint}, seq...)
-		return route, endpoints.Join
+// HTTP composes Endpoints into Routable. The verb is the routing metadata,
+// the server responds with 405 if the path is known but not the verb.
+func HTTP(verb string, path Routable, arrows ...Endpoint) Routable {
+	return func() Route {
+		route := path()
+		if len(arrows) > 0 {
+			route.Endpoint = append(Endpoints{route.Endpoint}, arrows...).Join
+		}
+		route.Method = verb
+		return route
 	}
 }
 
@@ -51,12 +49,9 @@ DELETE composes Endpoints into Routable that matches HTTP DELETE request.
 	  µ.URI(µ.Path("foo"), µ.Path("bar")),
 	  ...
 	)
-	e(mock.Input(mock.Method("DELETE"))) == nil
-	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func DELETE(path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method("DELETE")}, arrows...)
-	return Route(path, seq...)
+	return HTTP(http.MethodDelete, path, arrows...)
 }
 
 /*
@@ -66,12 +61,9 @@ GET composes Endpoints into Routable that matches HTTP GET request.
 	  µ.URI(µ.Path("foo"), µ.Path("bar")),
 	  ...
 	)
-	e(mock.Input(mock.Method("GET"))) == nil
-	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func GET(path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method("GET")}, arrows...)
-	return Route(path, seq...)
+	return HTTP(http.MethodGet, path, arrows...)
 }
 
 /*
@@ -81,12 +73,9 @@ PATCH composes Endpoints into Routable that matches HTTP PATCH request.
 	  µ.URI(µ.Path("foo"), µ.Path("bar")),
 	  ...
 	)
-	e(mock.Input(mock.Method("PATCH"))) == nil
-	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func PATCH(path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method("PATCH")}, arrows...)
-	return Route(path, seq...)
+	return HTTP(http.MethodPatch, path, arrows...)
 }
 
 /*
@@ -96,12 +85,9 @@ POST composes Endpoints into Routable that matches HTTP POST request.
 	  µ.URI(µ.Path("foo"), µ.Path("bar")),
 	  ...
 	)
-	e(mock.Input(mock.Method("POST"))) == nil
-	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func POST(path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method("POST")}, arrows...)
-	return Route(path, seq...)
+	return HTTP(http.MethodPost, path, arrows...)
 }
 
 /*
@@ -111,12 +97,9 @@ PUT composes Endpoints into Routable that matches HTTP PUT request.
 	  µ.URI(µ.Path("foo"), µ.Path("bar")),
 	  ...
 	)
-	e(mock.Input(mock.Method("PUT"))) == nil
-	e(mock.Input(mock.Method("OTHER"))) != nil
 */
 func PUT(path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method("PUT")}, arrows...)
-	return Route(path, seq...)
+	return HTTP(http.MethodPut, path, arrows...)
 }
 
 /*
@@ -126,21 +109,14 @@ ANY composes Endpoints into Routable that matches HTTP any request.
 	  µ.URI(µ.Path("foo"), µ.Path("bar")),
 	  ...
 	)
-	e(mock.Input(mock.Method("PUT"))) == nil
-	e(mock.Input(mock.Method("OTHER"))) == nil
 */
 func ANY(path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method(Any)}, arrows...)
-	return Route(path, seq...)
+	return HTTP(Any, path, arrows...)
 }
 
-// HTTP composes Endpoints into Routable
-func HTTP(verb string, path Routable, arrows ...Endpoint) Routable {
-	seq := append(Endpoints{Method(verb)}, arrows...)
-	return Route(path, seq...)
-}
-
-// Method is an endpoint to match HTTP verb request
+// Method is an endpoint to match HTTP verb request. Routes built by GET, POST,
+// etc. carry the verb as metadata, use the endpoint only to constrain
+// a request inside the route (e.g. ANY).
 func Method(verb string) Endpoint {
 	if verb == Any {
 		return func(ctx *Context) error {
@@ -150,33 +126,52 @@ func Method(verb string) Endpoint {
 
 	return func(ctx *Context) error {
 		if ctx.Request == nil {
-			return ErrNoMatch
+			return NoMatchMethod
 		}
 
 		if ctx.Request.Method == verb {
 			return nil
 		}
 
-		return ErrNoMatch
+		return NoMatchMethod
 	}
 }
 
-// Body decodes HTTP request body and lifts it to the structure
+// Body decodes HTTP request body and lifts it to the structure.
+// The body is read once and shared by all endpoints of the request, so
+// several lenses (e.g. raw bytes and typed struct) can read the same body.
+//
+// An empty body is Failure (400, "body is required"). A body over the limit
+// of the server is Failure (413). A body that cannot be decoded by the lens
+// is Failure (400) with JSON pointer to the invalid value.
 func Body(lens Lens) Endpoint {
 	return func(ctx *Context) error {
-		if ctx.payload == nil {
-			if err := ctx.cacheBody(); err != nil {
-				return err
-			}
-
-			if ctx.payload == nil {
-				return ErrNoMatch
-			}
-
-			return ctx.Put(lens, *(*string)(unsafe.Pointer(&ctx.payload)))
+		buf, err := ctx.body()
+		if err != nil {
+			return err
 		}
 
-		return ErrNoMatch
+		if len(buf) == 0 {
+			return newFailure(SourceBody, "", ErrBodyRequired)
+		}
+
+		return ctx.putBody(lens, buf)
+	}
+}
+
+// BodyMaybe is like Body, but an empty body is not an error.
+func BodyMaybe(lens Lens) Endpoint {
+	return func(ctx *Context) error {
+		buf, err := ctx.body()
+		if err != nil {
+			return err
+		}
+
+		if len(buf) == 0 {
+			return nil
+		}
+
+		return ctx.putBody(lens, buf)
 	}
 }
 
@@ -186,9 +181,7 @@ func FMap[A any](f func(*Context, *A) error) Endpoint {
 	return func(req *Context) error {
 		var a A
 		if err := FromContext(req, &a); err != nil {
-			out := NewOutput(http.StatusBadRequest)
-			out.SetIssue(err)
-			return out
+			return err
 		}
 
 		return f(req, &a)
@@ -202,9 +195,7 @@ func Map[A, B any](f func(*Context, *A) (*B, error)) Endpoint {
 	return func(req *Context) error {
 		var a A
 		if err := FromContext(req, &a); err != nil {
-			out := NewOutput(http.StatusBadRequest)
-			out.SetIssue(err)
-			return out
+			return err
 		}
 
 		b, err := f(req, &a)
@@ -212,16 +203,16 @@ func Map[A, B any](f func(*Context, *A) (*B, error)) Endpoint {
 			return err
 		}
 
-		out := NewOutput(http.StatusOK)
-
 		val, err := json.Marshal(b)
 		if err != nil {
-			out.SetIssue(fmt.Errorf("serialization is failed for <%T>", val))
+			out := NewOutput(http.StatusInternalServerError)
+			out.SetIssue(fmt.Errorf("serialization is failed for <%T>: %w", b, err))
 			return out
 		}
 
+		out := NewOutput(http.StatusOK)
 		out.SetHeader("Content-Type", "application/json")
-		out.Body = string(val)
+		out.Body = val
 		return out
 	}
 }

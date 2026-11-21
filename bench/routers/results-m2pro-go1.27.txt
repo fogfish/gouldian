@@ -1,0 +1,374 @@
+#GithubAPI Routes: 203
+   BunRouter: 93776 Bytes
+   Chi: 94888 Bytes
+   Echo: 117912 Bytes
+   Gin: 58840 Bytes
+   HttpRouter: 37072 Bytes
+   HttpTreeMux: 78800 Bytes
+
+#GPlusAPI Routes: 13
+   BunRouter: 7360 Bytes
+   Chi: 8008 Bytes
+   Echo: 11096 Bytes
+   Gin: 4576 Bytes
+   HttpRouter: 2776 Bytes
+   HttpTreeMux: 7440 Bytes
+
+#ParseAPI Routes: 26
+   BunRouter: 9336 Bytes
+   Chi: 9656 Bytes
+   Echo: 13944 Bytes
+   Gin: 7896 Bytes
+   HttpRouter: 5024 Bytes
+   HttpTreeMux: 7848 Bytes
+
+#Static Routes: 157
+   BunRouter: 51232 Bytes
+   Chi: 83160 Bytes
+   Echo: 92104 Bytes
+   Gin: 34408 Bytes
+   HttpRouter: 21680 Bytes
+   HttpTreeMux: 73448 Bytes
+
+goos: darwin
+goarch: arm64
+pkg: github.com/julienschmidt/go-http-routing-benchmark
+cpu: Apple M2 Pro
+BenchmarkBunRouter_Param          	79394835	        16.20 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Param          	79475898	        15.00 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Param          	80923657	        14.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_Param                	 2574912	       471.1 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_Param                	 2568518	       467.2 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_Param                	 2563047	       468.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_Param               	48630740	        24.55 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Param               	48976592	        24.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Param               	48906729	        24.54 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param                	46336370	        25.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param                	46608955	        25.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param                	46218210	        25.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_Param         	29628867	        39.44 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHttpRouter_Param         	30393051	        39.77 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHttpRouter_Param         	30464424	        39.49 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_Param        	 5427877	       224.2 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_Param        	 5402742	       226.3 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_Param        	 5449543	       223.0 ns/op	     352 B/op	       3 allocs/op
+BenchmarkBunRouter_Param5         	17265554	        69.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Param5         	17418862	        69.00 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Param5         	17373144	        68.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_Param5               	 1818045	       660.7 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_Param5               	 1761492	       680.7 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_Param5               	 1812856	       663.4 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_Param5              	18963598	        63.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Param5              	19054120	        62.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Param5              	19002751	        62.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param5               	24066624	        50.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param5               	24060612	        49.94 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param5               	24107276	        49.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_Param5        	 9545852	       125.7 ns/op	     160 B/op	       1 allocs/op
+BenchmarkHttpRouter_Param5        	 9226826	       125.8 ns/op	     160 B/op	       1 allocs/op
+BenchmarkHttpRouter_Param5        	 9631352	       126.3 ns/op	     160 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_Param5       	 2528236	       482.2 ns/op	     576 B/op	       6 allocs/op
+BenchmarkHttpTreeMux_Param5       	 2517096	       475.6 ns/op	     576 B/op	       6 allocs/op
+BenchmarkHttpTreeMux_Param5       	 2505162	       476.6 ns/op	     576 B/op	       6 allocs/op
+BenchmarkBunRouter_Param20        	 2453390	       492.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Param20        	 2451302	       489.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Param20        	 2458047	       490.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_Param20              	  431653	      2768 ns/op	    2504 B/op	       9 allocs/op
+BenchmarkChi_Param20              	  429282	      2732 ns/op	    2504 B/op	       9 allocs/op
+BenchmarkChi_Param20              	  428997	      2729 ns/op	    2504 B/op	       9 allocs/op
+BenchmarkEcho_Param20             	 6340857	       184.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Param20             	 5427734	       191.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Param20             	 6500840	       185.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param20              	 8376404	       146.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param20              	 8207079	       142.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Param20              	 8445519	       146.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_Param20       	 2737976	       424.6 ns/op	     704 B/op	       1 allocs/op
+BenchmarkHttpRouter_Param20       	 2834265	       423.6 ns/op	     704 B/op	       1 allocs/op
+BenchmarkHttpRouter_Param20       	 2843229	       412.9 ns/op	     704 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_Param20      	  429829	      2744 ns/op	    3144 B/op	      13 allocs/op
+BenchmarkHttpTreeMux_Param20      	  429362	      2770 ns/op	    3144 B/op	      13 allocs/op
+BenchmarkHttpTreeMux_Param20      	  424944	      2758 ns/op	    3144 B/op	      13 allocs/op
+BenchmarkBunRouter_ParamWrite     	37747323	        31.53 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParamWrite     	38620341	        31.19 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParamWrite     	38585725	        31.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_ParamWrite           	 2465715	       477.6 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_ParamWrite           	 2516082	       481.8 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_ParamWrite           	 2528714	       484.2 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_ParamWrite          	18378351	        67.21 ns/op	       8 B/op	       1 allocs/op
+BenchmarkEcho_ParamWrite          	17915672	        67.28 ns/op	       8 B/op	       1 allocs/op
+BenchmarkEcho_ParamWrite          	18095805	        67.44 ns/op	       8 B/op	       1 allocs/op
+BenchmarkGin_ParamWrite           	29879454	        34.64 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParamWrite           	34684586	        34.85 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParamWrite           	33556968	        34.87 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_ParamWrite    	26216065	        44.01 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHttpRouter_ParamWrite    	27701923	        43.69 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHttpRouter_ParamWrite    	27751305	        43.40 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_ParamWrite   	 5199687	       233.6 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_ParamWrite   	 5176599	       233.6 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_ParamWrite   	 5111137	       234.2 ns/op	     352 B/op	       3 allocs/op
+BenchmarkBunRouter_GithubStatic   	52183176	        23.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubStatic   	52139437	        23.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubStatic   	51892358	        23.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GithubStatic         	 4268715	       285.8 ns/op	     368 B/op	       2 allocs/op
+BenchmarkChi_GithubStatic         	 4301029	       279.5 ns/op	     368 B/op	       2 allocs/op
+BenchmarkChi_GithubStatic         	 4289848	       279.6 ns/op	     368 B/op	       2 allocs/op
+BenchmarkEcho_GithubStatic        	30961016	        39.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GithubStatic        	30038893	        39.45 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GithubStatic        	30235014	        39.54 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubStatic         	34526288	        34.89 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubStatic         	34305152	        34.77 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubStatic         	34603032	        34.77 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GithubStatic  	48080293	        25.08 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GithubStatic  	47328876	        25.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GithubStatic  	47498962	        25.13 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_GithubStatic 	34915904	        34.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_GithubStatic 	32497756	        34.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_GithubStatic 	34936615	        34.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubParam    	13994671	        85.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubParam    	14052660	        85.55 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubParam    	13941600	        85.64 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GithubParam          	 2141468	       564.9 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_GithubParam          	 2137760	       563.2 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_GithubParam          	 2143785	       559.7 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_GithubParam         	16225689	        74.29 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GithubParam         	16217055	        74.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GithubParam         	16151445	        74.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubParam          	20665219	        58.37 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubParam          	20488755	        58.64 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubParam          	20603466	        58.39 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GithubParam   	12089010	        98.84 ns/op	      96 B/op	       1 allocs/op
+BenchmarkHttpRouter_GithubParam   	12086286	       102.3 ns/op	      96 B/op	       1 allocs/op
+BenchmarkHttpRouter_GithubParam   	12235502	        99.01 ns/op	      96 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_GithubParam  	 3794628	       317.5 ns/op	     384 B/op	       4 allocs/op
+BenchmarkHttpTreeMux_GithubParam  	 3805854	       320.7 ns/op	     384 B/op	       4 allocs/op
+BenchmarkHttpTreeMux_GithubParam  	 3766566	       327.0 ns/op	     384 B/op	       4 allocs/op
+BenchmarkBunRouter_GithubAll      	   87316	     13628 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubAll      	   88056	     14292 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GithubAll      	   78934	     13732 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GithubAll            	    9818	    113599 ns/op	  130821 B/op	     740 allocs/op
+BenchmarkChi_GithubAll            	   10000	    115409 ns/op	  130821 B/op	     740 allocs/op
+BenchmarkChi_GithubAll            	   10000	    114039 ns/op	  130821 B/op	     740 allocs/op
+BenchmarkEcho_GithubAll           	   78450	     14862 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GithubAll           	   81510	     14766 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GithubAll           	   80002	     14720 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubAll            	   96130	     12359 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubAll            	   96706	     12374 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GithubAll            	   96332	     12478 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GithubAll     	   64774	     18524 ns/op	   13792 B/op	     167 allocs/op
+BenchmarkHttpRouter_GithubAll     	   64274	     18477 ns/op	   13792 B/op	     167 allocs/op
+BenchmarkHttpRouter_GithubAll     	   64052	     18698 ns/op	   13792 B/op	     167 allocs/op
+BenchmarkHttpTreeMux_GithubAll    	   20625	     58210 ns/op	   65856 B/op	     671 allocs/op
+BenchmarkHttpTreeMux_GithubAll    	   20640	     58757 ns/op	   65856 B/op	     671 allocs/op
+BenchmarkHttpTreeMux_GithubAll    	   20496	     58241 ns/op	   65856 B/op	     671 allocs/op
+BenchmarkGouldian_Param           	23877982	        49.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param           	23858992	        50.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param           	24212320	        50.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param5          	15776706	        76.10 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param5          	15735692	        76.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param5          	15752906	        76.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param20         	 6023499	       197.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param20         	 6110030	       197.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Param20         	 6076633	       196.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParamWrite      	 1964534	       628.7 ns/op	     760 B/op	       6 allocs/op
+BenchmarkGouldian_ParamWrite      	 1908864	       607.4 ns/op	     760 B/op	       6 allocs/op
+BenchmarkGouldian_ParamWrite      	 1976546	       627.1 ns/op	     760 B/op	       6 allocs/op
+BenchmarkGouldian_GithubStatic    	20298414	        58.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubStatic    	20360464	        58.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubStatic    	20282589	        58.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubParam     	16318824	        73.54 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubParam     	15970968	        73.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubParam     	16344403	        74.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubAll       	   68138	     17693 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubAll       	   67794	     17626 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GithubAll       	   68115	     17686 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusStatic     	28606988	        42.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusStatic     	28235542	        42.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusStatic     	28286820	        42.24 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusParam      	21756981	        55.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusParam      	21810564	        55.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusParam      	21722437	        55.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlus2Params    	15847999	        77.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlus2Params    	15872236	        75.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlus2Params    	15886972	        75.50 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusAll        	 1416352	       846.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusAll        	 1409594	       846.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_GPlusAll        	 1416768	       847.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseStatic     	24767120	        48.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseStatic     	24997699	        48.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseStatic     	25400252	        48.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseParam      	21248120	        56.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseParam      	21288847	        56.45 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseParam      	21254972	        56.53 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Parse2Params    	18456284	        64.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Parse2Params    	18021084	        65.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_Parse2Params    	18370615	        64.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseAll        	  673891	      1777 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseAll        	  665824	      1794 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_ParseAll        	  676992	      1778 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_StaticAll       	   98256	     12288 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_StaticAll       	   97516	     12324 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGouldian_StaticAll       	   97639	     12305 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusStatic    	100000000	        11.29 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusStatic    	100000000	        11.67 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusStatic    	100000000	        11.39 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GPlusStatic          	 4529244	       265.3 ns/op	     368 B/op	       2 allocs/op
+BenchmarkChi_GPlusStatic          	 4475606	       267.8 ns/op	     368 B/op	       2 allocs/op
+BenchmarkChi_GPlusStatic          	 4455453	       265.1 ns/op	     368 B/op	       2 allocs/op
+BenchmarkEcho_GPlusStatic         	47422786	        25.94 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlusStatic         	46614840	        25.89 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlusStatic         	45412116	        25.93 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusStatic          	50184880	        24.08 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusStatic          	49707020	        24.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusStatic          	50096451	        24.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GPlusStatic   	88159392	        13.33 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GPlusStatic   	90411655	        13.37 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GPlusStatic   	89433498	        13.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_GPlusStatic  	55823798	        20.42 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_GPlusStatic  	58741464	        20.43 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_GPlusStatic  	58484400	        20.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusParam     	57060436	        21.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusParam     	57628353	        20.95 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusParam     	56991330	        20.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GPlusParam           	 2523430	       484.8 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_GPlusParam           	 2502597	       485.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_GPlusParam           	 2502739	       485.4 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_GPlusParam          	28987986	        41.94 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlusParam          	28804665	        41.87 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlusParam          	28750089	        41.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusParam           	33190390	        36.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusParam           	33406060	        36.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusParam           	33161193	        36.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GPlusParam    	17755243	        61.68 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_GPlusParam    	18492880	        60.25 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_GPlusParam    	19581592	        60.68 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_GPlusParam   	 4994286	       242.4 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_GPlusParam   	 4997113	       239.8 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_GPlusParam   	 4986621	       240.1 ns/op	     352 B/op	       3 allocs/op
+BenchmarkBunRouter_GPlus2Params   	26627931	        45.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlus2Params   	26705389	        45.09 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlus2Params   	26667554	        45.02 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GPlus2Params         	 2244390	       535.7 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_GPlus2Params         	 2269042	       531.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_GPlus2Params         	 2256039	       532.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_GPlus2Params        	20989095	        56.81 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlus2Params        	21340209	        56.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlus2Params        	21042478	        57.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlus2Params         	22734250	        53.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlus2Params         	22642203	        52.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlus2Params         	22735040	        52.47 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GPlus2Params  	14759640	        76.47 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_GPlus2Params  	15366990	        76.16 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_GPlus2Params  	15780094	        76.21 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_GPlus2Params 	 3819384	       316.0 ns/op	     384 B/op	       4 allocs/op
+BenchmarkHttpTreeMux_GPlus2Params 	 3844947	       313.5 ns/op	     384 B/op	       4 allocs/op
+BenchmarkHttpTreeMux_GPlus2Params 	 3829808	       316.7 ns/op	     384 B/op	       4 allocs/op
+BenchmarkBunRouter_GPlusAll       	 2625864	       456.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusAll       	 2614513	       457.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_GPlusAll       	 2630914	       466.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_GPlusAll             	  178147	      6488 ns/op	    8480 B/op	      48 allocs/op
+BenchmarkChi_GPlusAll             	  184965	      6476 ns/op	    8480 B/op	      48 allocs/op
+BenchmarkChi_GPlusAll             	  183602	      6573 ns/op	    8480 B/op	      48 allocs/op
+BenchmarkEcho_GPlusAll            	 1961720	       599.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlusAll            	 2003443	       599.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_GPlusAll            	 2001002	       598.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusAll             	 2105470	       568.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusAll             	 2098918	       573.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_GPlusAll             	 2107526	       980.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_GPlusAll      	 1357581	       851.0 ns/op	     640 B/op	      11 allocs/op
+BenchmarkHttpRouter_GPlusAll      	 1430774	       843.7 ns/op	     640 B/op	      11 allocs/op
+BenchmarkHttpRouter_GPlusAll      	 1391504	       840.0 ns/op	     640 B/op	      11 allocs/op
+BenchmarkHttpTreeMux_GPlusAll     	  387097	      3123 ns/op	    4032 B/op	      38 allocs/op
+BenchmarkHttpTreeMux_GPlusAll     	  385980	      3140 ns/op	    4032 B/op	      38 allocs/op
+BenchmarkHttpTreeMux_GPlusAll     	  383011	      3112 ns/op	    4032 B/op	      38 allocs/op
+BenchmarkBunRouter_ParseStatic    	71565951	        16.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseStatic    	71692257	        16.82 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseStatic    	71533956	        16.84 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_ParseStatic          	 4525933	       267.3 ns/op	     368 B/op	       2 allocs/op
+BenchmarkChi_ParseStatic          	 4516896	       265.5 ns/op	     368 B/op	       2 allocs/op
+BenchmarkChi_ParseStatic          	 4552006	       269.3 ns/op	     368 B/op	       2 allocs/op
+BenchmarkEcho_ParseStatic         	46499538	        25.89 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_ParseStatic         	46453260	        26.07 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_ParseStatic         	46102348	        26.03 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseStatic          	50141632	        24.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseStatic          	49690983	        24.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseStatic          	49985941	        24.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_ParseStatic   	78620215	        15.12 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_ParseStatic   	79858698	        15.11 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_ParseStatic   	79384767	        16.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_ParseStatic  	36829962	        32.05 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_ParseStatic  	37705118	        32.35 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_ParseStatic  	37745047	        31.91 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseParam     	55671751	        21.78 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseParam     	54356338	        21.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseParam     	55500952	        21.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_ParseParam           	 2494952	       485.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_ParseParam           	 2483458	       474.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_ParseParam           	 2516016	       475.0 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_ParseParam          	36666364	        32.71 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_ParseParam          	36847303	        32.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_ParseParam          	36794719	        32.58 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseParam           	42296896	        28.57 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseParam           	42184882	        28.50 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseParam           	41894748	        28.48 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_ParseParam    	21757671	        53.06 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_ParseParam    	22818152	        52.47 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_ParseParam    	22432893	        52.04 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_ParseParam   	 5320990	       228.2 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_ParseParam   	 5226454	       228.4 ns/op	     352 B/op	       3 allocs/op
+BenchmarkHttpTreeMux_ParseParam   	 5052523	       226.8 ns/op	     352 B/op	       3 allocs/op
+BenchmarkBunRouter_Parse2Params   	35185800	        34.48 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Parse2Params   	31188340	        34.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_Parse2Params   	34422213	        34.23 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_Parse2Params         	 2323632	       519.3 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_Parse2Params         	 2255139	       521.1 ns/op	     704 B/op	       4 allocs/op
+BenchmarkChi_Parse2Params         	 2300584	       520.6 ns/op	     704 B/op	       4 allocs/op
+BenchmarkEcho_Parse2Params        	28884516	        41.17 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Parse2Params        	29097846	        41.14 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_Parse2Params        	29271028	        40.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Parse2Params         	29763349	        38.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Parse2Params         	30845222	        39.76 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_Parse2Params         	31702838	        37.85 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_Parse2Params  	18474091	        64.40 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_Parse2Params  	18635095	        64.70 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpRouter_Parse2Params  	18712380	        63.98 ns/op	      64 B/op	       1 allocs/op
+BenchmarkHttpTreeMux_Parse2Params 	 4172818	       288.4 ns/op	     384 B/op	       4 allocs/op
+BenchmarkHttpTreeMux_Parse2Params 	 4188656	       291.6 ns/op	     384 B/op	       4 allocs/op
+BenchmarkHttpTreeMux_Parse2Params 	 4166778	       289.2 ns/op	     384 B/op	       4 allocs/op
+BenchmarkBunRouter_ParseAll       	 1544360	       784.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseAll       	 1541780	       777.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_ParseAll       	 1525719	       783.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_ParseAll             	  100659	     12361 ns/op	   14944 B/op	      84 allocs/op
+BenchmarkChi_ParseAll             	   91058	     11559 ns/op	   14944 B/op	      84 allocs/op
+BenchmarkChi_ParseAll             	  103896	     11483 ns/op	   14944 B/op	      84 allocs/op
+BenchmarkEcho_ParseAll            	 1231701	       968.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_ParseAll            	 1238118	       970.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_ParseAll            	 1237684	       971.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseAll             	 1228813	       979.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseAll             	 1228293	       976.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_ParseAll             	 1226545	       988.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_ParseAll      	  901620	      1314 ns/op	     640 B/op	      16 allocs/op
+BenchmarkHttpRouter_ParseAll      	  962132	      1243 ns/op	     640 B/op	      16 allocs/op
+BenchmarkHttpRouter_ParseAll      	  928713	      1264 ns/op	     640 B/op	      16 allocs/op
+BenchmarkHttpTreeMux_ParseAll     	  251857	      4697 ns/op	    5728 B/op	      51 allocs/op
+BenchmarkHttpTreeMux_ParseAll     	  257732	      4716 ns/op	    5728 B/op	      51 allocs/op
+BenchmarkHttpTreeMux_ParseAll     	  258183	      4696 ns/op	    5728 B/op	      51 allocs/op
+BenchmarkBunRouter_StaticAll      	  151417	      8037 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_StaticAll      	  149336	      7944 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBunRouter_StaticAll      	  151897	      7900 ns/op	       0 B/op	       0 allocs/op
+BenchmarkChi_StaticAll            	   22588	     52906 ns/op	   57778 B/op	     314 allocs/op
+BenchmarkChi_StaticAll            	   22786	     54887 ns/op	   57778 B/op	     314 allocs/op
+BenchmarkChi_StaticAll            	   22599	     53195 ns/op	   57778 B/op	     314 allocs/op
+BenchmarkEcho_StaticAll           	  129846	      9242 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_StaticAll           	  129319	      9245 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEcho_StaticAll           	  129948	      9322 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_StaticAll            	  137419	      8666 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_StaticAll            	  137828	      8686 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGin_StaticAll            	  136908	      8647 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_StaticAll     	  228264	      4991 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_StaticAll     	  240102	      4954 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpRouter_StaticAll     	  242740	      4970 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_StaticAll    	  149566	      8058 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_StaticAll    	  150219	      8077 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHttpTreeMux_StaticAll    	  149426	      8003 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/julienschmidt/go-http-routing-benchmark	469.365s

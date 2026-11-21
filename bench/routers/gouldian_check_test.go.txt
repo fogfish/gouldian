@@ -1,0 +1,34 @@
+package main
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+	"testing"
+)
+
+// every route of every API must be routed (204), a fast 404 would skew the benchmark
+func TestGouldianRoutesAreRouted(t *testing.T) {
+	re := regexp.MustCompile(`:[a-z_]+`)
+	for name, api := range map[string]struct {
+		h      http.Handler
+		routes []route
+	}{
+		"github": {githubGouldian, githubAPI}, "gplus": {gplusGouldian, gplusAPI},
+		"parse": {parseGouldian, parseAPI}, "static": {staticGouldian, staticRoutes},
+	} {
+		bad := 0
+		for _, r := range api.routes {
+			req := httptest.NewRequest(r.method, re.ReplaceAllString(r.path, "x1"), nil)
+			w := httptest.NewRecorder()
+			api.h.ServeHTTP(w, req)
+			if w.Code != 204 {
+				bad++
+				if bad < 4 {
+					t.Errorf("%s %s %s -> %d", name, r.method, r.path, w.Code)
+				}
+			}
+		}
+		t.Logf("%s: %d routes, %d not routed", name, len(api.routes), bad)
+	}
+}

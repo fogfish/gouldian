@@ -21,9 +21,9 @@ package gouldian_test
 import (
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	"github.com/fogfish/it/v2"
 )
 
 func TestPathIs(t *testing.T) {
@@ -34,7 +34,8 @@ func TestPathIs(t *testing.T) {
 			"/foo",
 		} {
 			req := mock.Input(mock.URL(url))
-			it.Ok(t).IfNil(foo(req))
+			it.Then(t).
+				Should(it.Nil(foo(req)))
 		}
 	})
 
@@ -47,7 +48,8 @@ func TestPathIs(t *testing.T) {
 			"/foo/foo/bar",
 		} {
 			req := mock.Input(mock.URL(url))
-			it.Ok(t).IfNotNil(foo(req))
+			it.Then(t).
+				ShouldNot(it.Nil(foo(req)))
 		}
 	})
 }
@@ -61,7 +63,8 @@ func TestPathAny(t *testing.T) {
 			"/foo/foo",
 		} {
 			req := mock.Input(mock.URL(url))
-			it.Ok(t).IfNil(foo(req))
+			it.Then(t).
+				Should(it.Nil(foo(req)))
 		}
 	})
 
@@ -74,7 +77,8 @@ func TestPathAny(t *testing.T) {
 			"/foo/foo/bar",
 		} {
 			req := mock.Input(mock.URL(url))
-			it.Ok(t).IfNotNil(foo(req))
+			it.Then(t).
+				ShouldNot(it.Nil(foo(req)))
 		}
 	})
 }
@@ -87,7 +91,8 @@ func TestPathEmpty(t *testing.T) {
 			"/",
 		} {
 			req := mock.Input(mock.URL(url))
-			it.Ok(t).IfNil(foo(req))
+			it.Then(t).
+				Should(it.Nil(foo(req)))
 		}
 	})
 
@@ -98,7 +103,8 @@ func TestPathEmpty(t *testing.T) {
 			"/foo/foo/bar",
 		} {
 			req := mock.Input(mock.URL(url))
-			it.Ok(t).IfNotNil(foo(req))
+			it.Then(t).
+				ShouldNot(it.Nil(foo(req)))
 		}
 	})
 
@@ -114,20 +120,20 @@ func TestPathString(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/foo/bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("bar")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "bar"))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/foo/1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("1")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "1"))
 	})
 }
 
@@ -140,18 +146,18 @@ func TestPathInt(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/foo/bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/foo/1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1))
 	})
 }
 
@@ -164,28 +170,28 @@ func TestPathSeq(t *testing.T) {
 	t.Run("seq0", func(t *testing.T) {
 		req := mock.Input(mock.URL("/foo"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("seq1", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/foo/a"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("a")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "a"))
 	})
 
 	t.Run("seqN", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/foo/a/b/c"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("a/b/c")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "a/b/c"))
 	})
 }
 

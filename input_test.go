@@ -22,8 +22,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/it"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/it/v2"
 )
 
 func TestAccessToken(t *testing.T) {
@@ -39,19 +39,21 @@ func TestAccessToken(t *testing.T) {
 
 	var jwt map[string]interface{}
 	err := json.Unmarshal([]byte(raw), &jwt)
-	it.Ok(t).If(err).Must().Equal(nil)
+	it.Then(t).
+		Must(it.Equal(err, nil))
 
 	token := µ.NewToken(jwt)
-	it.Ok(t).
-		If(token.Jti()).Equal("jti").
-		If(token.Iss()).Equal("iss").
-		If(token.Exp()).Equal("exp").
-		If(token.Sub()).Equal("sub").
-		If(token.Scope()).Equal("scope").
-		If(token.Username()).Equal("username").
-		If(token.ClientID()).Equal("client_id")
+	it.Then(t).
+		Should(it.Equal(token.Jti(), "jti")).
+		Should(it.Equal(token.Iss(), "iss")).
+		Should(it.Equal(token.Exp(), "exp")).
+		Should(it.Equal(token.Sub(), "sub")).
+		Should(it.Equal(token.Scope(), "scope")).
+		Should(it.Equal(token.Username(), "username")).
+		Should(it.Equal(token.ClientID(), "client_id"))
 }
 
 func TestErrNoMatch(t *testing.T) {
-	it.Ok(t).If(µ.ErrNoMatch.Error()).Should().Equal("No Match")
+	it.Then(t).
+		Should(it.Equal(µ.ErrNoMatch.Error(), "No Match"))
 }

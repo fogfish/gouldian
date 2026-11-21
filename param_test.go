@@ -21,10 +21,9 @@ package gouldian_test
 import (
 	"testing"
 
-	µ "github.com/fogfish/gouldian/v2"
-	"github.com/fogfish/gouldian/v2/mock"
-	"github.com/fogfish/it"
-	itt "github.com/fogfish/it/v2"
+	µ "github.com/fogfish/gouldian/v3"
+	"github.com/fogfish/gouldian/v3/mock"
+	"github.com/fogfish/it/v2"
 )
 
 func TestParams(t *testing.T) {
@@ -43,11 +42,11 @@ func TestParams(t *testing.T) {
 	req := mock.Input(mock.URL("/?foo=bar&bar=foo"))
 	err := foo(req)
 
-	itt.Then(t).Should(
-		itt.Nil(err),
-		itt.Nil(µ.FromContext(req, &val)),
-		itt.Equal(val.Val.Foo, "bar"),
-		itt.Equal(val.Val.Bar, "foo"),
+	it.Then(t).Should(
+		it.Nil(err),
+		it.Nil(µ.FromContext(req, &val)),
+		it.Equal(val.Val.Foo, "bar"),
+		it.Equal(val.Val.Bar, "foo"),
 	)
 }
 
@@ -56,9 +55,9 @@ func TestParamIs(t *testing.T) {
 	success := mock.Input(mock.URL("/?foo=bar"))
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
-	it.Ok(t).
-		If(foo(success)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
+	it.Then(t).
+		Should(it.Equal(foo(success), nil)).
+		ShouldNot(it.Equal(foo(failure), nil))
 }
 
 func TestParamAny(t *testing.T) {
@@ -68,11 +67,11 @@ func TestParamAny(t *testing.T) {
 	success3 := mock.Input(mock.URL("/?foo=baz"))
 	failure := mock.Input(mock.URL("/?bar=foo"))
 
-	it.Ok(t).
-		If(foo(success1)).Should().Equal(nil).
-		If(foo(success2)).Should().Equal(nil).
-		If(foo(success3)).Should().Equal(nil).
-		If(foo(failure)).ShouldNot().Equal(nil)
+	it.Then(t).
+		Should(it.Equal(foo(success1), nil)).
+		Should(it.Equal(foo(success2), nil)).
+		Should(it.Equal(foo(success3), nil)).
+		ShouldNot(it.Equal(foo(failure), nil))
 }
 
 func TestParamString(t *testing.T) {
@@ -85,27 +84,27 @@ func TestParamString(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("bar")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "bar"))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("1")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "1"))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -119,20 +118,20 @@ func TestParamMaybeString(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("bar")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, "bar"))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal("")
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, ""))
 	})
 }
 
@@ -145,25 +144,25 @@ func TestParamInt(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -177,30 +176,30 @@ func TestParamMaybeInt(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(0)
+		it.Then(t).
+			Should(it.True(isFailure(foo(req)))).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 0))
 	})
 
 	t.Run("number", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(0)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 0))
 	})
 }
 
@@ -214,34 +213,34 @@ func TestParamFloat(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1.0)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1.0))
 	})
 
 	t.Run("double", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=1.1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1.1)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1.1))
 	})
 
 	t.Run("string", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -255,30 +254,30 @@ func TestParamMaybeFloat(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=1.1"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(1.1)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 1.1))
 	})
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(0.0)
+		it.Then(t).
+			Should(it.True(isFailure(foo(req)))).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 0.0))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(0.0)
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, 0.0))
 	})
 }
 
@@ -302,33 +301,33 @@ func TestParamJSON(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, MyS{A: "abc", B: 10}))
 	})
 
 	t.Run("string", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=bar"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).ShouldNot().Equal(nil)
+		it.Then(t).
+			Should(it.True(isFailure(foo(req)))).
+			Should(it.Equal(µ.FromContext(req, &val), nil))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 
 	t.Run("badformat", func(t *testing.T) {
 		req := mock.Input(mock.URL("/?foo=%7"))
 
-		it.Ok(t).
-			If(foo(req)).ShouldNot().Equal(nil)
+		it.Then(t).
+			ShouldNot(it.Equal(foo(req), nil))
 	})
 }
 
@@ -347,20 +346,20 @@ func TestParamMaybeJSON(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=%7B%22a%22%3A%22abc%22%2C%22b%22%3A10%7D"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(MyS{A: "abc", B: 10})
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, MyS{A: "abc", B: 10}))
 	})
 
 	t.Run("nomatch", func(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?bar=foo"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(MyS{})
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, MyS{}))
 
 	})
 
@@ -368,10 +367,10 @@ func TestParamMaybeJSON(t *testing.T) {
 		var val myT
 		req := mock.Input(mock.URL("/?foo=%7"))
 
-		it.Ok(t).
-			If(foo(req)).Should().Equal(nil).
-			If(µ.FromContext(req, &val)).Should().Equal(nil).
-			If(val.Val).Should().Equal(MyS{})
+		it.Then(t).
+			Should(it.Equal(foo(req), nil)).
+			Should(it.Equal(µ.FromContext(req, &val), nil)).
+			Should(it.Equal(val.Val, MyS{}))
 	})
 }
 
