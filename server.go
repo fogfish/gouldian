@@ -69,10 +69,21 @@ type CORS struct {
 //	NoMatch    404, 405 (Allow), 406, 415; OPTIONS and HEAD are derived
 //	error      500, the cause is logged but never exposed
 //	panic      500, recovered, the stack is logged
+//
+// The lifecycle of a request is
+//
+//	guards → routes → issue → log, CORS → observers
+//
+// the guards admit the request before routing (WithGuard), the issue of a
+// failure is rendered by WithIssue or WithIssueHandler, the observers see the
+// final response (WithObserver).
 type Server struct {
 	routes    *Routes
 	log       *slog.Logger
 	issue     IssueRenderer
+	issueOut  IssueHandler
+	guards    []Guard
+	observers []Observer
 	cors      *CORS
 	bodyLimit int64
 	recover   bool
@@ -92,6 +103,48 @@ func WithLogger(log *slog.Logger) Option { return func(s *Server) { s.log = log 
 // WithIssue sets the renderer of failures, the application owns the shape
 // of problem. The default is RFC 9457 `application/problem+json`.
 func WithIssue(f IssueRenderer) Option { return func(s *Server) { s.issue = f } }
+
+// IssueHandler renders the failure into the output. Unlike IssueRenderer, it
+// owns the whole response: it may change the status, set headers (e.g.
+// Retry-After, WWW-Authenticate) and the body, and it sees the context of
+// the request (RequestID, JWT, attributes). The issue is the default
+// description of the failure, the cause is the error of the endpoint (nil
+// for 404, 405, 406, 415).
+type IssueHandler func(ctx *Context, issue Issue, cause error, out *Output)
+
+// WithIssueHandler sets the handler of failures, it takes precedence over
+// WithIssue. Every failure is rendered by it: the outcome of endpoints, the
+// rejection of a guard and the responses of the router itself.
+func WithIssueHandler(f IssueHandler) Option { return func(s *Server) { s.issueOut = f } }
+
+// Guard admits the request before routing. A nil admits the request, any
+// other outcome is the response, as if an endpoint returned it (e.g. a
+// *Failure, an *Output, an error). The rejection is rendered through the
+// issue of the server, the router is never consulted, so a client who is
+// not admitted cannot tell known routes from unknown ones.
+//
+// Guards run for every request, including CORS preflight (OPTIONS): a guard
+// that authorizes requests must admit preflight if CORS is enabled. Guards
+// may set attributes of the context (Context.Set), they shall not bind lenses.
+type Guard func(ctx *Context) error
+
+// WithGuard appends guards to the server, they run in the given order.
+func WithGuard(guards ...Guard) Option {
+	return func(s *Server) { s.guards = append(s.guards, guards...) }
+}
+
+// Observer sees every request once it is served: the final response
+// (rendered issue, CORS headers), the route that took it (Context.Route, nil
+// if none did), the attributes of the context and the time of dispatch.
+// The observer must not keep the context or the output, both are released
+// once the response is sent.
+type Observer func(ctx *Context, out *Output, elapsed time.Duration)
+
+// WithObserver appends observers to the server (access logs, metrics,
+// traces), they run in the given order.
+func WithObserver(observers ...Observer) Option {
+	return func(s *Server) { s.observers = append(s.observers, observers...) }
+}
 
 // WithCORS enables CORS, default is off.
 func WithCORS(cors *CORS) Option { return func(s *Server) { s.cors = cors } }
@@ -182,8 +235,19 @@ func (s *Server) logger() *slog.Logger {
 // Dispatch executes the request. It never returns nil, the output must be
 // released with Output.Free once it is sent.
 func (s *Server) Dispatch(c *Context) *Output {
+	if len(s.observers) == 0 {
+		out := s.safeHandle(c)
+		s.finalize(c, out)
+		return out
+	}
+
+	t := time.Now()
 	out := s.safeHandle(c)
 	s.finalize(c, out)
+	elapsed := time.Since(t)
+	for _, f := range s.observers {
+		f(c, out, elapsed)
+	}
 	return out
 }
 
@@ -203,6 +267,12 @@ func (s *Server) safeHandle(c *Context) (out *Output) {
 }
 
 func (s *Server) handle(c *Context) *Output {
+	for _, guard := range s.guards {
+		if err := guard(c); err != nil {
+			return s.output(c, err)
+		}
+	}
+
 	req := c.Request
 	path := req.URL.Path
 
@@ -318,11 +388,15 @@ func (s *Server) finalize(c *Context, out *Output) {
 	req := c.Request
 
 	if out.render && len(out.Body) == 0 {
-		ct, body := s.issue(out.issue(req.URL.Path), out.Failure)
-		if out.GetHeader("Content-Type") == "" {
-			out.SetHeader("Content-Type", ct)
+		if s.issueOut != nil {
+			s.issueOut(c, out.issue(req.URL.Path), out.Failure, out)
+		} else {
+			ct, body := s.issue(out.issue(req.URL.Path), out.Failure)
+			if out.GetHeader("Content-Type") == "" {
+				out.SetHeader("Content-Type", ct)
+			}
+			out.Body = body
 		}
-		out.Body = body
 	}
 
 	s.log_(c, out)

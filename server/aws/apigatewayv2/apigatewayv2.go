@@ -25,6 +25,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -46,23 +47,54 @@ func Serve(endpoints ...µ.Routable) Func {
 	return Handler(µ.NewServer().Mount(endpoints...))
 }
 
+// Option of the adapter
+type Option func(*config)
+
+type config struct {
+	token func(*events.APIGatewayV2HTTPRequest) µ.Token
+}
+
+// WithToken sets the builder of the request token (Context.JWT). The default
+// takes the claims of the JWT authorizer, the IAM identity or the context of
+// the Lambda authorizer.
+func WithToken(f func(*events.APIGatewayV2HTTPRequest) µ.Token) Option {
+	return func(c *config) { c.token = f }
+}
+
 /*
 Handler adapts the server to AWS Lambda (HTTP API, Function URL). The context
 of the invocation (the deadline, the cancellation) is propagated to endpoints.
 
 	api := µ.NewServer(µ.WithCORS(...)).Mount( ... )
 	lambda.Start(apigatewayv2.Handler(api))
+
+A body that cannot be decoded (invalid base64) fails the endpoint that reads
+it, as a *µ.Failure of the body. The failure is rendered by the server
+(WithIssue, WithIssueHandler) after the guards of the server have admitted
+the request.
 */
-func Handler(srv *µ.Server) Func {
+func Handler(srv *µ.Server, opts ...Option) Func {
+	cfg := config{token: tokenFromAuthorizer}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	return func(ctx context.Context, r events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-		req, err := Request(ctx, &r)
+		var body io.Reader
+		if buf, err := requestBody(&r); err != nil {
+			body = failedBody{err}
+		} else {
+			body = bytes.NewReader(buf)
+		}
+
+		req, err := newRequest(ctx, &r, body)
 		if err != nil {
 			return badRequest(r.RawPath, err), nil
 		}
 
 		c := srv.NewContext(ctx, req)
 		c.RequestID = r.RequestContext.RequestID
-		c.JWT = tokenFromAuthorizer(&r)
+		c.JWT = cfg.token(&r)
 
 		out := srv.Dispatch(c)
 		evt := Response(out)
@@ -75,17 +107,35 @@ func Handler(srv *µ.Server) Func {
 
 // Request is events.APIGatewayV2HTTPRequest ⟼ http.Request
 func Request(ctx context.Context, r *events.APIGatewayV2HTTPRequest) (*http.Request, error) {
-	body := []byte(r.Body)
-	if r.IsBase64Encoded {
-		buf, err := base64.StdEncoding.DecodeString(r.Body)
-		if err != nil {
-			return nil, fmt.Errorf("body is not valid base64: %w", err)
-		}
-		body = buf
+	body, err := requestBody(r)
+	if err != nil {
+		return nil, err
 	}
 
+	return newRequest(ctx, r, bytes.NewReader(body))
+}
+
+func requestBody(r *events.APIGatewayV2HTTPRequest) ([]byte, error) {
+	if !r.IsBase64Encoded {
+		return []byte(r.Body), nil
+	}
+
+	buf, err := base64.StdEncoding.DecodeString(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("body is not valid base64: %w", err)
+	}
+	return buf, nil
+}
+
+// failedBody defers the failure of the body decoding to the endpoint that
+// reads the body.
+type failedBody struct{ err error }
+
+func (b failedBody) Read([]byte) (int, error) { return 0, b.err }
+
+func newRequest(ctx context.Context, r *events.APIGatewayV2HTTPRequest, body io.Reader) (*http.Request, error) {
 	method := r.RequestContext.HTTP.Method
-	req, err := http.NewRequestWithContext(ctx, method, "/", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, method, "/", body)
 	if err != nil {
 		return nil, err
 	}

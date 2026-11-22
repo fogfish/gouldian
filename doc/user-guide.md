@@ -7,6 +7,7 @@ The guide explains how to declare HTTP services with µ-Gouldian v3. Every Go sn
 * [Binding request to a struct](#binding-request-to-a-struct)
 * [Failures and problems](#failures-and-problems)
 * [Server options](#server-options)
+* [Request lifecycle: guards, issues, observers](#request-lifecycle-guards-issues-observers)
 * [Body](#body)
 * [Testing through the server](#testing-through-the-server)
 
@@ -203,6 +204,9 @@ func ExampleNewServer() {
 | ----------------------- | ------------------ |
 | `WithLogger(*slog.Logger)` | `slog.Default()`; `5xx` at error level, `4xx` at debug level, method and path only (never the query string) |
 | `WithIssue(renderer)`   | RFC 9457           |
+| `WithIssueHandler(h)`   | off; owns the whole response of a failure (status, headers, body), takes precedence over `WithIssue` |
+| `WithGuard(guards...)`  | none; admit the request before routing |
+| `WithObserver(observers...)` | none; see every final response, the route and the time of dispatch |
 | `WithCORS(*µ.CORS)`     | off; origin allow-list, automatic preflight, endpoint headers win |
 | `WithBodyLimit(n)`      | 6 MiB, over the limit `413` |
 | `WithRecover(bool)`     | on; a panic is `500`, the stack is logged |
@@ -215,7 +219,117 @@ lambda.Start(apigateway.Handler(api))                // REST API, payload 1.0
 lambda.Start(apigatewayv2.Handler(api))              // HTTP API and Function URL, payload 2.0
 ```
 
+The API Gateway adapters take options: `apigateway.WithToken(f)` (and `apigatewayv2.WithToken(f)`) builds `ctx.JWT` from the event, e.g. from the flat context of a Lambda authorizer. A body that is not valid base64 fails the endpoint that reads it (`400`, rendered by the server), after the guards admitted the request.
+
 The context of the caller (`http.Request`, the Lambda invocation) is propagated: `ctx.Done()`, the deadline and the trace identity are available to handlers. Binary responses are base64 encoded by the API Gateway adapters, multi-value headers and `Set-Cookie` are preserved.
+
+## Request lifecycle: guards, issues, observers
+
+The server runs every request through one pipeline, the application plugs into it without wrapping the adapter:
+
+```text
+guards → routes → issue (WithIssue | WithIssueHandler) → log, CORS → observers
+```
+
+A guard admits the request before routing. Any outcome other than `nil` is the response, rendered as any other failure; the router is never consulted, so a client who is not admitted cannot probe the routes. A guard passes facts to endpoints and observers with `ctx.Set(key, value)`; `ctx.Value(key)` reads them (and the values of the caller's context). Guards run for CORS preflight too: admit `OPTIONS` if CORS is on.
+
+```go
+func ExampleWithGuard() {
+	type principal struct{}
+
+	api := µ.NewServer(
+		// the guard admits the request before routing, a rejected client
+		// cannot tell known routes from unknown ones
+		µ.WithGuard(func(ctx *µ.Context) error {
+			key := ctx.Request.Header.Get("X-Api-Key")
+			if key == "" {
+				return ø.Status.Unauthorized(ø.Error(fmt.Errorf("api key is required")))
+			}
+			ctx.Set(principal{}, key)
+			return nil
+		}),
+	).Mount(
+		µ.GET(µ.URI(µ.Path("me")), func(ctx *µ.Context) error {
+			return ø.Status.OK(ø.ContentType.TextPlain, ø.Send(ctx.Value(principal{}).(string)))
+		}),
+	)
+
+	h := httpd.Handler(api)
+	do(h, "GET", "/me", "", "X-Api-Key", "joe")
+	do(h, "GET", "/unknown", "")
+	// Output:
+	// 200 text/plain joe
+	// 401 application/problem+json {"type":"about:blank","title":"Unauthorized","status":401,"detail":"api key is required","instance":"/unknown"}
+}
+```
+
+`WithIssueHandler` owns the whole response of a failure: the outcomes of endpoints, the rejections of guards and the responses of the router itself (`404`, `405`, ...). Unlike `WithIssue`, it sets the status and headers, so a domain error is simply returned by the handler and mapped in one place.
+
+```go
+// errBusy is a failure of the domain, it knows its own status
+type errBusy struct{ retry time.Duration }
+
+func (e errBusy) Error() string { return "busy" }
+
+func ExampleWithIssueHandler() {
+	api := µ.NewServer(
+		µ.WithLogger(slog.New(slog.DiscardHandler)),
+		// the handler owns the response of every failure: the status, the
+		// headers and the body
+		µ.WithIssueHandler(func(ctx *µ.Context, issue µ.Issue, cause error, out *µ.Output) {
+			code := strings.ReplaceAll(strings.ToLower(issue.Title), " ", "_")
+			var busy errBusy
+			if errors.As(cause, &busy) {
+				out.Status, code = http.StatusServiceUnavailable, "busy"
+				out.SetHeader("Retry-After", fmt.Sprint(busy.retry.Seconds()))
+			}
+			out.SetHeader("Content-Type", "application/json")
+			out.Body = []byte(fmt.Sprintf(`{"code":"%s"}`, code))
+		}),
+	).Mount(
+		µ.GET(µ.URI(µ.Path("things")), func(*µ.Context) error {
+			return errBusy{retry: 5 * time.Second}
+		}),
+	)
+
+	h := httpd.Handler(api)
+	do(h, "GET", "/things", "")
+	do(h, "GET", "/unknown", "")
+	// Output:
+	// 503 application/json {"code":"busy"}
+	// 404 application/json {"code":"not_found"}
+}
+```
+
+An observer sees every request once it is served: the final response, the route that took it (`ctx.Route()`, `nil` if none did) and the time of dispatch. `µ.Named` names the route, so logs and metrics identify the operation without parsing the path.
+
+```go
+func ExampleWithObserver() {
+	api := µ.NewServer(
+		// the observer sees the final response and the route that took it
+		µ.WithObserver(func(ctx *µ.Context, out *µ.Output, elapsed time.Duration) {
+			route := "-"
+			if r := ctx.Route(); r != nil {
+				route = r.Name
+			}
+			fmt.Printf("access: %s %d\n", route, out.Status)
+		}),
+	).Mount(
+		µ.Named("things.list",
+			µ.GET(µ.URI(µ.Path("things")), func(*µ.Context) error { return ø.Status.OK(ø.Send("list")) }),
+		),
+	)
+
+	h := httpd.Handler(api)
+	do(h, "GET", "/things", "")
+	do(h, "GET", "/unknown", "")
+	// Output:
+	// access: things.list 200
+	// 200  list
+	// access: - 404
+	// 404 application/problem+json {"type":"about:blank","title":"Not Found","status":404,"instance":"/unknown"}
+}
+```
 
 ## Body
 
