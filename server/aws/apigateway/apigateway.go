@@ -25,6 +25,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -56,23 +57,63 @@ func ServeAndCommit(commit func(), endpoints ...µ.Routable) Func {
 	}
 }
 
+// Option of the adapter
+type Option func(*config)
+
+type config struct {
+	token func(*events.APIGatewayProxyRequest) µ.Token
+}
+
+/*
+WithToken sets the builder of the request token (Context.JWT). The default
+takes the claims of the Cognito / JWT authorizer or the IAM identity. Use it
+for a Lambda authorizer, whose context is a flat map, or to compose the token
+from facts that the client cannot forge.
+
+	lambda.Start(apigateway.Handler(api,
+		apigateway.WithToken(func(r *events.APIGatewayProxyRequest) µ.Token {
+			return µ.NewToken(r.RequestContext.Authorizer)
+		}),
+	))
+*/
+func WithToken(f func(*events.APIGatewayProxyRequest) µ.Token) Option {
+	return func(c *config) { c.token = f }
+}
+
 /*
 Handler adapts the server to AWS Lambda. The context of the invocation (the
 deadline, the cancellation) is propagated to endpoints.
 
 	api := µ.NewServer(µ.WithCORS(...)).Mount( ... )
 	lambda.Start(apigateway.Handler(api))
+
+A body that cannot be decoded (invalid base64) fails the endpoint that reads
+it, as a *µ.Failure of the body. The failure is rendered by the server
+(WithIssue, WithIssueHandler) after the guards of the server have admitted
+the request.
 */
-func Handler(srv *µ.Server) Func {
+func Handler(srv *µ.Server, opts ...Option) Func {
+	cfg := config{token: jwtFromAuthorizer}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	return func(ctx context.Context, r events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-		req, err := Request(ctx, &r)
+		var body io.Reader
+		if buf, err := requestBody(&r); err != nil {
+			body = failedBody{err}
+		} else {
+			body = bytes.NewReader(buf)
+		}
+
+		req, err := newRequest(ctx, &r, body)
 		if err != nil {
 			return badRequest(r.Path, err), nil
 		}
 
 		c := srv.NewContext(ctx, req)
 		c.RequestID = r.RequestContext.RequestID
-		c.JWT = jwtFromAuthorizer(&r)
+		c.JWT = cfg.token(&r)
 
 		out := srv.Dispatch(c)
 		evt := Response(out)
@@ -90,7 +131,11 @@ func Request(ctx context.Context, r *events.APIGatewayProxyRequest) (*http.Reque
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, r.HTTPMethod, "/", bytes.NewReader(body))
+	return newRequest(ctx, r, bytes.NewReader(body))
+}
+
+func newRequest(ctx context.Context, r *events.APIGatewayProxyRequest, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, r.HTTPMethod, "/", body)
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +170,12 @@ func Request(ctx context.Context, r *events.APIGatewayProxyRequest) (*http.Reque
 
 	return req, nil
 }
+
+// failedBody defers the failure of the body decoding to the endpoint that
+// reads the body.
+type failedBody struct{ err error }
+
+func (b failedBody) Read([]byte) (int, error) { return 0, b.err }
 
 func requestBody(r *events.APIGatewayProxyRequest) ([]byte, error) {
 	if !r.IsBase64Encoded {

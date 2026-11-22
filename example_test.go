@@ -1,12 +1,14 @@
 package gouldian_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"time"
 
 	µ "github.com/fogfish/gouldian/v3"
 	ø "github.com/fogfish/gouldian/v3/output"
@@ -186,4 +188,92 @@ func ExampleFailure() {
 	do(httpd.Serve(get), "GET", "/items", "")
 	// Output:
 	// 403 application/problem+json {"type":"about:blank","title":"Forbidden","status":403,"detail":"items are not yours","instance":"/items"}
+}
+
+func ExampleWithGuard() {
+	type principal struct{}
+
+	api := µ.NewServer(
+		// the guard admits the request before routing, a rejected client
+		// cannot tell known routes from unknown ones
+		µ.WithGuard(func(ctx *µ.Context) error {
+			key := ctx.Request.Header.Get("X-Api-Key")
+			if key == "" {
+				return ø.Status.Unauthorized(ø.Error(fmt.Errorf("api key is required")))
+			}
+			ctx.Set(principal{}, key)
+			return nil
+		}),
+	).Mount(
+		µ.GET(µ.URI(µ.Path("me")), func(ctx *µ.Context) error {
+			return ø.Status.OK(ø.ContentType.TextPlain, ø.Send(ctx.Value(principal{}).(string)))
+		}),
+	)
+
+	h := httpd.Handler(api)
+	do(h, "GET", "/me", "", "X-Api-Key", "joe")
+	do(h, "GET", "/unknown", "")
+	// Output:
+	// 200 text/plain joe
+	// 401 application/problem+json {"type":"about:blank","title":"Unauthorized","status":401,"detail":"api key is required","instance":"/unknown"}
+}
+
+// errBusy is a failure of the domain, it knows its own status
+type errBusy struct{ retry time.Duration }
+
+func (e errBusy) Error() string { return "busy" }
+
+func ExampleWithIssueHandler() {
+	api := µ.NewServer(
+		µ.WithLogger(slog.New(slog.DiscardHandler)),
+		// the handler owns the response of every failure: the status, the
+		// headers and the body
+		µ.WithIssueHandler(func(ctx *µ.Context, issue µ.Issue, cause error, out *µ.Output) {
+			code := strings.ReplaceAll(strings.ToLower(issue.Title), " ", "_")
+			var busy errBusy
+			if errors.As(cause, &busy) {
+				out.Status, code = http.StatusServiceUnavailable, "busy"
+				out.SetHeader("Retry-After", fmt.Sprint(busy.retry.Seconds()))
+			}
+			out.SetHeader("Content-Type", "application/json")
+			out.Body = []byte(fmt.Sprintf(`{"code":"%s"}`, code))
+		}),
+	).Mount(
+		µ.GET(µ.URI(µ.Path("things")), func(*µ.Context) error {
+			return errBusy{retry: 5 * time.Second}
+		}),
+	)
+
+	h := httpd.Handler(api)
+	do(h, "GET", "/things", "")
+	do(h, "GET", "/unknown", "")
+	// Output:
+	// 503 application/json {"code":"busy"}
+	// 404 application/json {"code":"not_found"}
+}
+
+func ExampleWithObserver() {
+	api := µ.NewServer(
+		// the observer sees the final response and the route that took it
+		µ.WithObserver(func(ctx *µ.Context, out *µ.Output, elapsed time.Duration) {
+			route := "-"
+			if r := ctx.Route(); r != nil {
+				route = r.Name
+			}
+			fmt.Printf("access: %s %d\n", route, out.Status)
+		}),
+	).Mount(
+		µ.Named("things.list",
+			µ.GET(µ.URI(µ.Path("things")), func(*µ.Context) error { return ø.Status.OK(ø.Send("list")) }),
+		),
+	)
+
+	h := httpd.Handler(api)
+	do(h, "GET", "/things", "")
+	do(h, "GET", "/unknown", "")
+	// Output:
+	// access: things.list 200
+	// 200  list
+	// access: - 404
+	// 404 application/problem+json {"type":"about:blank","title":"Not Found","status":404,"instance":"/unknown"}
 }

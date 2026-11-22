@@ -117,13 +117,38 @@ func TestResponseMapping(t *testing.T) {
 }
 
 func TestBadRequest(t *testing.T) {
-	api := apigatewayv2.Serve()
+	type req struct{ Raw []byte }
+	api := apigatewayv2.Serve(µ.POST(µ.URI(µ.Path("x")), µ.Body(µ.Optics1[req, []byte]())))
 
-	evt := request("GET", "/x")
+	// the endpoint that reads the body fails, the server renders the issue
+	evt := request("POST", "/x")
 	evt.Body, evt.IsBase64Encoded = "***", true
 	out, _ := api(context.Background(), evt)
-	it.Then(t).Should(it.Equal(out.StatusCode, http.StatusBadRequest))
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusBadRequest)).
+		Should(it.Equal(out.Headers["Content-Type"], "application/problem+json"))
 
 	out, _ = api(context.Background(), request("G E T", "/x"))
 	it.Then(t).Should(it.Equal(out.StatusCode, http.StatusBadRequest))
+}
+
+func TestWithToken(t *testing.T) {
+	var token µ.Token
+	api := apigatewayv2.Handler(
+		µ.NewServer().Mount(µ.GET(µ.URI(µ.Path("a")), func(c *µ.Context) error {
+			token = c.JWT
+			return nil
+		})),
+		apigatewayv2.WithToken(func(r *events.APIGatewayV2HTTPRequest) µ.Token {
+			return µ.Token{"sub": r.RequestContext.AccountID}
+		}),
+	)
+
+	evt := request("GET", "/a")
+	evt.RequestContext.AccountID = "acc-1"
+	out, err := api(context.Background(), evt)
+	it.Then(t).
+		Must(it.Nil(err)).
+		Should(it.Equal(out.StatusCode, http.StatusNoContent)).
+		Should(it.Equal(token.Sub(), "acc-1"))
 }

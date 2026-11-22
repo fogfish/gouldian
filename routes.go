@@ -30,6 +30,9 @@ itself. The metadata allows the server to distinguish "no such resource" (404)
 from "no such method" (405) and to respond to OPTIONS requests.
 */
 type Route struct {
+	// Name of the route, an identity of the operation for logs and metrics,
+	// see Named. Empty by default.
+	Name string
 	// Method of HTTP request (GET, POST, ...), Any matches every verb
 	Method string
 	// Path is a sequence of segments: literal, ":" for a variable captured
@@ -50,6 +53,21 @@ func (r Route) String() string {
 
 // Routable is a lazy route, see URI, GET, POST, ...
 type Routable func() Route
+
+/*
+Named gives the name to the route. The server exposes the route that took
+the request (Context.Route) to observers, so the name identifies the operation
+in logs and metrics, without parsing the path.
+
+	µ.Named("user.get", µ.GET(µ.URI(µ.Path("users"), µ.Path(id)), ...))
+*/
+func Named(name string, route Routable) Routable {
+	return func() Route {
+		r := route()
+		r.Name = name
+		return r
+	}
+}
 
 // Routes is a routing table. It is built once and it is safe for concurrent use.
 type Routes struct {
@@ -115,13 +133,31 @@ func (r *Routes) append(route Route) {
 		verb = Any
 	}
 
+	endpoint := route.taken()
 	for i := range n.methods {
 		if n.methods[i].verb == verb {
-			n.methods[i].endpoint = n.methods[i].endpoint.Or(route.Endpoint)
+			n.methods[i].endpoint = n.methods[i].endpoint.Or(endpoint)
 			return
 		}
 	}
-	n.methods = append(n.methods, handler{verb, route.Endpoint})
+	n.methods = append(n.methods, handler{verb, endpoint})
+}
+
+// taken wraps the endpoint of the route, so that the context knows the route
+// that took the request: any outcome but NoMatch. The route is visible to the
+// endpoint while it runs, and it survives a panic of the endpoint.
+func (r Route) taken() Endpoint {
+	meta := &Route{Name: r.Name, Method: r.Method, Path: r.Path}
+	endpoint := r.Endpoint
+	return func(ctx *Context) error {
+		prev := ctx.route
+		ctx.route = meta
+		err := endpoint(ctx)
+		if _, isNoMatch := err.(NoMatch); isNoMatch {
+			ctx.route = prev
+		}
+		return err
+	}
 }
 
 func (n *node) literal(segment string) *node {
@@ -256,6 +292,7 @@ func (n *node) run(ctx *Context) error {
 func (r *Routes) exec(ctx *Context, path string) error {
 	ctx.free()
 	ctx.allow = ctx.allow[:0]
+	ctx.route = nil
 	if len(path) > 0 && path[0] == '/' {
 		path = path[1:]
 	}

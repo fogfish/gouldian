@@ -195,7 +195,55 @@ func TestResponseMapping(t *testing.T) {
 }
 
 func TestInvalidBase64(t *testing.T) {
-	api := apigateway.Serve()
-	out, _ := api(context.Background(), events.APIGatewayProxyRequest{HTTPMethod: "POST", Path: "/", Body: "***", IsBase64Encoded: true})
-	it.Then(t).Should(it.Equal(out.StatusCode, http.StatusBadRequest))
+	type req struct{ Raw []byte }
+	evt := events.APIGatewayProxyRequest{HTTPMethod: "POST", Path: "/a", Body: "***", IsBase64Encoded: true}
+
+	// the endpoint that reads the body fails, the server renders the issue
+	api := apigateway.Handler(µ.NewServer(
+		µ.WithIssue(func(issue µ.Issue, cause error) (string, []byte) {
+			return "text/plain", []byte(issue.Detail)
+		}),
+	).Mount(µ.POST(µ.URI(µ.Path("a")), µ.Body(µ.Optics1[req, []byte]()))))
+
+	out, _ := api(context.Background(), evt)
+	it.Then(t).
+		Should(it.Equal(out.StatusCode, http.StatusBadRequest)).
+		Should(it.Equal(out.Headers["Content-Type"], "text/plain")).
+		Should(it.String(out.Body).Contain("base64"))
+
+	// a route that does not read the body is still routed
+	evt.Path = "/b"
+	out, _ = api(context.Background(), evt)
+	it.Then(t).Should(it.Equal(out.StatusCode, http.StatusNotFound))
+
+	// the guard is consulted before the body
+	guarded := apigateway.Handler(µ.NewServer(
+		µ.WithGuard(func(*µ.Context) error { return ø.Status.Forbidden() }),
+	).Mount(µ.POST(µ.URI(µ.Path("a")), µ.Body(µ.Optics1[req, []byte]()))))
+
+	evt.Path = "/a"
+	out, _ = guarded(context.Background(), evt)
+	it.Then(t).Should(it.Equal(out.StatusCode, http.StatusForbidden))
+}
+
+func TestWithToken(t *testing.T) {
+	var token µ.Token
+	api := apigateway.Handler(
+		µ.NewServer().Mount(µ.GET(µ.URI(µ.Path("a")), func(c *µ.Context) error {
+			token = c.JWT
+			return nil
+		})),
+		apigateway.WithToken(func(r *events.APIGatewayProxyRequest) µ.Token {
+			return µ.NewToken(r.RequestContext.Authorizer)
+		}),
+	)
+
+	evt := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/a"}
+	evt.RequestContext.Authorizer = map[string]interface{}{"principalId": "alice", "tenant": "t1"}
+	out, err := api(context.Background(), evt)
+	it.Then(t).
+		Must(it.Nil(err)).
+		Should(it.Equal(out.StatusCode, http.StatusNoContent)).
+		Should(it.Equal(token.String("principalId"), "alice")).
+		Should(it.Equal(token.String("tenant"), "t1"))
 }
